@@ -579,12 +579,12 @@ export default function DesignAndEngineeringPage() {
                 What They Know <br />
                 <span className="text-orange-500">How to Build</span>
               </h2>
-              <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
+              <div className="relative h-[500px] w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image 
-                  src="https://picsum.photos/seed/engineering-field/800/600" 
+                  src="/engineer-led-design-and-installation.jpg" 
                   alt="Engineering Field Experience" 
                   fill 
-                  className="object-cover"
+                  className="object-cover object-top"
                   referrerPolicy="no-referrer"
                 />
               </div>

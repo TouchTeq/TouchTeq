@@ -295,12 +295,12 @@ export default function MaintenanceAndSupportPage() {
               <p className="text-slate-600 text-lg leading-relaxed mb-10 font-medium">
                 A &quot;fit and forget&quot; approach to industrial systems leads to higher long-term costs and increased safety risks. Professional maintenance provides a clear return on investment.
               </p>
-              <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
+              <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl mt-8">
                 <Image
-                  src="https://picsum.photos/seed/calibration-hand/800/600"
+                  src="/detector-maintenance.jpeg"
                   alt="Instrument Calibration"
                   fill
-                  className="object-cover"
+                  className="object-cover object-bottom"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -409,7 +409,7 @@ export default function MaintenanceAndSupportPage() {
                   src="https://picsum.photos/seed/engineer-refinery/800/600"
                   alt="Engineer at Refinery"
                   fill
-                  className="object-cover"
+                  className="object-cover object-top"
                   referrerPolicy="no-referrer"
                 />
               </div>

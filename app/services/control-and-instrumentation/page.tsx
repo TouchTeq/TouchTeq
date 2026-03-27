@@ -272,12 +272,11 @@ export default function ControlAndInstrumentationPage() {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/5]">
                 <Image 
-                  src="https://picsum.photos/seed/plc-cabinet/800/1000" 
+                  src="/plant-field-panel-system-integration.jpeg" 
                   alt="Industrial Monitoring and Control" 
-                  width={800} 
-                  height={1000}
+                  fill 
                   className="object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -410,10 +409,10 @@ export default function ControlAndInstrumentationPage() {
               </h2>
               <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image 
-                  src="https://picsum.photos/seed/instrumentation-testing/800/600" 
+                  src="/qualified-accountable-signoff.jpg" 
                   alt="Instrumentation Testing" 
                   fill 
-                  className="object-cover"
+                  className="object-cover object-top"
                   referrerPolicy="no-referrer"
                 />
               </div>
