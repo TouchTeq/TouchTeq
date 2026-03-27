@@ -6,7 +6,8 @@ coverage/
 .env*
 .vercel/
 !/.env.example
-
 nul
-
-.next/
+tmp/
+build_log.txt
+build_output.txt
+tsc_output.txt
