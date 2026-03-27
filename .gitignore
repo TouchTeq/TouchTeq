@@ -11,3 +11,4 @@ tmp/
 build_log.txt
 build_output.txt
 tsc_output.txt
+next/
