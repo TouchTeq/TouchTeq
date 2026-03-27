@@ -285,12 +285,11 @@ export default function ElectricalEngineeringPage() {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/5]">
                 <Image 
-                  src="https://picsum.photos/seed/mcc-room/800/1000" 
+                  src="/electrical-infrastructure-industrial-ops.jpeg" 
                   alt="Industrial Electrical Infrastructure" 
-                  width={800} 
-                  height={1000}
+                  fill 
                   className="object-cover"
                   referrerPolicy="no-referrer"
                 />

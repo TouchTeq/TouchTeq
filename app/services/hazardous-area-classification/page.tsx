@@ -335,7 +335,7 @@ export default function HazardousAreaClassificationPage() {
               </p>
               <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image 
-                  src="https://picsum.photos/seed/safety-first/800/600" 
+                  src="/Industrial_facility.jpeg" 
                   alt="Safety and Compliance" 
                   fill 
                   className="object-cover"
@@ -477,7 +477,7 @@ export default function HazardousAreaClassificationPage() {
               </h2>
               <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image 
-                  src="https://picsum.photos/seed/engineering-audit/800/600" 
+                  src="/teq-advantage-engineer-review.jpeg" 
                   alt="Engineering Audit" 
                   fill 
                   className="object-cover"
