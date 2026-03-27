@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply antialiased;
+  }
+  
+  /* Hide default cursor on desktop */
+  body.cursor-none {
+    cursor: none;
+  }
+  
+  /* Show default cursor on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    body.cursor-none {
+      cursor: auto;
+    }
+  }
+  
+  /* Ensure interactive elements show pointer */
+  body.cursor-none a,
+  body.cursor-none button,
+  body.cursor-none [role="button"],
+  body.cursor-none input,
+  body.cursor-none textarea,
+  body.cursor-none select {
+    cursor: pointer;
+  }
+}
+
+/* Custom scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff6900;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e65f00;
+}
+
+/* Specific class for finer control */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 105, 0, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 105, 0, 0.6);
+}
+
+
+/* Accordion animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+[data-state="open"] .animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+[data-state="closed"] .animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+.office-theme,
+.office-theme * {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+[data-office-theme='light'] {
+  color-scheme: light;
+  background:
+    radial-gradient(circle at top left, rgba(255, 105, 0, 0.08), transparent 28%),
+    linear-gradient(180deg, #f7f4ee 0%, #efe8dc 100%) !important;
+  color: #182230 !important;
+}
+
+[data-office-theme='light'] [class*='bg-[#0B0F19]'] {
+  background-color: #f7f4ee !important;
+}
+
+[data-office-theme='light'] [class*='bg-[#111724]'] {
+  background-color: #f2ece1 !important;
+}
+
+[data-office-theme='light'] [class*='bg-[#151B28]'] {
+  background-color: #fffdf9 !important;
+}
+
+[data-office-theme='light'] [class*='bg-slate-900'] {
+  background-color: #ece6db !important;
+}
+
+[data-office-theme='light'] [class*='bg-slate-800'] {
+  background-color: #f2ede4 !important;
+}
+
+[data-office-theme='light'] [class*='bg-slate-700'] {
+  background-color: #e7e0d4 !important;
+}
+
+[data-office-theme='light'] [class*='border-slate-800'],
+[data-office-theme='light'] [class*='border-slate-700'],
+[data-office-theme='light'] [class*='border-slate-600'],
+[data-office-theme='light'] [class*='border-[#151B28]'] {
+  border-color: #d7d0c4 !important;
+}
+
+[data-office-theme='light'] [class*='text-white'],
+[data-office-theme='light'] [class*='text-slate-200'],
+[data-office-theme='light'] [class*='text-slate-300'] {
+  color: #182230 !important;
+}
+
+[data-office-theme='light'] [class*='text-slate-400'] {
+  color: #556172 !important;
+}
+
+[data-office-theme='light'] [class*='text-slate-500'],
+[data-office-theme='light'] [class*='text-slate-600'] {
+  color: #6c7785 !important;
+}
+
+[data-office-theme='light'] [class*='text-slate-700'] {
+  color: #7b8695 !important;
+}
+
+[data-office-theme='light'] [class*='placeholder:text-slate-600']::placeholder,
+[data-office-theme='light'] [class*='placeholder:text-slate-500']::placeholder {
+  color: #8a94a3 !important;
+}
+
+[data-office-theme='light'] [class*='hover:bg-slate-800']:hover,
+[data-office-theme='light'] [class*='hover:bg-slate-800/40']:hover,
+[data-office-theme='light'] [class*='hover:bg-slate-800/60']:hover,
+[data-office-theme='light'] [class*='hover:bg-slate-700']:hover {
+  background-color: #ebe4d7 !important;
+}
+
+[data-office-theme='light'] [class*='hover:text-white']:hover {
+  color: #182230 !important;
+}
+
+[data-office-theme='light'] [class*='shadow-2xl'],
+[data-office-theme='light'] [class*='shadow-xl'],
+[data-office-theme='light'] [class*='shadow-lg'] {
+  box-shadow: 0 20px 50px -24px rgba(24, 34, 48, 0.18) !important;
+}
+
+[data-office-theme='light'] input,
+[data-office-theme='light'] textarea,
+[data-office-theme='light'] select {
+  color: #182230;
+}
