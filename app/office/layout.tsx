@@ -202,6 +202,58 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     () => 'dark'
   );
 
+  const isEnvMissing = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (isEnvMissing) {
+    return (
+      <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-center p-6 text-center space-y-8 relative overflow-hidden">
+        {/* Background Decor */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-orange-500/10 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full"></div>
+
+        <div className="max-w-md w-full p-8 md:p-10 bg-[#151B28] border border-slate-800/50 shadow-2xl relative z-10 space-y-8">
+            <div className="space-y-4">
+                <div className="w-16 h-16 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-orange-500/20 shadow-lg shadow-orange-500/10">
+                    <Shield size={32} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Supabase Connection Required</h2>
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">Your project's URL and API key are required to initialize the office dashboard. Please add them to your environment variables or the AI Studio secrets.</p>
+            </div>
+
+            <div className="text-left bg-[#0B0F19]/60 border border-slate-800/60 p-5 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Configuration Checklist:</p>
+                <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                        <span className={`font-mono ${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'text-slate-500 line-through decoration-slate-700' : 'text-slate-300 font-bold'}`}>NEXT_PUBLIC_SUPABASE_URL</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                        <span className={`font-mono ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'text-slate-500 line-through decoration-slate-700' : 'text-slate-300 font-bold'}`}>NEXT_PUBLIC_SUPABASE_ANON_KEY</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <button 
+                    onClick={() => window.location.reload()}
+                    className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600/90 text-white font-black text-sm uppercase tracking-[0.2em] py-4 rounded-sm transition-all shadow-xl shadow-orange-500/10 active:scale-[0.98]"
+                >
+                    REFRESH & RETRY
+                </button>
+                <p className="text-[10px] uppercase font-black tracking-[0.15em] text-slate-600">
+                    RESTART DEV SERVER AFTER ADDING SECRETS
+                </p>
+            </div>
+        </div>
+        
+        <p className="text-slate-600 text-[10px] font-bold uppercase tracking-[0.4em] relative z-10">
+            TouchTeq Office Management System
+        </p>
+      </div>
+    );
+  }
+
   // Fetch business profile logo
   useEffect(() => {
     async function fetchLogo() {

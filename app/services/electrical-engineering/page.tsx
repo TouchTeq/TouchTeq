@@ -418,10 +418,10 @@ export default function ElectricalEngineeringPage() {
               </h2>
               <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image 
-                  src="/teq-advantage-engineer-review.jpeg" 
+                  src="/qualified-accountable-signoff.jpeg" 
                   alt="Electrical Testing" 
                   fill 
-                  className="object-cover"
+                  className="object-cover object-top"
                   referrerPolicy="no-referrer"
                 />
               </div>

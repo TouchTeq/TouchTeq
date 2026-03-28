@@ -300,7 +300,7 @@ export default function MaintenanceAndSupportPage() {
                   src="/detector-maintenance.jpeg"
                   alt="Instrument Calibration"
                   fill
-                  className="object-cover object-bottom"
+                  className="object-cover object-[center_65%]"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -406,10 +406,10 @@ export default function MaintenanceAndSupportPage() {
               </h2>
               <div className="relative h-80 w-full rounded-3xl overflow-hidden shadow-xl">
                 <Image
-                  src="https://picsum.photos/seed/engineer-refinery/800/600"
+                  src="/expertise-site-consultation.jpeg"
                   alt="Engineer at Refinery"
                   fill
-                  className="object-cover object-top"
+                  className="object-cover object-[center_65%]"
                   referrerPolicy="no-referrer"
                 />
               </div>
