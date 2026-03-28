@@ -9,7 +9,8 @@ import {
   Settings as SettingsIcon,
   Car,
   Bot,
-  KeyRound
+  KeyRound,
+  Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,6 +22,7 @@ import SystemPreferencesTab from './SystemPreferencesTab';
 import TravelSettingsTab from './TravelSettingsTab';
 import AiAssistantSettingsTab from './AiAssistantSettingsTab';
 import ApiKeysTab from './ApiKeysTab';
+import DocumentNumberingTab from './DocumentNumberingTab';
 
 export default function SettingsClient({ 
   initialProfile, 
@@ -38,6 +40,7 @@ export default function SettingsClient({
 const TABS = useMemo(() => [
   { id: 'profile', label: 'Business Profile', icon: Building2 },
   { id: 'banking', label: 'Banking Details', icon: CreditCard },
+  { id: 'numbering', label: 'Document Numbering', icon: Hash },
   { id: 'documents', label: 'Document Templates', icon: FileText },
   { id: 'emails', label: 'Email Settings', icon: Mail },
   { id: 'assistant', label: 'AI Assistant Settings', icon: Bot },
@@ -69,6 +72,8 @@ const TABS = useMemo(() => [
       switch (activeTab) {
         case 'banking':
           return <BankingDetailsTab profile={profile} setProfile={setProfile} />;
+        case 'numbering':
+          return <DocumentNumberingTab profile={profile} setProfile={setProfile} />;
         case 'documents':
           return <DocumentTemplatesTab profile={profile} setProfile={setProfile} />;
         case 'emails':

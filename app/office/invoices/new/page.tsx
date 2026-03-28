@@ -66,6 +66,19 @@ function NewInvoiceContent() {
   const [invoiceNumber, setInvoiceNumber] = useState('INV-....');
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const clientSearchRef = useRef<HTMLDivElement>(null);
+  
+  // Close client search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clientSearchRef.current && !clientSearchRef.current.contains(event.target as Node)) {
+        setSearchTerm('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
   const [paymentTermsDays, setPaymentTermsDays] = useState(30);
   const [includeVat, setIncludeVat] = useState(true);
 
@@ -117,13 +130,24 @@ function NewInvoiceContent() {
         due_date: format(addDays(new Date(`${prev.issue_date}T00:00:00`), nextTerms), 'yyyy-MM-dd'),
       }));
 
-      // Sequential Numbering
+      // Sequential Numbering - use profile settings
+      const invoicePrefix = documentSettings.invoice_prefix || 'INV';
+      const invoiceStartingNumber = documentSettings.invoice_starting_number || 1;
+      const invoiceIncludeYear = documentSettings.invoice_include_year || false;
+      
       const { count } = await supabase
         .from('invoices')
         .select('*', { count: 'exact', head: true });
       
+      const year = new Date().getFullYear();
       const nextNum = (count || 0) + 1;
-      setInvoiceNumber(`INV-${String(nextNum).padStart(4, '0')}`);
+      const displayNum = nextNum >= invoiceStartingNumber ? nextNum : invoiceStartingNumber;
+      
+      if (invoiceIncludeYear) {
+        setInvoiceNumber(`${invoicePrefix}-${year}-${String(displayNum).padStart(4, '0')}`);
+      } else {
+        setInvoiceNumber(`${invoicePrefix}-${String(displayNum).padStart(4, '0')}`);
+      }
     }
     init();
   }, [supabase]);
@@ -412,7 +436,7 @@ function NewInvoiceContent() {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Client Selection */}
-          <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-visible">
             <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Building2 className="text-orange-500" size={18} />
@@ -439,7 +463,7 @@ function NewInvoiceContent() {
                   </button>
                 </div>
               ) : (
-                <div className="relative group">
+                <div ref={clientSearchRef} className="relative group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" size={18} />
                   <input 
                     type="text"
@@ -500,10 +524,17 @@ function NewInvoiceContent() {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 1)} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" />
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={item.quantity} 
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} 
+                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
+                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                       </td>
                       <td className="px-6 py-4 text-right font-black text-sm text-slate-200">{formatRand(item.quantity * item.unit_price)}</td>
                       <td className="px-6 py-4 text-right">

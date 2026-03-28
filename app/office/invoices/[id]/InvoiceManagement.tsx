@@ -770,8 +770,9 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                       type="number"
                       step="0.01"
                       value={paymentForm.amount}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => setPaymentForm({...paymentForm, amount: parseFloat(e.target.value) || 0})}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 pl-10 text-white font-black text-xl outline-none focus:border-orange-500"
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 pl-10 text-white font-black text-xl outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest text-right">Max: {formatCurrency(invoice.balance_due)}</p>

@@ -152,6 +152,13 @@ function sanitizeEmailTemplates(value: unknown) {
 
 function sanitizeBusinessProfileUpdates(updates: any) {
   const sanitized: Record<string, any> = {};
+  const docNumberingFields = [
+    'invoice_prefix', 'invoice_starting_number', 'invoice_include_year',
+    'quote_prefix', 'quote_starting_number', 'quote_include_year',
+    'credit_note_prefix', 'credit_note_starting_number', 'credit_note_include_year',
+    'po_prefix', 'po_starting_number', 'po_include_year',
+    'cert_prefix', 'cert_starting_number', 'cert_include_year',
+  ];
 
   if (typeof updates?.id === 'string' && updates.id.trim()) {
     sanitized.id = updates.id.trim();
@@ -166,7 +173,34 @@ function sanitizeBusinessProfileUpdates(updates: any) {
   if ('logo_url' in updates) sanitized.logo_url = normalizeOptionalUrl(updates.logo_url);
   if ('credentials' in updates) sanitized.credentials = sanitizeCredentials(updates.credentials);
   if ('banking_details' in updates) sanitized.banking_details = sanitizeBankingDetails(updates.banking_details);
-  if ('document_settings' in updates) sanitized.document_settings = sanitizeDocumentSettings(updates.document_settings);
+  
+  const existingDocSettings = typeof updates?.document_settings === 'object' && updates.document_settings !== null
+    ? updates.document_settings
+    : {};
+  
+  const docSettingsUpdates: Record<string, any> = {};
+  docNumberingFields.forEach(field => {
+    if (field in updates) {
+      let value = updates[field];
+      if (field.includes('number')) {
+        value = parseInt(value) || 1;
+      } else if (field.includes('include_year')) {
+        value = Boolean(value);
+      } else {
+        value = normalizeString(value, 20);
+      }
+      sanitized[field] = value;
+      const jsonKey = field.replace('po_', 'po_').replace(/_/g, '_');
+      docSettingsUpdates[field] = value;
+    }
+  });
+  
+  if (Object.keys(docSettingsUpdates).length > 0) {
+    sanitized.document_settings = { ...existingDocSettings, ...docSettingsUpdates };
+  } else if ('document_settings' in updates) {
+    sanitized.document_settings = sanitizeDocumentSettings(updates.document_settings);
+  }
+  
   if ('email_settings' in updates) sanitized.email_settings = sanitizeEmailSettings(updates.email_settings);
   if ('email_templates' in updates) sanitized.email_templates = sanitizeEmailTemplates(updates.email_templates);
 
@@ -176,6 +210,26 @@ function sanitizeBusinessProfileUpdates(updates: any) {
 export async function getBusinessProfile() {
   const { supabase } = await requireAuthenticatedUser();
   return loadBusinessProfile(supabase);
+}
+
+export async function getDocumentCounts() {
+  const { supabase } = await requireAuthenticatedUser();
+  
+  const [invoices, quotes, creditNotes, purchaseOrders, certificates] = await Promise.all([
+    supabase.from('invoices').select('id', { count: 'exact', head: true }),
+    supabase.from('quotes').select('id', { count: 'exact', head: true }),
+    supabase.from('credit_notes').select('id', { count: 'exact', head: true }),
+    supabase.from('purchase_orders').select('id', { count: 'exact', head: true }),
+    supabase.from('certificates').select('id', { count: 'exact', head: true }),
+  ]);
+
+  return {
+    invoices: invoices.count || 0,
+    quotes: quotes.count || 0,
+    credit_notes: creditNotes.count || 0,
+    purchase_orders: purchaseOrders.count || 0,
+    certificates: certificates.count || 0,
+  };
 }
 
 export async function updateBusinessProfile(updates: any) {
@@ -207,7 +261,11 @@ export async function updateBusinessProfile(updates: any) {
   revalidatePath('/office/settings');
   revalidatePath('/office/dashboard');
   revalidatePath('/office/invoices');
+  revalidatePath('/office/invoices/new');
   revalidatePath('/office/quotes');
+  revalidatePath('/office/quotes/new');
+  revalidatePath('/office/purchase-orders');
+  revalidatePath('/office/purchase-orders/new');
   return { success: true };
 }
 

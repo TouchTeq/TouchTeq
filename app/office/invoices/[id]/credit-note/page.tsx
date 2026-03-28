@@ -358,16 +358,18 @@ export default function CreateCreditNotePage() {
                     <input 
                       type="number" 
                       value={item.quantity}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </td>
                   <td className="px-4 py-3">
                     <input 
                       type="number" 
                       value={item.unit_price}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </td>
                   <td className="px-4 py-3 text-right font-black text-white">

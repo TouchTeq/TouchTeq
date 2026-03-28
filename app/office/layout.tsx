@@ -120,16 +120,47 @@ function subscribeToOfficeTheme(callback: () => void) {
 function SidebarNav({ 
   navGroups, 
   isCollapsed, 
-  pathname 
+  pathname,
+  sidebarRef
 }: { 
   navGroups: NavGroup[], 
   isCollapsed: boolean, 
-  pathname: string 
+  pathname: string,
+  sidebarRef?: React.MutableRefObject<HTMLDivElement | null>
 }) {
   const searchParams = useSearchParams();
   
+  // Handle wheel scrolling for sidebar
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (sidebarRef?.current) {
+        const { scrollTop, scrollHeight, clientHeight } = sidebarRef.current;
+        const canScrollUp = scrollTop > 0;
+        const canScrollDown = scrollTop + clientHeight < scrollHeight;
+        
+        // If at edges, don't prevent default
+        if ((e.deltaY < 0 && !canScrollUp) || (e.deltaY > 0 && !canScrollDown)) {
+          return;
+        }
+        // Otherwise, handle scroll within sidebar
+        e.preventDefault();
+        sidebarRef.current.scrollTop += e.deltaY;
+      }
+    };
+    
+    const element = sidebarRef?.current;
+    if (element) {
+      element.addEventListener('wheel', handleWheel, { passive: false });
+      return () => element.removeEventListener('wheel', handleWheel);
+    }
+  }, [sidebarRef]);
+  
   return (
-    <nav className={`flex-1 min-h-0 py-4 space-y-4 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'px-2' : 'px-3'}`}>
+    <nav 
+      className={`flex-1 min-h-0 py-4 space-y-4 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'px-2' : 'px-3'} scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent`}
+      onWheel={(e) => e.stopPropagation()}
+      style={{ overflowY: 'auto' }}
+    >
       {navGroups.map((group) => (
         <div key={group.title}>
           {!isCollapsed && (
@@ -195,6 +226,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
   const [overdueReminderCount, setOverdueReminderCount] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
   const theme = useSyncExternalStore<OfficeTheme>(
     subscribeToOfficeTheme,
@@ -415,12 +447,12 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                 x: isMobile && !isSidebarOpen ? -236 : 0
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="sticky top-0 inset-y-0 left-0 z-50 bg-[#151B28] border-r border-slate-800/50 flex flex-col h-screen overflow-y-auto overflow-x-hidden flex-shrink-0"
+              className="sticky top-0 inset-y-0 left-0 z-50 bg-[#151B28] border-r border-slate-800/50 flex flex-col h-screen flex-shrink-0"
             >
               {/* Logo Area */}
               <div className={`flex items-center justify-between border-b border-slate-800/50 flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'p-4 justify-center' : 'p-5 gap-[10px]'}`}>
                 <div className="flex items-center gap-[10px]">
-                  <div className={`relative overflow-hidden flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-9 h-9'}`}>
+                  <div className={`relative overflow-hidden flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-9 h-9}'}`}>
                     {logoUrl ? (
                       <Image
                         src={logoUrl}
@@ -449,12 +481,12 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
               </div>
 
               {/* Navigation */}
-              <Suspense fallback={<div className="flex-1" />}>
-                <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} />
-              </Suspense>
+              <div ref={sidebarRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} sidebarRef={sidebarRef} />
+              </div>
 
               {/* Bottom: Sign Out */}
-              <div className={`border-t border-slate-800/50 flex flex-col gap-1 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+              <div className={`border-t border-slate-800/50 flex flex-col gap-1 flex-shrink-0 ${isCollapsed ? 'p-2' : 'p-3'}`}>
                 <div className="relative group/tooltip">
                   <button onClick={handleSignOut} className={`w-full flex items-center rounded-lg text-slate-400 hover:text-white hover:bg-red-500/10 transition-all group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'}`}>
                     <LogOut size={18} className="group-hover:text-red-500 flex-shrink-0" />

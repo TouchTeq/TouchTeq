@@ -287,10 +287,10 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
                         <textarea required value={item.description} onChange={(e) => handleLineChange(idx, 'description', e.target.value)} className="w-full bg-transparent border-none outline-none text-slate-200 text-sm font-medium resize-none" rows={1} />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 1)} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" />
+                        <input type="number" min="0" value={item.quantity} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" step="0.01" value={item.unit_price} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
+                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                       </td>
                       <td className="px-6 py-4 text-right font-black text-sm text-slate-200">{formatRand(item.quantity * item.unit_price)}</td>
                       <td className="px-6 py-4 text-right">
