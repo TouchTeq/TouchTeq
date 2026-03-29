@@ -314,7 +314,7 @@ export default function NewPurchaseOrderPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-black border-b border-slate-800">
+                  <tr className="text-slate-500 text-[10px] uppercase font-black border-b border-slate-800">
                     <th className="text-left py-3 px-2">Description</th>
                     <th className="text-right py-3 px-2 w-24">Qty</th>
                     <th className="text-right py-3 px-2 w-32">Unit Price</th>
@@ -331,25 +331,55 @@ export default function NewPurchaseOrderPage() {
                           value={item.description}
                           onChange={(e) => updateLineItem(idx, 'description', e.target.value)}
                           placeholder="Item description"
-                          className="w-full bg-transparent border-none text-white text-sm focus:outline-none"
+                          className="w-full bg-[#0B0F19] border-none text-white text-sm focus:outline-none"
                         />
                       </td>
                       <td className="py-3 px-2">
                         <input 
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           value={item.quantity}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => updateLineItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              updateLineItem(idx, 'quantity', 0);
+                            } else {
+                              const num = parseFloat(val.replace(/\D/g, ''));
+                              if (!isNaN(num)) updateLineItem(idx, 'quantity', num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || isNaN(parseFloat(val))) {
+                              updateLineItem(idx, 'quantity', 1);
+                            }
+                          }}
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
                         />
                       </td>
                       <td className="py-3 px-2">
                         <input 
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           value={item.unit_price}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => updateLineItem(idx, 'unit_price', parseFloat(e.target.value) || 0)}
-                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              updateLineItem(idx, 'unit_price', 0);
+                            } else {
+                              const num = parseFloat(val.replace(/[^\d.]/g, ''));
+                              if (!isNaN(num)) updateLineItem(idx, 'unit_price', num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || isNaN(parseFloat(val))) {
+                              updateLineItem(idx, 'unit_price', 0);
+                            }
+                          }}
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
                         />
                       </td>
                       <td className="py-3 px-2 text-right font-black text-white">

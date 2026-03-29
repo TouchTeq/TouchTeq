@@ -51,25 +51,26 @@ export default function EditQuoteClient({ quote, initialLineItems, clients }: an
       documentType: 'quote',
       documentId: quote.id,
       documentData: {
-        clientName: selectedClient?.company_name ?? null,
-        clientId: selectedClient?.id ?? null,
-        issue_date: formData.issue_date,
-        expiry_date: formData.expiry_date,
-        notes: formData.notes,
-        internal_notes: formData.internal_notes,
-        status: formData.status,
-        lineItems: lineItems.map((item: any) => ({
+        clientName: quote.clients?.company_name ?? null,
+        clientId: quote.clients?.id ?? null,
+        issue_date: quote.issue_date,
+        expiry_date: quote.expiry_date,
+        notes: quote.notes || '',
+        internal_notes: quote.internal_notes || '',
+        status: quote.status,
+        lineItems: initialLineItems.map((item: any) => ({
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unit_price),
-          total: Number(item.line_total),
-          line_total: Number(item.line_total),
+          total: Number(item.line_total || item.quantity * item.unit_price),
+          line_total: Number(item.line_total || item.quantity * item.unit_price),
         })),
       },
       isOpen: true,
     });
     return () => clearDocumentSession();
-  }, [clearDocumentSession, formData.expiry_date, formData.internal_notes, formData.issue_date, formData.notes, formData.status, lineItems, quote.id, registerDocumentSession, selectedClient?.company_name, selectedClient?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearDocumentSession, registerDocumentSession, quote.id]);
 
   // Handle updates from AI Assistant (Live Session)
   useEffect(() => {
@@ -283,7 +284,7 @@ export default function EditQuoteClient({ quote, initialLineItems, clients }: an
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
+                  <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
                     <th className="px-8 py-4 w-1/2">Description</th>
                     <th className="px-6 py-4">Qty</th>
                     <th className="px-6 py-4">Price</th>
@@ -298,16 +299,27 @@ export default function EditQuoteClient({ quote, initialLineItems, clients }: an
                         <textarea 
                           required
                           value={item.description}
-                          onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
-                          className="w-full bg-transparent border-none focus:ring-0 outline-none text-slate-200 text-sm font-medium resize-none"
+                          onChange={(e) => {
+                            handleLineChange(idx, 'description', e.target.value);
+                            setTimeout(() => {
+                              const textarea = document.getElementById(`quote-desc-${idx}`);
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = textarea.scrollHeight + 'px';
+                              }
+                            }, 0);
+                          }}
+                          id={`quote-desc-${idx}`}
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded focus:ring-0 outline-none text-slate-200 text-sm font-medium"
                           rows={1}
+                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <input type="number" min="0" value={item.quantity} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                        <input type="text" inputMode="numeric" value={item.quantity} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'quantity', 0); } else { const num = parseInt(val.replace(/\D/g, ''), 10); if (!isNaN(num)) handleLineChange(idx, 'quantity', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseInt(val, 10))) { handleLineChange(idx, 'quantity', 1); } }} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                        <input type="text" inputMode="decimal" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'unit_price', 0); } else { const num = parseFloat(val.replace(/[^\d.]/g, '')); if (!isNaN(num)) handleLineChange(idx, 'unit_price', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseFloat(val))) { handleLineChange(idx, 'unit_price', 0); } }} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
                       </td>
                       <td className="px-6 py-4 text-right font-black text-sm text-slate-200">
                         {formatRand(item.quantity * item.unit_price)}

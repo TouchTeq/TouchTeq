@@ -97,6 +97,17 @@ function NewQuoteContent() {
     { description: '', quantity: 1, unit_price: 0, total: 0 }
   ]);
 
+  const descriptionRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+
+  useEffect(() => {
+    descriptionRefs.current.forEach((textarea, idx) => {
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }
+    });
+  }, [lineItems]);
+
   // Load Initial Data
   useEffect(() => {
     async function init() {
@@ -519,7 +530,7 @@ function NewQuoteContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
+                  <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
                     <th className="px-8 py-4 w-1/2">Description</th>
                     <th className="px-6 py-4">Qty</th>
                     <th className="px-6 py-4">Unit Price (R)</th>
@@ -532,31 +543,70 @@ function NewQuoteContent() {
                     <tr key={idx} className="bg-[#0B0F19]/20 group">
                       <td className="px-8 py-4">
                         <textarea 
+                          ref={(el) => { descriptionRefs.current[idx] = el; }}
                           required
                           value={item.description}
-                          onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
+                          onChange={(e) => {
+                            handleLineChange(idx, 'description', e.target.value);
+                            setTimeout(() => {
+                              const textarea = descriptionRefs.current[idx];
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = textarea.scrollHeight + 'px';
+                              }
+                            }, 0);
+                          }}
                           placeholder="e.g. Electrical Inspection & Commissioning"
-                          className="w-full bg-transparent border-none focus:ring-0 outline-none text-slate-200 text-sm font-medium resize-none"
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded focus:ring-0 outline-none text-slate-200 text-sm font-medium"
                           rows={1}
+                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
                         />
                       </td>
                       <td className="px-6 py-4">
                         <input 
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           value={item.quantity}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)}
-                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              handleLineChange(idx, 'quantity', 0);
+                            } else {
+                              const num = parseInt(val.replace(/\D/g, ''), 10);
+                              if (!isNaN(num)) handleLineChange(idx, 'quantity', num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || isNaN(parseInt(val, 10))) {
+                              handleLineChange(idx, 'quantity', 1);
+                            }
+                          }}
+                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold outline-none focus:border-orange-500"
                         />
                       </td>
                       <td className="px-6 py-4">
                         <input 
-                          type="number"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           value={item.unit_price}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              handleLineChange(idx, 'unit_price', 0);
+                            } else {
+                              const num = parseFloat(val.replace(/[^\d.]/g, ''));
+                              if (!isNaN(num)) handleLineChange(idx, 'unit_price', num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || isNaN(parseFloat(val))) {
+                              handleLineChange(idx, 'unit_price', 0);
+                            }
+                          }}
                           className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold outline-none focus:border-orange-500"
                         />
                       </td>
@@ -587,10 +637,10 @@ function NewQuoteContent() {
                 <Plus size={16} /> Add Line Item
               </button>
 
-              <div className="w-full md:w-80 space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
+              <div className="w-full md:w-96 md:ml-auto space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
               <div className="flex justify-between items-center text-slate-500">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Subtotal</span>
-                <span className="font-bold">{formatRand(subtotal)}</span>
+                <span className="font-bold text-right min-w-[120px]">{formatRand(subtotal)}</span>
               </div>
               <label className="flex items-center justify-between gap-3 text-slate-500">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Apply VAT (15%)</span>
@@ -603,11 +653,11 @@ function NewQuoteContent() {
               </label>
               <div className="flex justify-between items-center text-slate-500">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">VAT (15%)</span>
-                <span className="font-bold">{formatRand(vatAmount)}</span>
+                <span className="font-bold text-right min-w-[120px]">{formatRand(vatAmount)}</span>
               </div>
                 <div className="flex justify-between items-center py-4 border-t border-slate-800">
                   <span className="text-xs font-black uppercase tracking-[0.2em] text-white">Total Amount</span>
-                  <span className="text-xl font-black text-orange-500">{formatRand(total)}</span>
+                  <span className="text-xl font-black text-orange-500 text-right min-w-[120px]">{formatRand(total)}</span>
                 </div>
               </div>
             </div>
@@ -635,11 +685,11 @@ function NewQuoteContent() {
                 value={formData.expiry_date}
                 onChange={(val) => handleFormFieldChange('expiry_date', val)}
               />
-              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Default validity: {quoteValidityDays} days</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Default validity: {quoteValidityDays} days</p>
             </div>
 
               <div className="space-y-2 pt-4">
-                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Initial Status</label>
+                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Initial Status</label>
                  <div className="relative">
                    <button
                      type="button"
@@ -683,7 +733,7 @@ function NewQuoteContent() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Public Note (on PDF)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Public Note (on PDF)</label>
                 <textarea 
                   rows={3}
                   value={formData.notes}
@@ -694,7 +744,7 @@ function NewQuoteContent() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Internal Notes (Private)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Internal Notes (Private)</label>
                 <textarea 
                   rows={3}
                   value={formData.internal_notes}
@@ -759,7 +809,7 @@ function NewQuoteContent() {
               </div>
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Company Name</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Company Name</label>
                    <input 
                       value={inlineClient.company}
                       onChange={(e) => setInlineClient({...inlineClient, company: e.target.value})}
@@ -767,7 +817,7 @@ function NewQuoteContent() {
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Contact Name</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Contact Name</label>
                    <input 
                       value={inlineClient.name}
                       onChange={(e) => setInlineClient({...inlineClient, name: e.target.value})}
@@ -775,7 +825,7 @@ function NewQuoteContent() {
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Email Address</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email Address</label>
                    <input 
                       type="email"
                       value={inlineClient.email}

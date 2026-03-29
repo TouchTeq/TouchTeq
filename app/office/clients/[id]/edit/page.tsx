@@ -290,7 +290,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, email_missing: false }))}
-                className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors px-3 py-1.5 border border-slate-700 rounded"
+                className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors px-3 py-1.5 border border-slate-700 rounded"
               >
                 Mark Resolved
               </button>

@@ -23,6 +23,7 @@ export default function DocumentNumberingTab({ profile, setProfile }: DocumentNu
   const [success, setSuccess] = useState(false);
   const [counts, setCounts] = useState<DocumentCount | null>(null);
   const [loadingCounts, setLoadingCounts] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const documentFields = useMemo(() => [
     {
@@ -92,36 +93,44 @@ export default function DocumentNumberingTab({ profile, setProfile }: DocumentNu
   }, []);
 
   const getFieldValue = (key: string, defaultValue: any) => {
-    return profile?.[key] ?? defaultValue;
+    return profile?.document_settings?.[key] ?? profile?.[key] ?? defaultValue;
   };
 
   const handleUpdate = async () => {
     setLoading(true);
+    setError(null);
     const res = await updateBusinessProfile(profile);
     if (res.success) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+    } else {
+      setError(res.error || 'Failed to save changes');
     }
     setLoading(false);
   };
 
   const handleFieldChange = (key: string, value: any) => {
-    setProfile({ ...profile, [key]: value });
+    setProfile({
+      ...profile,
+      document_settings: {
+        ...(profile.document_settings || {}),
+        [key]: value
+      }
+    });
   };
 
   const generatePreview = (doc: typeof documentFields[0]): string => {
     const prefix = getFieldValue(doc.prefixKey, doc.defaultPrefix);
-    const startingNumber = getFieldValue(doc.startingNumberKey, doc.defaultStartingNumber);
+    const startingNumberRaw = getFieldValue(doc.startingNumberKey, doc.defaultStartingNumber);
+    const startingNumber = typeof startingNumberRaw === 'number' ? startingNumberRaw : doc.defaultStartingNumber;
     const includeYear = getFieldValue(doc.includeYearKey, doc.defaultIncludeYear);
     
     const year = new Date().getFullYear();
-    const existingCount = getExistingCount(doc);
-    const number = existingCount > 0 ? existingCount + 1 : startingNumber;
     
     if (includeYear) {
-      return `${prefix}-${year}-${String(number).padStart(4, '0')}`;
+      return `${prefix}-${year}-${String(startingNumber).padStart(4, '0')}`;
     }
-    return `${prefix}-${String(number).padStart(4, '0')}`;
+    return `${prefix}-${String(startingNumber).padStart(4, '0')}`;
   };
 
   const getExistingCount = (doc: typeof documentFields[0]): number => {
@@ -148,6 +157,12 @@ export default function DocumentNumberingTab({ profile, setProfile }: DocumentNu
           Configure how document numbers are generated for your invoices, quotes, and other documents.
         </p>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-lg text-sm font-medium">
+          {error}
+        </div>
+      )}
 
       {/* Document Settings */}
       <div className="space-y-6">
@@ -198,10 +213,28 @@ export default function DocumentNumberingTab({ profile, setProfile }: DocumentNu
                     Starting Number
                   </label>
                   <input
-                    type="number"
-                    min={1}
-                    value={getFieldValue(doc.startingNumberKey, doc.defaultStartingNumber)}
-                    onChange={(e) => handleFieldChange(doc.startingNumberKey, parseInt(e.target.value) || 1)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={7}
+                    value={getFieldValue(doc.startingNumberKey, doc.defaultStartingNumber) ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleFieldChange(doc.startingNumberKey, '');
+                      } else {
+                        const digits = val.replace(/\D/g, '').slice(0, 7);
+                        const num = parseInt(digits, 10);
+                        if (!isNaN(num) && num <= 9999999) {
+                          handleFieldChange(doc.startingNumberKey, num);
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || isNaN(parseInt(val, 10))) {
+                        handleFieldChange(doc.startingNumberKey, doc.defaultStartingNumber);
+                      }
+                    }}
                     className="w-full bg-[#151B28] border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm font-medium outline-none focus:border-orange-500 transition-colors"
                     placeholder={String(doc.defaultStartingNumber)}
                   />

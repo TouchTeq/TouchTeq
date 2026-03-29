@@ -298,15 +298,15 @@ export default function FuelTrackerPage() {
 
             <div className="ml-auto flex gap-8 items-center">
               <div className="text-right">
-                <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest mb-1">Litres</p>
+                <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-1">Litres</p>
                 <p className="text-xl font-black text-white">{totals.lits.toFixed(2)}L</p>
               </div>
               <div className="text-right">
-                <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest mb-1">Total Spend</p>
+                <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-1">Total Spend</p>
                 <p className="text-xl font-black text-white">R{totals.spend.toLocaleString()}</p>
               </div>
               <div className="text-right">
-                <p className="text-orange-500 text-[9px] font-black uppercase tracking-widest mb-1">Input VAT</p>
+                <p className="text-orange-500 text-[10px] font-black uppercase tracking-widest mb-1">Input VAT</p>
                 <p className="text-xl font-black text-orange-500">R{totals.vat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function FuelTrackerPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800">
+                  <tr className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800">
                     <th className="px-6 py-5">Date</th>
                     <th className="px-6 py-5">Station</th>
                     <th className="px-6 py-5">Vehicle</th>
@@ -352,7 +352,7 @@ export default function FuelTrackerPage() {
                         <p className="font-black text-white text-sm">{log.supplier_name}</p>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-[9px] font-black uppercase px-2 py-1 bg-white/5 text-slate-400 rounded">
+                        <span className="text-[10px] font-black uppercase px-2 py-1 bg-white/5 text-slate-400 rounded">
                           {log.vehicles?.vehicle_description.split(' ')[0]}
                         </span>
                       </td>
@@ -475,7 +475,7 @@ export default function FuelTrackerPage() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">Fuel Spend Trend</h3>
-                  <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Last 12 Monthly Totals</p>
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Last 12 Monthly Totals</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -530,7 +530,7 @@ export default function FuelTrackerPage() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">Fleet Efficiency</h3>
-                  <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Consumption Trend (L/100km)</p>
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Consumption Trend (L/100km)</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>

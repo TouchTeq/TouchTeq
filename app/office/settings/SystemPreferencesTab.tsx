@@ -93,7 +93,7 @@ export default function SystemPreferencesTab({ profile }: { profile: any }) {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {PREFERENCES.map((pref, idx) => (
                <div key={idx} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-3">
-                  <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{pref.label}</span>
+                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{pref.label}</span>
                   <div className="flex items-center justify-between">
                      <span className="text-sm font-bold text-white">{pref.value}</span>
                      <div className="group relative">

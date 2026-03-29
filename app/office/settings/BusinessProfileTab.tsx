@@ -155,7 +155,7 @@ export default function BusinessProfileTab({ profile, setProfile }: { profile: a
                  <button 
                    type="button" 
                    onClick={() => setProfile({ ...profile, postal_address: profile.physical_address })}
-                   className="text-[9px] font-black text-orange-500 uppercase tracking-widest hover:underline"
+                   className="text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline"
                  >
                     Same as physical
                  </button>
@@ -273,7 +273,7 @@ export default function BusinessProfileTab({ profile, setProfile }: { profile: a
               {profile.credentials?.map((cred: any, idx: number) => (
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 items-end">
                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Type</label>
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Type</label>
                       <input 
                         type="text" 
                         value={cred.type} 
@@ -283,7 +283,7 @@ export default function BusinessProfileTab({ profile, setProfile }: { profile: a
                       />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Number</label>
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Number</label>
                       <input 
                         type="text" 
                         value={cred.number}

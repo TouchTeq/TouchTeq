@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { format, startOfMonth, endOfMonth, parseISO, addDays } from 'date-fns';
-import { 
-  Receipt, 
-  AlertCircle, 
-  Calendar, 
-  TrendingUp, 
-  ArrowUpRight, 
+import {
+  Receipt,
+  AlertCircle,
+  Calendar,
+  TrendingUp,
+  ArrowUpRight,
   Clock,
   ExternalLink,
   Plus,
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     .from('invoices')
     .select('total, balance_due')
     .in('status', ['Sent', 'Partially Paid']);
-  
+
   const outstandingCount = outstandingData?.length || 0;
   const outstandingValue = outstandingData?.reduce((sum, inv) => sum + (inv.balance_due || 0), 0) || 0;
 
@@ -125,14 +125,14 @@ export default async function DashboardPage() {
   ]);
 
   const activities = [
-    ...(quotesRes.data?.map(q => ({ 
-      id: q.id, type: 'Quote', ref: q.quote_number, client: q.clients?.company_name, amount: q.total, status: q.status, date: q.created_at 
+    ...(quotesRes.data?.filter(q => q.clients !== null).map(q => ({
+      id: q.id, type: 'Quote', ref: q.quote_number, client: q.clients?.company_name, amount: q.total, status: q.status, date: q.created_at
     })) || []),
-    ...(invoicesRes.data?.map(i => ({ 
-      id: i.id, type: 'Invoice', ref: i.invoice_number, client: i.clients?.company_name, amount: i.total, status: i.status, date: i.created_at 
+    ...(invoicesRes.data?.filter(i => i.clients !== null).map(i => ({
+      id: i.id, type: 'Invoice', ref: i.invoice_number, client: i.clients?.company_name, amount: i.total, status: i.status, date: i.created_at
     })) || []),
-    ...(paymentsRes.data?.map(p => ({ 
-      id: p.id, type: 'Payment', ref: p.invoices?.invoice_number, client: p.invoices?.clients?.company_name, amount: p.amount, status: 'Success', date: p.created_at 
+    ...(paymentsRes.data?.filter(p => p.invoices?.clients !== null).map(p => ({
+      id: p.id, type: 'Payment', ref: p.invoices?.invoice_number, client: p.invoices?.clients?.company_name, amount: p.amount, status: 'Success', date: p.created_at
     })) || []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
           daysToVat,
         }}
       />
-      
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Outstanding Invoices */}
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           <div className="flex items-baseline gap-3">
             <h3 className="text-3xl font-black text-white">{formatRand(outstandingValue)}</h3>
             <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded">{outstandingCount} Active</span>
-           </div>
+          </div>
         </div>
 
         {/* P&L Snapshot */}
@@ -177,26 +177,26 @@ export default async function DashboardPage() {
               </h3>
             </div>
             <Link href="/office/reports?report=7" className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all">
-               <ExternalLink size={16} />
+              <ExternalLink size={16} />
             </Link>
           </div>
-          
+
           <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-500 uppercase">Revenue</span>
-               <span className="text-[10px] font-black text-green-500">{formatRand(netRevenue)}</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase">Revenue</span>
+              <span className="text-[10px] font-black text-green-500">{formatRand(netRevenue)}</span>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-500 uppercase">Expenses</span>
-               <span className="text-[10px] font-black text-red-400">-{formatRand(totalExpenses)}</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase">Expenses</span>
+              <span className="text-[10px] font-black text-red-400">-{formatRand(totalExpenses)}</span>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-500 uppercase">Profit Margin</span>
-               <span className={`text-[10px] font-black uppercase ${netRevenue > 0 ? (netProfit / netRevenue * 100 >= 0 ? 'text-green-500' : 'text-red-500') : 'text-slate-500'}`}>
-                 {netRevenue > 0 ? `${(netProfit / netRevenue * 100).toFixed(1)}%` : 'N/A'}
-               </span>
+              <span className="text-[10px] font-black text-slate-500 uppercase">Profit Margin</span>
+              <span className={`text-[10px] font-black uppercase ${netRevenue > 0 ? (netProfit / netRevenue * 100 >= 0 ? 'text-green-500' : 'text-red-500') : 'text-slate-500'}`}>
+                {netRevenue > 0 ? `${(netProfit / netRevenue * 100).toFixed(1)}%` : 'N/A'}
+              </span>
             </div>
           </div>
         </div>
@@ -214,32 +214,32 @@ export default async function DashboardPage() {
               </h3>
             </div>
             <Link href="/office/vat" className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all">
-               <ExternalLink size={16} />
+              <ExternalLink size={16} />
             </Link>
           </div>
-          
+
           <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-500 uppercase">Period Status</span>
-               <span className={`text-[10px] font-black uppercase ${vatData?.status === 'Submitted' ? 'text-green-500' : 'text-orange-500'}`}>
-                 {vatData?.status || 'No Period'}
-               </span>
+              <span className="text-[10px] font-black text-slate-500 uppercase">Period Status</span>
+              <span className={`text-[10px] font-black uppercase ${vatData?.status === 'Submitted' ? 'text-green-500' : 'text-orange-500'}`}>
+                {vatData?.status || 'No Period'}
+              </span>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-500 uppercase">Submission Deadline</span>
-               <span className={`text-[10px] font-black uppercase ${daysToVat !== null && daysToVat < 7 ? 'text-red-500' : 'text-white'}`}>
-                  {vatData ? format(parseISO(vatData.due_date), 'dd MMM yyyy') : 'N/A'}
-               </span>
+              <span className="text-[10px] font-black text-slate-500 uppercase">Submission Deadline</span>
+              <span className={`text-[10px] font-black uppercase ${daysToVat !== null && daysToVat < 7 ? 'text-red-500' : 'text-white'}`}>
+                {vatData ? format(parseISO(vatData.due_date), 'dd MMM yyyy') : 'N/A'}
+              </span>
             </div>
             {vatData?.status !== 'Submitted' && daysToVat !== null && (
-               <>
-                  <div className="w-px h-8 bg-slate-800" />
-                  <div className="flex flex-col">
-                     <span className="text-[9px] font-black text-slate-500 uppercase">Countdown</span>
-                     <span className="text-[10px] font-black text-white uppercase">{daysToVat} Days Left</span>
-                  </div>
-               </>
+              <>
+                <div className="w-px h-8 bg-slate-800" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-500 uppercase">Countdown</span>
+                  <span className="text-[10px] font-black text-white uppercase">{daysToVat} Days Left</span>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -256,7 +256,7 @@ export default async function DashboardPage() {
             View All Activity <ExternalLink size={14} />
           </Link>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -274,11 +274,10 @@ export default async function DashboardPage() {
                 activities.map((act, i) => (
                   <tr key={i} className="group hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-5">
-                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${
-                        act.type === 'Quote' ? 'bg-blue-500/10 text-blue-500' :
-                        act.type === 'Invoice' ? 'bg-orange-500/10 text-orange-500' :
-                        'bg-green-500/10 text-green-500'
-                      }`}>
+                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${act.type === 'Quote' ? 'bg-blue-500/10 text-blue-500' :
+                          act.type === 'Invoice' ? 'bg-orange-500/10 text-orange-500' :
+                            'bg-green-500/10 text-green-500'
+                        }`}>
                         {act.type}
                       </span>
                     </td>
@@ -286,12 +285,11 @@ export default async function DashboardPage() {
                     <td className="px-6 py-5 text-slate-400 text-sm font-medium">{act.client || 'Internal'}</td>
                     <td className="px-6 py-5 font-black text-white text-sm">{formatRand(act.amount)}</td>
                     <td className="px-6 py-5">
-                      <span className={`text-xs font-bold ${
-                        act.status === 'Draft' ? 'text-slate-500' :
-                        ['Sent', 'Partially Paid'].includes(act.status) ? 'text-amber-500' :
-                        ['Accepted', 'Paid', 'Success'].includes(act.status) ? 'text-green-500' :
-                        'text-red-500'
-                      }`}>
+                      <span className={`text-xs font-bold ${act.status === 'Draft' ? 'text-slate-500' :
+                          ['Sent', 'Partially Paid'].includes(act.status) ? 'text-amber-500' :
+                            ['Accepted', 'Paid', 'Success'].includes(act.status) ? 'text-green-500' :
+                              'text-red-500'
+                        }`}>
                         {act.status}
                       </span>
                     </td>
@@ -325,7 +323,7 @@ export default async function DashboardPage() {
             </div>
             <ChevronRightIcon size={18} className="text-slate-600 group-hover:text-white" />
           </Link>
-          
+
           <Link href="/office/invoices/new" className="flex items-center justify-between bg-white/5 border border-slate-800 hover:bg-orange-500 hover:border-orange-500 transition-all p-5 group rounded-lg">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-slate-800 group-hover:bg-white/20 rounded-lg text-orange-500 group-hover:text-white transition-colors">
@@ -335,7 +333,7 @@ export default async function DashboardPage() {
             </div>
             <ChevronRightIcon size={18} className="text-slate-600 group-hover:text-white" />
           </Link>
-          
+
           <Link href="/office/clients/new" className="flex items-center justify-between bg-white/5 border border-slate-800 hover:bg-orange-500 hover:border-orange-500 transition-all p-5 group rounded-lg">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-slate-800 group-hover:bg-white/20 rounded-lg text-orange-500 group-hover:text-white transition-colors">

@@ -218,19 +218,19 @@ export default function MonthlyRevenueReport() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Invoiced</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Invoiced</p>
             <h4 className="text-2xl font-black text-white">{formatCurrency(yearTotals.invoiced)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Collected</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Collected</p>
             <h4 className="text-2xl font-black text-green-500">{formatCurrency(yearTotals.collected)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Outstanding</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Outstanding</p>
             <h4 className="text-2xl font-black text-orange-500">{formatCurrency(yearTotals.invoiced - yearTotals.collected)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Collection Rate</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Collection Rate</p>
             <h4 className="text-2xl font-black text-blue-500">
               {yearTotals.invoiced > 0 ? ((yearTotals.collected / yearTotals.invoiced) * 100).toFixed(1) : 0}%
             </h4>
@@ -268,7 +268,7 @@ export default function MonthlyRevenueReport() {
           <div className="bg-[#0B0F19] rounded-xl border border-slate-800/50 overflow-hidden">
             <table className="w-full text-left">
                <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-black tracking-widest bg-slate-800/20">
+                  <tr className="text-slate-500 text-[10px] uppercase font-black tracking-widest bg-slate-800/20">
                      <th className="px-6 py-4">Month</th>
                      <th className="px-6 py-4 text-right">Invoiced</th>
                      <th className="px-6 py-4 text-right">Collected</th>
@@ -297,7 +297,7 @@ export default function MonthlyRevenueReport() {
               <div className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 overflow-hidden">
                  <table className="w-full text-left">
                     <thead>
-                       <tr className="bg-slate-800/20 text-slate-500 text-[9px] font-black uppercase tracking-widest">
+                       <tr className="bg-slate-800/20 text-slate-500 text-[10px] font-black uppercase tracking-widest">
                           <th className="px-6 py-4">Client</th>
                           <th className="px-6 py-4 text-right">Invoiced</th>
                           <th className="px-6 py-4 text-right">Collected</th>
@@ -331,11 +331,11 @@ export default function MonthlyRevenueReport() {
               </p>
               <div className="grid grid-cols-2 gap-4 w-full">
                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Invoices</p>
+                    <p className="text-[10px] font-black uppercase text-slate-500 mb-1">Invoices</p>
                     <p className="text-white font-black">{data.invoices.length}</p>
                  </div>
                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Payments</p>
+                    <p className="text-[10px] font-black uppercase text-slate-500 mb-1">Payments</p>
                     <p className="text-white font-black">{data.payments.length}</p>
                  </div>
               </div>

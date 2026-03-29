@@ -266,7 +266,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Professional Compliance Output</p>
             <button
               onClick={() => setShowPreviewModal(true)}
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
+              className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
             >
               <Maximize2 size={12} /> Fullscreen
             </button>
@@ -299,7 +299,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
 
             <div className="grid grid-cols-2 gap-12 mb-12">
               <div className="space-y-4">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Client Information:</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Client Information:</h3>
                 <div className="space-y-1">
                   <p className="font-black text-sm uppercase">{certificate.clients?.company_name}</p>
                   <p className="text-xs font-bold text-slate-700">Attn: {certificate.clients?.contact_person}</p>
@@ -308,7 +308,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Technical Details:</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Technical Details:</h3>
                 <div className="grid grid-cols-2 gap-y-3">
                   <div>
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Date of Inspection</p>
@@ -348,7 +348,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
             </div>
 
             {/* Standards */}
-            <div className="mb-10 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+            <div className="mb-10 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Standards Referenced: <span className="text-slate-600">{certificate.standards_referenced || 'General Engineering Best Practices'}</span>
             </div>
 
@@ -423,7 +423,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
               </div>
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Recipient Email</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recipient Email</label>
                   <input 
                     type="email" 
                     value={recipientEmail}
@@ -432,7 +432,7 @@ export default function CertificateManagement({ certificate, businessProfile }: 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Personal Message (Optional)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Personal Message (Optional)</label>
                   <textarea 
                     rows={4}
                     value={emailMessage}

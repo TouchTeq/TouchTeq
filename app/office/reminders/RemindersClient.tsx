@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  BellRing, 
-  TrendingUp, 
-  Mail, 
-  AlertCircle, 
-  ChevronRight, 
-  Send, 
+import {
+  BellRing,
+  TrendingUp,
+  Mail,
+  AlertCircle,
+  ChevronRight,
+  Send,
   Loader2,
   X,
   History,
@@ -83,12 +83,12 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
     try {
       // In a real app, we'd have a specific manual trigger endpoint 
       // or we can reuse the process endpoint with a body specifying the invoice.
-      const res = await fetch('/api/reminders/process', { 
+      const res = await fetch('/api/reminders/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invoiceId: showManualModal.invoice.id, manual: true, message: customMessage })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
@@ -195,7 +195,7 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
         <div className="overflow-x-auto text-white">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.3em] border-b border-slate-800/50 bg-slate-900/50">
+              <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em] border-b border-slate-800/50 bg-slate-900/50">
                 <th className="px-8 py-5">Invoice / Client</th>
                 <th className="px-6 py-5">Days Overdue</th>
                 <th className="px-6 py-5">Balance Due</th>
@@ -206,11 +206,11 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
             <tbody className="divide-y divide-slate-800/30">
               {overdueInvoices.length === 0 ? (
                 <tr>
-                   <td colSpan={5} className="px-8 py-20 text-center">
-                      <div className="bg-slate-900/50 p-12 rounded-lg border border-dashed border-slate-800">
-                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No active overdue reminders</p>
-                      </div>
-                   </td>
+                  <td colSpan={5} className="px-8 py-20 text-center">
+                    <div className="bg-slate-900/50 p-12 rounded-lg border border-dashed border-slate-800">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No active overdue reminders</p>
+                    </div>
+                  </td>
                 </tr>
               ) : overdueInvoices.map((inv: any) => {
                 const days = differenceInDays(new Date(), new Date(inv.due_date));
@@ -219,7 +219,7 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
                     <td className="px-8 py-6">
                       <Link href={`/office/invoices/${inv.id}`} className="block group/link">
                         <p className="font-black text-sm uppercase tracking-tight group-hover/link:text-orange-500 transition-colors">{inv.invoice_number}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">{inv.clients.company_name}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">{inv.clients?.company_name || 'N/A'}</p>
                       </Link>
                     </td>
                     <td className="px-6 py-6">
@@ -231,11 +231,11 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
                       <p className="font-bold text-sm">{formatCurrency(inv.balance_due)}</p>
                     </td>
                     <td className="px-6 py-6 font-mono text-[10px] text-slate-400 font-bold">
-                       {/* Simplified last rem detection - in real app we'd pass this from server */}
-                       Automated Sequence Active
+                      {/* Simplified last rem detection - in real app we'd pass this from server */}
+                      Automated Sequence Active
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button 
+                      <button
                         onClick={() => {
                           setManualRecipientEmail(null);
                           setManualRecipientName(null);
@@ -259,7 +259,7 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
       <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
         <div className="p-8 border-b border-slate-800/50 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
+            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
               <History size={20} />
             </div>
             <div>
@@ -271,7 +271,7 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
         <div className="overflow-x-auto text-white">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.3em] bg-slate-900/50 border-b border-slate-800/50">
+              <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em] bg-slate-900/50 border-b border-slate-800/50">
                 <th className="px-8 py-5">Date/Time</th>
                 <th className="px-6 py-5">Invoice</th>
                 <th className="px-6 py-5">Recipient</th>
@@ -286,19 +286,19 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
                   <td className="px-6 py-4 font-black uppercase tracking-tight">{h.invoices?.invoice_number}</td>
                   <td className="px-6 py-4 text-slate-400">{h.recipient_email}</td>
                   <td className="px-6 py-4">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
-                        {h.reminder_type}
-                     </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
+                      {h.reminder_type}
+                    </span>
                   </td>
                   <td className="px-8 py-4 text-right">
                     {h.status === 'Sent' ? (
-                       <span className="flex items-center justify-end gap-1.5 text-green-500 font-black uppercase text-[9px] tracking-widest">
-                          <CheckCircle2 size={12} /> Delivered
-                       </span>
+                      <span className="flex items-center justify-end gap-1.5 text-green-500 font-black uppercase text-[10px] tracking-widest">
+                        <CheckCircle2 size={12} /> Delivered
+                      </span>
                     ) : (
-                      <span className="flex items-center justify-end gap-1.5 text-red-500 font-black uppercase text-[9px] tracking-widest">
-                          <X size={12} /> Failed
-                       </span>
+                      <span className="flex items-center justify-end gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest">
+                        <X size={12} /> Failed
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -325,7 +325,7 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#151B28] border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl relative z-10" >
-               <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between">
                 <h3 className="text-white font-black uppercase tracking-widest text-xs">Send Manual Reminder</h3>
                 <button
                   onClick={() => {
@@ -340,34 +340,34 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
                 </button>
               </div>
               <div className="p-8 space-y-6">
-                 <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
-                    <p className="text-[10px] font-black text-slate-500 uppercase mb-1">To: {showManualModal.invoice.clients.company_name}</p>
-                    <p className="text-white font-bold">{manualRecipientEmail || showManualModal.invoice.clients.email || '—'}</p>
-                    {(manualRecipientName || manualRecipientMatched !== 'none') && (
-                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">
-                        {manualRecipientName ? `Attn: ${manualRecipientName}` : null}
-                        {manualRecipientName && manualRecipientMatched !== 'none' ? ' • ' : null}
-                        {manualRecipientMatched !== 'none' ? `${manualRecipientMatched} contact` : null}
-                      </p>
-                    )}
-                 </div>
-                 <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Custom message (Optional Override)</label>
-                    <textarea 
-                      rows={5} 
-                      value={customMessage} 
-                      onChange={(e) => setCustomMessage(e.target.value)} 
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 text-white text-xs outline-none resize-none font-medium" 
-                      placeholder="Add a personal note or instruction for the client..." 
-                    />
-                 </div>
-                 <button 
-                  onClick={handleSendManual} 
-                  disabled={loading === 'manual'} 
+                <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
+                  <p className="text-[10px] font-black text-slate-500 uppercase mb-1">To: {showManualModal.invoice.clients?.company_name || 'N/A'}</p>
+                  <p className="text-white font-bold">{manualRecipientEmail || showManualModal.invoice.clients?.email || '—'}</p>
+                  {(manualRecipientName || manualRecipientMatched !== 'none') && (
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">
+                      {manualRecipientName ? `Attn: ${manualRecipientName}` : null}
+                      {manualRecipientName && manualRecipientMatched !== 'none' ? ' • ' : null}
+                      {manualRecipientMatched !== 'none' ? `${manualRecipientMatched} contact` : null}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Custom message (Optional Override)</label>
+                  <textarea
+                    rows={5}
+                    value={customMessage}
+                    onChange={(e) => setCustomMessage(e.target.value)}
+                    className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 text-white text-xs outline-none resize-none font-medium"
+                    placeholder="Add a personal note or instruction for the client..."
+                  />
+                </div>
+                <button
+                  onClick={handleSendManual}
+                  disabled={loading === 'manual'}
                   className="w-full py-5 bg-orange-500 text-white font-black uppercase tracking-[0.3em] text-sm rounded-sm hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-3"
-                 >
-                    {loading === 'manual' ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Send Overnight Now
-                 </button>
+                >
+                  {loading === 'manual' ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Send Overnight Now
+                </button>
               </div>
             </motion.div>
           </div>

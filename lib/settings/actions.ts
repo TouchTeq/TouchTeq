@@ -119,6 +119,26 @@ function sanitizeDocumentSettings(value: unknown) {
           }
         : null,
     },
+    // Document Numbering
+    invoice_prefix: normalizeString(entry.invoice_prefix ?? 'INV', 20),
+    invoice_starting_number: Number.isFinite(Number(entry.invoice_starting_number)) ? Math.max(1, Number(entry.invoice_starting_number)) : 1,
+    invoice_include_year: Boolean(entry.invoice_include_year),
+    
+    quote_prefix: normalizeString(entry.quote_prefix ?? 'QT', 20),
+    quote_starting_number: Number.isFinite(Number(entry.quote_starting_number)) ? Math.max(1, Number(entry.quote_starting_number)) : 1,
+    quote_include_year: Boolean(entry.quote_include_year),
+    
+    credit_note_prefix: normalizeString(entry.credit_note_prefix ?? 'CN', 20),
+    credit_note_starting_number: Number.isFinite(Number(entry.credit_note_starting_number)) ? Math.max(1, Number(entry.credit_note_starting_number)) : 1,
+    credit_note_include_year: entry.credit_note_include_year !== undefined ? Boolean(entry.credit_note_include_year) : true,
+    
+    po_prefix: normalizeString(entry.po_prefix ?? 'PO', 20),
+    po_starting_number: Number.isFinite(Number(entry.po_starting_number)) ? Math.max(1, Number(entry.po_starting_number)) : 1,
+    po_include_year: entry.po_include_year !== undefined ? Boolean(entry.po_include_year) : true,
+    
+    cert_prefix: normalizeString(entry.cert_prefix ?? 'CERT', 20),
+    cert_starting_number: Number.isFinite(Number(entry.cert_starting_number)) ? Math.max(1, Number(entry.cert_starting_number)) : 1,
+    cert_include_year: entry.cert_include_year !== undefined ? Boolean(entry.cert_include_year) : true,
   };
 }
 
@@ -152,13 +172,6 @@ function sanitizeEmailTemplates(value: unknown) {
 
 function sanitizeBusinessProfileUpdates(updates: any) {
   const sanitized: Record<string, any> = {};
-  const docNumberingFields = [
-    'invoice_prefix', 'invoice_starting_number', 'invoice_include_year',
-    'quote_prefix', 'quote_starting_number', 'quote_include_year',
-    'credit_note_prefix', 'credit_note_starting_number', 'credit_note_include_year',
-    'po_prefix', 'po_starting_number', 'po_include_year',
-    'cert_prefix', 'cert_starting_number', 'cert_include_year',
-  ];
 
   if (typeof updates?.id === 'string' && updates.id.trim()) {
     sanitized.id = updates.id.trim();
@@ -174,30 +187,7 @@ function sanitizeBusinessProfileUpdates(updates: any) {
   if ('credentials' in updates) sanitized.credentials = sanitizeCredentials(updates.credentials);
   if ('banking_details' in updates) sanitized.banking_details = sanitizeBankingDetails(updates.banking_details);
   
-  const existingDocSettings = typeof updates?.document_settings === 'object' && updates.document_settings !== null
-    ? updates.document_settings
-    : {};
-  
-  const docSettingsUpdates: Record<string, any> = {};
-  docNumberingFields.forEach(field => {
-    if (field in updates) {
-      let value = updates[field];
-      if (field.includes('number')) {
-        value = parseInt(value) || 1;
-      } else if (field.includes('include_year')) {
-        value = Boolean(value);
-      } else {
-        value = normalizeString(value, 20);
-      }
-      sanitized[field] = value;
-      const jsonKey = field.replace('po_', 'po_').replace(/_/g, '_');
-      docSettingsUpdates[field] = value;
-    }
-  });
-  
-  if (Object.keys(docSettingsUpdates).length > 0) {
-    sanitized.document_settings = { ...existingDocSettings, ...docSettingsUpdates };
-  } else if ('document_settings' in updates) {
+  if ('document_settings' in updates) {
     sanitized.document_settings = sanitizeDocumentSettings(updates.document_settings);
   }
   

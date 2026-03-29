@@ -492,7 +492,7 @@ function NewCertificateContent() {
               value={formData.next_inspection_date}
               onChange={(val) => setFormData({...formData, next_inspection_date: val})}
             />
-            <p className="text-[9px] text-slate-600 mt-2 italic font-bold">Required for recurring compliance tracking</p>
+            <p className="text-[10px] text-slate-600 mt-2 italic font-bold">Required for recurring compliance tracking</p>
           </div>
         </div>
       </div>

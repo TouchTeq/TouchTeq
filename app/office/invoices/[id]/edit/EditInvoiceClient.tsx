@@ -51,34 +51,48 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
     description: item.description,
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
-    total: Number(item.line_total)
+    total: Number(item.line_total),
+    qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty'
   })));
+
+  const descriptionRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+
+  useEffect(() => {
+    descriptionRefs.current.forEach((textarea, idx) => {
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }
+    });
+  }, [lineItems]);
 
   useEffect(() => {
     registerDocumentSession({
       documentType: 'invoice',
       documentId: initialInvoice.id,
       documentData: {
-        clientName: selectedClient?.company_name ?? null,
-        clientId: selectedClient?.id ?? null,
-        issue_date: formData.issue_date,
-        due_date: formData.due_date,
-        reference: formData.reference,
-        notes: formData.notes,
-        internal_notes: formData.internal_notes,
-        status: formData.status,
-        lineItems: lineItems.map((item: any) => ({
+        clientName: initialInvoice.clients?.company_name ?? null,
+        clientId: initialInvoice.clients?.id ?? null,
+        issue_date: initialInvoice.issue_date,
+        due_date: initialInvoice.due_date,
+        reference: initialInvoice.reference || '',
+        notes: initialInvoice.notes || '',
+        internal_notes: initialInvoice.internal_notes || '',
+        status: initialInvoice.status,
+        lineItems: initialLineItems.map((item: any) => ({
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unit_price),
-          total: Number(item.total),
-          line_total: Number(item.total),
+          total: Number(item.line_total || item.quantity * item.unit_price),
+          line_total: Number(item.line_total || item.quantity * item.unit_price),
+          qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty',
         })),
       },
       isOpen: true,
     });
     return () => clearDocumentSession();
-  }, [clearDocumentSession, formData.due_date, formData.internal_notes, formData.issue_date, formData.notes, formData.reference, formData.status, initialInvoice.id, lineItems, registerDocumentSession, selectedClient?.company_name, selectedClient?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearDocumentSession, registerDocumentSession, initialInvoice.id]);
 
   // Handle updates from AI Assistant (Live Session)
   useEffect(() => {
@@ -101,6 +115,7 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unitPrice ?? item.unit_price) || 0,
         total: Number(item.total ?? item.line_total ?? (Number(item.quantity) || 1) * (Number(item.unitPrice ?? item.unit_price) || 0)),
+        qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty',
       })));
     }
   }, [documentData]);
@@ -123,9 +138,9 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
   };
 
   const handleAddLine = () => {
-    const newItem = { description: '', quantity: 1, unit_price: 0, total: 0 };
+    const newItem = { description: '', quantity: 1, unit_price: 0, total: 0, qty_type: 'qty' as const };
     setLineItems([...lineItems, newItem]);
-    addLineItem({ ...newItem, unitPrice: 0 });
+    addLineItem({ ...newItem, unitPrice: 0, qty_type: 'qty' });
   };
 
   const handleRemoveLine = (index: number) => {
@@ -174,6 +189,7 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
+          qty_type: item.qty_type || 'qty',
           sort_order: idx
         })));
 
@@ -272,8 +288,9 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
+                  <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
                     <th className="px-8 py-4 w-1/2">Description</th>
+                    <th className="px-2 py-4">Type</th>
                     <th className="px-6 py-4">Qty</th>
                     <th className="px-6 py-4">Price (R)</th>
                     <th className="px-6 py-4 text-right">Total</th>
@@ -284,13 +301,43 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
                   {lineItems.map((item: any, idx: number) => (
                     <tr key={idx} className="bg-[#0B0F19]/20 group">
                       <td className="px-8 py-4">
-                        <textarea required value={item.description} onChange={(e) => handleLineChange(idx, 'description', e.target.value)} className="w-full bg-transparent border-none outline-none text-slate-200 text-sm font-medium resize-none" rows={1} />
+                        <textarea 
+                          ref={(el) => { descriptionRefs.current[idx] = el; }}
+                          required 
+                          value={item.description} 
+                          onChange={(e) => {
+                            handleLineChange(idx, 'description', e.target.value);
+                            setTimeout(() => {
+                              const textarea = descriptionRefs.current[idx];
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = textarea.scrollHeight + 'px';
+                              }
+                            }, 0);
+                          }} 
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded outline-none text-slate-200 text-sm font-medium" 
+                          rows={1}
+                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
+                        />
+                      </td>
+                      <td className="px-2 py-4">
+                        <button
+                          type="button"
+                          onClick={() => handleLineChange(idx, 'qty_type', item.qty_type === 'qty' ? 'hrs' : 'qty')}
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded transition-colors ${
+                            item.qty_type === 'hrs' 
+                              ? 'bg-orange-500 text-white' 
+                              : 'bg-[#0B0F19] border border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {item.qty_type === 'hrs' ? 'Hrs' : 'Qty'}
+                        </button>
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" min="0" value={item.quantity} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                        <input type="text" inputMode="numeric" value={item.quantity} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'quantity', 0); } else { const num = parseInt(val.replace(/\D/g, ''), 10); if (!isNaN(num)) handleLineChange(idx, 'quantity', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseInt(val, 10))) { handleLineChange(idx, 'quantity', 1); } }} className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                        <input type="text" inputMode="decimal" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'unit_price', 0); } else { const num = parseFloat(val.replace(/[^\d.]/g, '')); if (!isNaN(num)) handleLineChange(idx, 'unit_price', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseFloat(val))) { handleLineChange(idx, 'unit_price', 0); } }} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
                       </td>
                       <td className="px-6 py-4 text-right font-black text-sm text-slate-200">{formatRand(item.quantity * item.unit_price)}</td>
                       <td className="px-6 py-4 text-right">
@@ -330,11 +377,11 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
                 onChange={(val) => handleFormFieldChange('due_date', val)}
               />
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Reference</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Reference</label>
                 <input type="text" value={formData.reference} onChange={(e) => handleFormFieldChange('reference', e.target.value)} className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium" />
               </div>
               <div className="space-y-2 pt-4">
-                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Update Status</label>
+                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Update Status</label>
                  <div className="relative">
                    <button
                      type="button"

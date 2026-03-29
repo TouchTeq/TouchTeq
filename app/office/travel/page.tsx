@@ -675,7 +675,7 @@ function TravelLogbookContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800">
+                  <tr className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800">
                     <th className="px-6 py-5">Date</th>
                     <th className="px-6 py-5">Vehicle</th>
                     <th className="px-6 py-5">Route</th>
@@ -704,7 +704,7 @@ function TravelLogbookContent() {
                         </p>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-[9px] font-black uppercase px-2 py-1 bg-orange-500/10 text-orange-500 rounded">
+                        <span className="text-[10px] font-black uppercase px-2 py-1 bg-orange-500/10 text-orange-500 rounded">
                           {trip.vehicle_description?.split(' ')[0] || 'Unknown'}
                         </span>
                       </td>
@@ -724,11 +724,11 @@ function TravelLogbookContent() {
                       </td>
                       <td className="px-6 py-5">
                         {trip.client_name ? (
-                          <span className="text-[9px] font-black uppercase px-2 py-1 bg-green-500/20 text-green-500 rounded">
+                          <span className="text-[10px] font-black uppercase px-2 py-1 bg-green-500/20 text-green-500 rounded">
                             {trip.client_name}
                           </span>
                         ) : (
-                          <span className="text-[9px] font-black uppercase text-slate-600">Unlinked</span>
+                          <span className="text-[10px] font-black uppercase text-slate-600">Unlinked</span>
                         )}
                       </td>
                       <td className="px-6 py-5 text-right">

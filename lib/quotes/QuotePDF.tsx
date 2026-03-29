@@ -138,6 +138,16 @@ export const QuotePDF = ({ quote, lineItems, businessProfile }: any) => {
     return new Intl.NumberFormat('en-ZA', { minimumFractionDigits: 2 }).format(val);
   };
 
+  const renderMultilineText = (text: string, style: any) => {
+    if (!text) return null;
+    const lines = text.split('\n');
+    return lines.map((line, idx) => (
+      <Text key={idx} style={idx > 0 ? [style, { marginTop: 3 }] : style}>
+        {line}
+      </Text>
+    ));
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -186,7 +196,9 @@ export const QuotePDF = ({ quote, lineItems, businessProfile }: any) => {
           </View>
           {lineItems.map((item: any, i: number) => (
             <View key={i} style={styles.tableRow}>
-              <Text style={styles.colDesc}>{item.description}</Text>
+              <View style={styles.colDesc}>
+                {renderMultilineText(item.description, styles.colDesc)}
+              </View>
               <Text style={styles.colQty}>{item.quantity}</Text>
               <Text style={styles.colPrice}>{formatCurrency(item.unit_price)}</Text>
               <Text style={styles.colTotal}>{formatCurrency(item.line_total)}</Text>

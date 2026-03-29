@@ -409,19 +409,19 @@ export default function CashFlowPage() {
         {/* Timeline markers */}
         <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-800">
           <div className="text-center">
-            <p className="text-slate-500 text-[9px] font-black uppercase">Today</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase">Today</p>
             <p className={`font-black ${openingBalance >= 0 ? 'text-white' : 'text-red-500'}`}>{formatCurrency(openingBalance)}</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500 text-[9px] font-black uppercase">30 Days</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase">30 Days</p>
             <p className={`font-black ${projected30Day >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(projected30Day)}</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500 text-[9px] font-black uppercase">60 Days</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase">60 Days</p>
             <p className={`font-black ${projected60Day >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(projected60Day)}</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500 text-[9px] font-black uppercase">90 Days</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase">90 Days</p>
             <p className={`font-black ${projected90Day >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(projected90Day)}</p>
           </div>
         </div>

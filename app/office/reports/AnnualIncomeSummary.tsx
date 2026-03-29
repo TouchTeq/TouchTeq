@@ -144,15 +144,15 @@ export default function AnnualIncomeSummary() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Annual Revenue</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Annual Revenue</p>
             <h4 className="text-2xl font-black text-white">{formatCurrency(data.totalRevenue)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Expenses</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Expenses</p>
             <h4 className="text-2xl font-black text-slate-300">{formatCurrency(data.totalExpenses)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-green-500/70 tracking-widest mb-2">Est. Gross Profit</p>
+            <p className="text-[10px] font-black uppercase text-green-500/70 tracking-widest mb-2">Est. Gross Profit</p>
             <h4 className="text-2xl font-black text-green-500">{formatCurrency(data.totalRevenue - data.totalExpenses)}</h4>
          </div>
       </div>

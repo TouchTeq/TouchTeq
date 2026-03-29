@@ -91,7 +91,7 @@ export default async function ClientDetailPage({
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <FileText size={40} className="text-blue-500" />
           </div>
-          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Quotes Total</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Quotes Total</p>
           <h3 className="text-xl font-black text-white">
             {formatCurrency(client.quotes?.reduce((s: number, q: any) => s + (q.total || 0), 0) || 0)}
           </h3>
@@ -101,7 +101,7 @@ export default async function ClientDetailPage({
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Receipt size={40} className="text-orange-500" />
           </div>
-          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Invoice Total</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Invoice Total</p>
           <h3 className="text-xl font-black text-white">{formatCurrency(totalInvoiced)}</h3>
         </div>
 
@@ -109,7 +109,7 @@ export default async function ClientDetailPage({
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <TrendingUp size={40} className="text-green-500" />
           </div>
-          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Collected</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Collected</p>
           <h3 className="text-xl font-black text-green-500">{formatCurrency(totalCollected)}</h3>
         </div>
 
@@ -118,7 +118,7 @@ export default async function ClientDetailPage({
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <Wallet size={40} className="text-amber-400" />
             </div>
-            <p className="text-amber-500/70 text-[9px] font-black uppercase tracking-widest mb-1">Opening Balance (Sage)</p>
+            <p className="text-amber-500/70 text-[10px] font-black uppercase tracking-widest mb-1">Opening Balance (Sage)</p>
             <h3 className={`text-xl font-black ${client.opening_balance < 0 ? 'text-red-400' : 'text-amber-400'}`}>
               {formatCurrency(client.opening_balance)}
             </h3>
@@ -128,7 +128,7 @@ export default async function ClientDetailPage({
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
               <AlertCircle size={40} className="text-red-500" />
             </div>
-            <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Outstanding (Inv)</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Outstanding (Inv)</p>
             <h3 className="text-xl font-black text-red-500">{formatCurrency(totalOutstanding)}</h3>
           </div>
         )}
@@ -351,7 +351,7 @@ export default async function ClientDetailPage({
             >
               <MessageSquare size={16} /> Comms
               {client.client_communications?.length > 0 && (
-                <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center font-black">
+                <span className="bg-white/20 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center font-black">
                   {client.client_communications.length}
                 </span>
               )}
@@ -374,7 +374,7 @@ export default async function ClientDetailPage({
                 <div className="overflow-x-auto text-sm">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] bg-black/20">
+                      <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] bg-black/20">
                         <th className="px-6 py-3">Quote #</th>
                         <th className="px-6 py-3">Issue Date</th>
                         <th className="px-6 py-3">Amount</th>
@@ -424,7 +424,7 @@ export default async function ClientDetailPage({
                 <div className="overflow-x-auto text-sm">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] bg-black/20">
+                      <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] bg-black/20">
                         <th className="px-6 py-3">Inv #</th>
                         <th className="px-6 py-3">Due Date</th>
                         <th className="px-6 py-3">Total</th>

@@ -150,7 +150,7 @@ export default function VatHistoryReport() {
          <div className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 overflow-hidden shadow-2xl">
             <table className="w-full text-left font-sans">
                <thead>
-                  <tr className="bg-slate-800/20 text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-slate-800">
+                  <tr className="bg-slate-800/20 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800">
                      <th className="px-6 py-5">Period Range</th>
                      <th className="px-6 py-5 text-right">Output VAT</th>
                      <th className="px-6 py-5 text-right">Input VAT</th>

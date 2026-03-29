@@ -221,7 +221,7 @@ export default function BankingDetailsTab({ profile, setProfile }: { profile: an
                   </div>
                   
                   <div className="mt-8 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                     <p className="text-[9px] font-medium text-slate-600 leading-relaxed italic">
+                     <p className="text-[10px] font-medium text-slate-600 leading-relaxed italic">
                         {banking.payment_instructions || 'Please refer to the above banking details for payment.'}
                      </p>
                   </div>

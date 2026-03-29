@@ -307,7 +307,7 @@ export default function ClientsTableClient({ clients }: Props) {
                       {client.company_name}
                     </Link>
                     {client.vat_number && (
-                      <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
                         VAT: {client.vat_number}
                       </div>
                     )}
@@ -332,7 +332,7 @@ export default function ClientsTableClient({ clients }: Props) {
                       <p className="text-slate-300 text-xs font-medium">{client.email || 'No Email'}</p>
                       <p className="text-slate-500 text-[10px] font-bold">{client.phone || ''}</p>
                       {client.email_missing && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-amber-500">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-500">
                           <MailX size={10} /> Email Missing
                         </span>
                       )}

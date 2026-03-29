@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Send, 
-  Download, 
-  CheckCircle2, 
-  CreditCard, 
+import {
+  ArrowLeft,
+  Send,
+  Download,
+  CheckCircle2,
+  CreditCard,
   Receipt,
   Mail,
   AlertCircle,
@@ -40,7 +40,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [payments, setPayments] = useState(initialPayments);
-  
+
   // Modals
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -89,7 +89,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
       cancelled = true;
     };
   }, [showEmailModal, supabase, invoice.client_id, invoice.clients]);
-  
+
   // Payment Form
   const [paymentForm, setPaymentForm] = useState({
     amount: invoice.balance_due,
@@ -114,7 +114,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `TouchTeq-${invoice.invoice_number}-${invoice.clients.company_name.replace(/\s+/g, '')}.pdf`;
+      link.download = `TouchTeq-${invoice.invoice_number}-${(invoice.clients?.company_name || 'Unknown').replace(/\s+/g, '')}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -195,7 +195,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
       // 2. Update Invoice
       const newPaidAmount = Number(invoice.amount_paid) + Number(data.amount);
       const isPaid = newPaidAmount >= Number(invoice.total) - 0.01;
-      
+
       const { error: invError } = await supabase
         .from('invoices')
         .update({
@@ -214,7 +214,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
         .lte('period_start', issueDate)
         .gte('period_end', issueDate)
         .single();
-      
+
       if (period) {
         await supabase
           .from('vat_periods')
@@ -247,7 +247,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
   const handleMarkAsPaid = async () => {
     if (!confirm("Are you sure you want to mark this invoice as fully paid? This will record a manual payment for the remaining balance.")) return;
-    
+
     const manualData = {
       amount: invoice.balance_due,
       date: new Date().toISOString().split('T')[0],
@@ -255,7 +255,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
       reference: 'Self-marked as paid',
       notes: 'Final settlement recorded manually.'
     };
-    
+
     handleRecordPayment(manualData);
   };
 
@@ -271,13 +271,12 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Management</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                invoice.status === 'Draft' ? 'bg-slate-800 text-slate-400' : 
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${invoice.status === 'Draft' ? 'bg-slate-800 text-slate-400' :
                 invoice.status === 'Sent' ? 'bg-blue-500/10 text-blue-500' :
-                invoice.status === 'Paid' ? 'bg-green-500/10 text-green-500' :
-                invoice.status === 'Overdue' ? 'bg-red-500/10 text-red-500' :
-                'bg-amber-500/10 text-amber-500'
-              }`}>
+                  invoice.status === 'Paid' ? 'bg-green-500/10 text-green-500' :
+                    invoice.status === 'Overdue' ? 'bg-red-500/10 text-red-500' :
+                      'bg-amber-500/10 text-amber-500'
+                }`}>
                 {invoice.status}
               </span>
             </div>
@@ -286,7 +285,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
         <div className="flex items-center flex-wrap gap-3">
           {invoice.status === 'Draft' && (
-            <Link 
+            <Link
               href={`/office/invoices/${invoice.id}/edit`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-700 transition-all"
             >
@@ -294,16 +293,16 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
             </Link>
           )}
 
-          <button 
+          <button
             onClick={handleDownloadPDF}
             disabled={loading === 'pdf'}
             className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-700 transition-all"
           >
-            {loading === 'pdf' ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />} 
+            {loading === 'pdf' ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
             PDF
           </button>
 
-          <button 
+          <button
             onClick={() => setShowEmailModal(true)}
             className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded border border-blue-600/20 transition-all"
           >
@@ -312,14 +311,14 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
           {invoice.status !== 'Paid' && (
             <>
-              <button 
+              <button
                 onClick={() => setShowPaymentModal(true)}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-green-500 text-white hover:bg-green-600 rounded shadow-lg shadow-green-500/20 transition-all px-6 py-3"
               >
                 <CreditCard size={14} /> Record Payment
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleMarkAsPaid}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-400 hover:text-white rounded border border-slate-700 transition-all"
               >
@@ -327,7 +326,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               </button>
 
               {invoice.credit_status !== 'Fully Credited' && (
-                <Link 
+                <Link
                   href={`/office/invoices/${invoice.id}/credit-note`}
                   className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded border border-red-500/20 transition-all"
                 >
@@ -353,7 +352,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Tax Invoice Preview</p>
             <button
               onClick={() => setShowPreviewModal(true)}
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
+              className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
             >
               <Maximize2 size={12} /> Fullscreen
             </button>
@@ -385,11 +384,11 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
             <div className="grid grid-cols-2 gap-12 mb-12">
               <div className="space-y-4">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
                 <div className="space-y-1">
                   <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                  <div className="pt-4 text-[9px] font-bold text-slate-400 space-y-1">
+                  <div className="pt-4 text-[10px] font-bold text-slate-400 space-y-1">
                     <p>VAT No: {businessProfile.vat_number}</p>
                     <p>Reg No: {businessProfile.registration_number}</p>
                     <p>CSD No: {businessProfile.csd_number}</p>
@@ -398,12 +397,12 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
                 <div className="space-y-1">
-                  <p className="font-black text-sm uppercase">{invoice.clients.company_name}</p>
-                  <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients.contact_person}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients.physical_address}</p>
-                  {invoice.clients.vat_number && <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients.vat_number}</p>}
+                  <p className="font-black text-sm uppercase">{invoice.clients?.company_name || 'N/A'}</p>
+                  <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients?.contact_person || 'N/A'}</p>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients?.physical_address || 'N/A'}</p>
+                  {invoice.clients?.vat_number && <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients.vat_number}</p>}
                 </div>
               </div>
             </div>
@@ -423,7 +422,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
             <div className="flex-1">
               <table className="w-full">
                 <thead className="bg-[#1E293B] text-white">
-                  <tr className="text-[9px] font-black uppercase tracking-widest">
+                  <tr className="text-[10px] font-black uppercase tracking-widest">
                     <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
                     <th className="px-4 py-3 text-center">Qty</th>
                     <th className="px-4 py-3 text-right">Unit Price</th>
@@ -433,8 +432,8 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <tbody className="divide-y divide-slate-100">
                   {lineItems.map((item: any, i: number) => (
                     <tr key={i} className="text-slate-800">
-                      <td className="px-6 py-4 text-xs font-bold leading-relaxed">{item.description}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.quantity}</td>
+                      <td className="px-6 py-4 text-xs font-bold leading-relaxed whitespace-pre-line">{item.description}</td>
+                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.qty_type === 'hrs' ? `${item.quantity} hrs` : item.quantity}</td>
                       <td className="px-4 py-4 text-xs font-bold text-right text-slate-500">{new Intl.NumberFormat('en-ZA').format(item.unit_price)}</td>
                       <td className="px-6 py-4 text-xs font-black text-right">{new Intl.NumberFormat('en-ZA').format(item.line_total)}</td>
                     </tr>
@@ -540,11 +539,11 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               </div>
               <div className="grid grid-cols-2 gap-12 mb-12">
                 <div className="space-y-4">
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
                   <div className="space-y-1">
                     <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                    <div className="pt-4 text-[9px] font-bold text-slate-400 space-y-1">
+                    <div className="pt-4 text-[10px] font-bold text-slate-400 space-y-1">
                       <p>VAT No: {businessProfile.vat_number}</p>
                       <p>Reg No: {businessProfile.registration_number}</p>
                       <p>Email: {businessProfile.email}</p>
@@ -552,17 +551,17 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
                   <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{invoice.clients.company_name}</p>
-                    <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients.contact_person}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients.physical_address}</p>
+                    <p className="font-black text-sm uppercase">{invoice.clients?.company_name || 'N/A'}</p>
+                    <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients?.contact_person || 'N/A'}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients?.physical_address || 'N/A'}</p>
                   </div>
                 </div>
               </div>
               <table className="w-full mb-8">
                 <thead className="bg-[#1E293B] text-white">
-                  <tr className="text-[9px] font-black uppercase tracking-widest">
+                  <tr className="text-[10px] font-black uppercase tracking-widest">
                     <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
                     <th className="px-4 py-3 text-center">Qty</th>
                     <th className="px-4 py-3 text-right">Unit Price</th>
@@ -572,8 +571,8 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <tbody className="divide-y divide-slate-100">
                   {lineItems.map((item: any, i: number) => (
                     <tr key={i} className="text-slate-800">
-                      <td className="px-6 py-4 text-xs font-bold leading-relaxed">{item.description}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.quantity}</td>
+                      <td className="px-6 py-4 text-xs font-bold leading-relaxed whitespace-pre-line">{item.description}</td>
+                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.qty_type === 'hrs' ? `${item.quantity} hrs` : item.quantity}</td>
                       <td className="px-4 py-4 text-xs font-bold text-right text-slate-500">{new Intl.NumberFormat('en-ZA').format(item.unit_price)}</td>
                       <td className="px-6 py-4 text-xs font-black text-right">{new Intl.NumberFormat('en-ZA').format(item.line_total)}</td>
                     </tr>
@@ -611,9 +610,9 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <p className="text-xl font-black text-white">{formatCurrency(invoice.total)}</p>
               </div>
               <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
-                <div 
-                  className="h-full bg-green-500 transition-all duration-1000" 
-                  style={{ width: `${(invoice.amount_paid / invoice.total) * 100}%` }} 
+                <div
+                  className="h-full bg-green-500 transition-all duration-1000"
+                  style={{ width: `${(invoice.amount_paid / invoice.total) * 100}%` }}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -641,7 +640,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 </span>
               )}
             </div>
-            
+
             <div className="p-6">
               {payments && payments.length > 0 ? (
                 <div className="space-y-8 relative">
@@ -684,7 +683,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <BellRing size={16} className="text-orange-500" /> Reminder Sequence
               </div>
             </div>
-            
+
             <div className="p-6 space-y-8">
               {/* Sequence Indicator */}
               <div className="flex justify-between relative px-2">
@@ -693,9 +692,8 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                   const sent = reminderLogs?.some((l: any) => l.reminder_type === type && l.status === 'Sent');
                   return (
                     <div key={type} className="relative z-10 flex flex-col items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${
-                        sent ? 'bg-orange-500 border-orange-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-[#0B0F19] border-slate-700 text-slate-500'
-                      }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${sent ? 'bg-orange-500 border-orange-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-[#0B0F19] border-slate-700 text-slate-500'
+                        }`}>
                         {sent ? <CheckCircle2 size={12} /> : <span className="text-[10px] font-black">{idx + 1}</span>}
                       </div>
                       <span className={`text-[8px] font-black uppercase tracking-tighter text-center ${sent ? 'text-white' : 'text-slate-600'}`}>{type.replace(' Reminder', '').replace(' Notice', '')}</span>
@@ -711,11 +709,10 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                     <div key={log.id} className="flex justify-between items-center p-4 bg-slate-900/30 rounded border border-slate-800/50 group/log">
                       <div>
                         <p className="text-[10px] font-black text-white uppercase tracking-tight">{log.reminder_type}</p>
-                        <p className="text-[9px] text-slate-500 font-bold">{format(new Date(log.sent_at), 'dd MMM, HH:mm')}</p>
+                        <p className="text-[10px] text-slate-500 font-bold">{format(new Date(log.sent_at), 'dd MMM, HH:mm')}</p>
                       </div>
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
-                        log.status === 'Sent' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                      }`}>
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${log.status === 'Sent' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                        }`}>
                         {log.status === 'Sent' ? 'Delivered' : 'Failed'}
                       </span>
                     </div>
@@ -728,7 +725,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               </div>
 
               {(invoice.status === 'Overdue' || invoice.status === 'Sent') && (
-                <button 
+                <button
                   onClick={() => setShowEmailModal(true)} // Or dedicated trigger
                   className="w-full py-4 bg-[#1e293b] hover:bg-orange-500 hover:text-white text-slate-400 rounded-sm font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 group"
                 >
@@ -744,14 +741,14 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
       <AnimatePresence>
         {showPaymentModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowPaymentModal(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -763,36 +760,43 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               </div>
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Amount Received (ZAR)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Amount Received (ZAR)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">R</span>
-                    <input 
-                      type="number"
-                      step="0.01"
+                    <input
+                      type="text"
+                      inputMode="decimal"
                       value={paymentForm.amount}
                       onFocus={(e) => e.target.select()}
-                      onChange={(e) => setPaymentForm({...paymentForm, amount: parseFloat(e.target.value) || 0})}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 pl-10 text-white font-black text-xl outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setPaymentForm({ ...paymentForm, amount: 0 });
+                        } else {
+                          const num = parseFloat(val.replace(/[^\d.]/g, ''));
+                          if (!isNaN(num)) setPaymentForm({ ...paymentForm, amount: num });
+                        }
+                      }}
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 pl-10 text-white font-black text-xl outline-none focus:border-orange-500"
                     />
                   </div>
-                  <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest text-right">Max: {formatCurrency(invoice.balance_due)}</p>
+                  <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest text-right">Max: {formatCurrency(invoice.balance_due)}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <DatePicker 
+                  <DatePicker
                     label="Date Received"
                     value={paymentForm.date}
-                    onChange={(val) => setPaymentForm({...paymentForm, date: val})}
+                    onChange={(val) => setPaymentForm({ ...paymentForm, date: val })}
                   />
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Method</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Method</label>
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setPaymentMethodOpen(!paymentMethodOpen)}
-                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
-                          paymentMethodOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
-                        }`}
+                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${paymentMethodOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
+                          }`}
                       >
                         <span className="text-white">{paymentForm.method}</span>
                         <ChevronDown size={14} className={`text-slate-500 transition-transform ${paymentMethodOpen ? 'rotate-180' : ''}`} />
@@ -804,12 +808,11 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                               key={method}
                               type="button"
                               onClick={() => {
-                                setPaymentForm({...paymentForm, method});
+                                setPaymentForm({ ...paymentForm, method });
                                 setPaymentMethodOpen(false);
                               }}
-                              className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-bold text-sm uppercase tracking-widest ${
-                                paymentForm.method === method ? 'text-orange-500' : 'text-slate-300'
-                              }`}
+                              className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-bold text-sm uppercase tracking-widest ${paymentForm.method === method ? 'text-orange-500' : 'text-slate-300'
+                                }`}
                             >
                               {method}
                             </button>
@@ -821,24 +824,24 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Reference / Notes</label>
-                  <input 
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Reference / Notes</label>
+                  <input
                     type="text"
                     value={paymentForm.reference}
-                    onChange={(e) => setPaymentForm({...paymentForm, reference: e.target.value})}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
                     placeholder="Bank reference number..."
                     className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium outline-none mb-2"
                   />
-                  <textarea 
+                  <textarea
                     rows={2}
                     value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm({...paymentForm, notes: e.target.value})}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                     placeholder="Internal notes about this payment..."
                     className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium outline-none resize-none"
                   />
                 </div>
 
-                <button 
+                <button
                   onClick={handleRecordPayment}
                   disabled={loading === 'payment'}
                   className="w-full py-5 bg-green-500 text-white font-black uppercase tracking-[0.3em] text-sm rounded-sm hover:bg-green-600 transition-all shadow-xl shadow-green-500/20 disabled:opacity-50"
@@ -865,18 +868,18 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
                   <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Recipient</p>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-white font-bold">{recipientName || invoice.clients.contact_person}</p>
+                    <p className="text-white font-bold">{recipientName || invoice.clients?.contact_person || 'N/A'}</p>
                     {recipientMatched !== 'none' && (
                       <span className="px-2 py-1 rounded bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-widest">
                         {recipientMatched}
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-400 text-xs">{recipientEmail || invoice.clients.email}</p>
+                  <p className="text-slate-400 text-xs">{recipientEmail || invoice.clients?.email || 'N/A'}</p>
                 </div>
                 <textarea rows={4} value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 text-white text-xs outline-none resize-none" placeholder="Add a personal message..." />
                 <button onClick={handleSendEmail} disabled={loading === 'email'} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs rounded-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                   {loading === 'email' ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />} Send Invoice Now
+                  {loading === 'email' ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />} Send Invoice Now
                 </button>
               </div>
             </motion.div>

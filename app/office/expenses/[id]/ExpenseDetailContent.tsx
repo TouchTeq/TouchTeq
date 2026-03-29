@@ -104,14 +104,14 @@ export default function ExpenseDetailContent({ expense, signedUrl }: { expense: 
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-slate-800/30">
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black uppercase text-slate-500">Expense Date</p>
+                          <p className="text-[10px] font-black uppercase text-slate-500">Expense Date</p>
                           <div className="flex items-center gap-2 text-white">
                              <Calendar size={14} className="text-slate-600" />
                              <span className="text-xs font-black">{format(parseISO(expense.expense_date), 'dd MMM yyyy')}</span>
                           </div>
                        </div>
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black uppercase text-slate-500">VAT Status</p>
+                          <p className="text-[10px] font-black uppercase text-slate-500">VAT Status</p>
                           <div className="flex items-center gap-2">
                              {expense.vat_claimable ? (
                                <CheckCircle2 size={14} className="text-green-500" />
@@ -124,18 +124,18 @@ export default function ExpenseDetailContent({ expense, signedUrl }: { expense: 
                           </div>
                        </div>
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black uppercase text-slate-500">Input VAT</p>
+                          <p className="text-[10px] font-black uppercase text-slate-500">Input VAT</p>
                           <p className="text-xs font-black text-blue-500">{formatCurrency(expense.input_vat_amount)}</p>
                        </div>
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black uppercase text-slate-500">Net Amount</p>
+                          <p className="text-[10px] font-black uppercase text-slate-500">Net Amount</p>
                           <p className="text-xs font-black text-slate-300">{formatCurrency(expense.amount_exclusive)}</p>
                        </div>
                     </div>
                 </div>
                 
                 <div className="p-8 bg-[#0B0F19]/30">
-                   <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
                       <FileText size={12} /> Internal Notes
                    </h4>
                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
@@ -210,7 +210,7 @@ export default function ExpenseDetailContent({ expense, signedUrl }: { expense: 
                    </div>
 
                    <div className="p-4 rounded-xl border border-slate-800/50 bg-[#0B0F19]/50 space-y-3">
-                      <p className="text-[9px] font-black uppercase text-slate-300">Accounting Details</p>
+                      <p className="text-[10px] font-black uppercase text-slate-300">Accounting Details</p>
                       <div className="flex justify-between text-[11px] font-bold text-slate-500">
                          <span>Created</span>
                          <span className="text-slate-400">{format(new Date(expense.created_at), 'dd MMM yyyy, HH:mm')}</span>

@@ -165,7 +165,7 @@ function SidebarNav({
         <div key={group.title}>
           {!isCollapsed && (
             <div className="px-3 mb-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">{group.title}</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">{group.title}</span>
             </div>
           )}
           <div className="space-y-0.5">
@@ -550,7 +550,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                   >
                     <Bell size={18} />
                     {overdueReminderCount > 0 ? (
-                      <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-orange-500 text-white rounded-full border-2 border-[#151B28] flex items-center justify-center text-[9px] font-black leading-none">
+                      <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-orange-500 text-white rounded-full border-2 border-[#151B28] flex items-center justify-center text-[10px] font-black leading-none">
                         {overdueReminderCount > 99 ? '99+' : overdueReminderCount}
                       </span>
                     ) : (

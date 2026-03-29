@@ -246,7 +246,7 @@ export default function DocumentTemplatesTab({ profile, setProfile }: { profile:
               <button
                 type="button"
                 onClick={() => setIsPreviewFullscreen(true)}
-                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
+                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
               >
                 <Maximize2 size={12} /> Fullscreen
               </button>
@@ -312,8 +312,8 @@ function PreviewDocument({ settings, profile }: { settings: any, profile: any })
           </div>
           <div className="text-right space-y-1">
             <p className="text-[8px] font-bold text-slate-400 uppercase">Contact</p>
-            <p className="text-[9px] font-bold">{profile.email}</p>
-            {settings.show_website && profile.website && <p className="text-[9px] font-bold">{profile.website}</p>}
+            <p className="text-[10px] font-bold">{profile.email}</p>
+            {settings.show_website && profile.website && <p className="text-[10px] font-bold">{profile.website}</p>}
           </div>
         </div>
 
@@ -324,7 +324,7 @@ function PreviewDocument({ settings, profile }: { settings: any, profile: any })
             <div className="w-28 h-3 bg-slate-100 rounded" />
           </div>
           <div className="space-y-2 text-right">
-            <div className="inline-block px-3 py-1 rounded-sm text-white text-[9px] font-black uppercase" style={{ backgroundColor: settings.primary_color }}>
+            <div className="inline-block px-3 py-1 rounded-sm text-white text-[10px] font-black uppercase" style={{ backgroundColor: settings.primary_color }}>
               INV-2026-001
             </div>
             <p className="text-[8px] font-bold text-slate-400">Due: 15 March 2026</p>
@@ -338,16 +338,16 @@ function PreviewDocument({ settings, profile }: { settings: any, profile: any })
             <span className="text-[8px] font-black uppercase text-right">Total</span>
           </div>
           <div className="grid grid-cols-4 pt-2">
-            <span className="text-[9px] font-bold col-span-2">Software Development Services</span>
-            <span className="text-[9px] font-bold text-right italic">1.0</span>
-            <span className="text-[9px] font-bold text-right italic">R 15,000.00</span>
+            <span className="text-[10px] font-bold col-span-2">Software Development Services</span>
+            <span className="text-[10px] font-bold text-right italic">1.0</span>
+            <span className="text-[10px] font-bold text-right italic">R 15,000.00</span>
           </div>
         </div>
 
         {/* Fix 5: Total row — properly spaced, no overflow */}
         <div className="flex justify-end mb-10">
           <div className="w-48 space-y-2">
-            <div className="flex items-center justify-between text-[9px] font-bold">
+            <div className="flex items-center justify-between text-[10px] font-bold">
               <span className="text-slate-400">VAT (15%)</span>
               <span>R 2,250.00</span>
             </div>
@@ -361,12 +361,12 @@ function PreviewDocument({ settings, profile }: { settings: any, profile: any })
         <div className="space-y-4 pt-8 border-t border-slate-100">
           <div>
             <h5 className="text-[8px] font-black uppercase text-slate-400 mb-1">Notes</h5>
-            <p className="text-[9px] leading-relaxed text-slate-600">{settings.invoice_default_notes}</p>
+            <p className="text-[10px] leading-relaxed text-slate-600">{settings.invoice_default_notes}</p>
           </div>
           {profile.banking_details && (
             <div className="p-3 rounded-lg border border-slate-100 bg-slate-50">
               <p className="text-[8px] font-black uppercase text-slate-400 mb-1">Payment Reference</p>
-              <p className="text-[9px] font-bold">INV-2026-001</p>
+              <p className="text-[10px] font-bold">INV-2026-001</p>
             </div>
           )}
           <div className="text-[7px] text-slate-400 leading-tight">

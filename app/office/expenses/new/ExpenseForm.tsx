@@ -256,7 +256,7 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
                     {uploading ? <Loader2 className="animate-spin" /> : <Upload size={24} />}
                  </div>
                  <p className="text-white font-black uppercase tracking-widest text-xs">Upload Receipt</p>
-                 <p className="text-slate-500 text-[9px] font-bold uppercase mt-2">Support JPG, PNG, PDF (Max 5MB)</p>
+                 <p className="text-slate-500 text-[10px] font-bold uppercase mt-2">Support JPG, PNG, PDF (Max 5MB)</p>
                  <input type="file" onChange={handleUpload} ref={fileInputRef} className="hidden" />
                </div>
              ) : (
@@ -298,7 +298,7 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
                  <div className="flex items-center justify-between p-4 bg-[#0B0F19] rounded-xl border border-slate-800/50">
                     <div>
                        <p className="text-[10px] font-black uppercase text-white">VAT Claimable</p>
-                       <p className="text-[9px] font-bold uppercase text-slate-500">Enable 15% Input VAT</p>
+                       <p className="text-[10px] font-bold uppercase text-slate-500">Enable 15% Input VAT</p>
                     </div>
                     <button
                       type="button"
@@ -311,7 +311,7 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
 
                  {/* Entry Mode Toggle */}
                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Enter Amount As</label>
+                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Enter Amount As</label>
                     <div className="flex bg-[#0B0F19] p-1 rounded-lg border border-slate-800/50">
                       {['Inclusive', 'Exclusive'].map(mode => (
                         <button

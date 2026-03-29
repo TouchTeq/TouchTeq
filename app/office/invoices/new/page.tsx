@@ -36,6 +36,7 @@ type LineItem = {
   quantity: number;
   unit_price: number;
   total: number;
+  qty_type: 'qty' | 'hrs';
 };
 
 export default function NewInvoicePage() {
@@ -101,8 +102,19 @@ function NewInvoiceContent() {
   const [recurringAutoSend, setRecurringAutoSend] = useState(false);
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: '', quantity: 1, unit_price: 0, total: 0 }
+    { description: '', quantity: 1, unit_price: 0, total: 0, qty_type: 'qty' }
   ]);
+
+  const descriptionRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+
+  useEffect(() => {
+    descriptionRefs.current.forEach((textarea, idx) => {
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }
+    });
+  }, [lineItems]);
 
   // Load Initial Data
   useEffect(() => {
@@ -268,6 +280,7 @@ function NewInvoiceContent() {
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unitPrice ?? item.unit_price) || 0,
         total: Number(item.total ?? item.line_total ?? (Number(item.quantity) || 1) * (Number(item.unitPrice ?? item.unit_price) || 0)),
+        qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty',
       })));
     }
   }, [clients, documentData, searchTerm, selectedClient?.id]);
@@ -288,8 +301,8 @@ function NewInvoiceContent() {
 
   // Handlers
   const handleAddLine = () => {
-    setLineItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0, total: 0 }]);
-    addLineItem({ description: '', quantity: 1, unitPrice: 0, total: 0, line_total: 0 });
+    setLineItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0, total: 0, qty_type: 'qty' }]);
+    addLineItem({ description: '', quantity: 1, unitPrice: 0, total: 0, line_total: 0, qty_type: 'qty' });
   };
 
   const handleRemoveLine = (index: number) => {
@@ -376,7 +389,8 @@ function NewInvoiceContent() {
         invoice_id: invoice.id,
         description: item.description,
         quantity: item.quantity,
-        unit_price: item.unit_price
+        unit_price: item.unit_price,
+        qty_type: item.qty_type || 'qty'
       }));
 
       const { error: itemsError } = await supabase
@@ -502,8 +516,9 @@ function NewInvoiceContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[9px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
+                  <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
                     <th className="px-8 py-4 w-1/2">Description</th>
+                    <th className="px-2 py-4">Type</th>
                     <th className="px-6 py-4">Qty</th>
                     <th className="px-6 py-4">Unit Price (R)</th>
                     <th className="px-6 py-4 text-right">Total</th>
@@ -515,26 +530,64 @@ function NewInvoiceContent() {
                     <tr key={idx} className="bg-[#0B0F19]/20 group">
                       <td className="px-8 py-4">
                         <textarea 
+                          ref={(el) => { descriptionRefs.current[idx] = el; }}
                           required
                           value={item.description}
-                          onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
+                          onChange={(e) => {
+                            handleLineChange(idx, 'description', e.target.value);
+                            setTimeout(() => {
+                              const textarea = descriptionRefs.current[idx];
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = textarea.scrollHeight + 'px';
+                              }
+                            }, 0);
+                          }}
                           placeholder="e.g. Electrical Installation & Wiring"
-                          className="w-full bg-transparent border-none outline-none text-slate-200 text-sm font-medium resize-none"
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded outline-none text-slate-200 text-sm font-medium"
                           rows={1}
+                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
                         />
+                      </td>
+                      <td className="px-2 py-4">
+                        <button
+                          type="button"
+                          onClick={() => handleLineChange(idx, 'qty_type', item.qty_type === 'qty' ? 'hrs' : 'qty')}
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded transition-colors ${
+                            item.qty_type === 'hrs' 
+                              ? 'bg-orange-500 text-white' 
+                              : 'bg-[#0B0F19] border border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {item.qty_type === 'hrs' ? 'Hrs' : 'Qty'}
+                        </button>
                       </td>
                       <td className="px-6 py-4">
                         <input 
-                          type="number" 
-                          min="0" 
-                          value={item.quantity} 
+                          type="text" 
+                          inputMode="numeric"
+                          value={item.quantity}
                           onFocus={(e) => e.target.select()}
-                          onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 0)} 
-                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              handleLineChange(idx, 'quantity', 0);
+                            } else {
+                              const num = parseInt(val.replace(/\D/g, ''), 10);
+                              if (!isNaN(num)) handleLineChange(idx, 'quantity', num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || isNaN(parseInt(val, 10))) {
+                              handleLineChange(idx, 'quantity', 1);
+                            }
+                          }}
+                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" 
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="number" step="0.01" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                        <input type="text" inputMode="decimal" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'unit_price', 0); } else { const num = parseFloat(val.replace(/[^\d.]/g, '')); if (!isNaN(num)) handleLineChange(idx, 'unit_price', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseFloat(val))) { handleLineChange(idx, 'unit_price', 0); } }} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
                       </td>
                       <td className="px-6 py-4 text-right font-black text-sm text-slate-200">{formatRand(item.quantity * item.unit_price)}</td>
                       <td className="px-6 py-4 text-right">
@@ -548,8 +601,8 @@ function NewInvoiceContent() {
 
             <div className="p-8 flex flex-col md:flex-row justify-between items-start gap-8">
               <button type="button" onClick={handleAddLine} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors"><Plus size={16} /> Add Line Item</button>
-              <div className="w-full md:w-80 space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>Subtotal</span><span className="font-bold">{formatRand(subtotal)}</span></div>
+              <div className="w-full md:w-96 md:ml-auto space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>Subtotal</span><span className="font-bold text-right min-w-[120px]">{formatRand(subtotal)}</span></div>
                 <label className="flex items-center justify-between gap-3 text-[10px] font-black uppercase text-slate-500">
                   <span>Apply VAT (15%)</span>
                   <input
@@ -559,8 +612,8 @@ function NewInvoiceContent() {
                     className="h-4 w-4 accent-orange-500"
                   />
                 </label>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>VAT (15%)</span><span className="font-bold">{formatRand(vatAmount)}</span></div>
-                <div className="flex justify-between items-center py-4 border-t border-slate-800"><span className="text-xs font-black uppercase text-white">Grand Total</span><span className="text-2xl font-black text-orange-500">{formatRand(total)}</span></div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>VAT (15%)</span><span className="font-bold text-right min-w-[120px]">{formatRand(vatAmount)}</span></div>
+                <div className="flex justify-between items-center py-4 border-t border-slate-800"><span className="text-xs font-black uppercase text-white">Grand Total</span><span className="text-2xl font-black text-orange-500 text-right min-w-[120px]">{formatRand(total)}</span></div>
               </div>
             </div>
           </div>
@@ -584,16 +637,16 @@ function NewInvoiceContent() {
                 value={formData.due_date}
                 onChange={(val) => handleFormFieldChange('due_date', val)}
               />
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Default terms: {paymentTermsDays} days</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Default terms: {paymentTermsDays} days</p>
               <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">PO / Reference</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">PO / Reference</label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
                   <input type="text" value={formData.reference} onChange={(e) => handleFormFieldChange('reference', e.target.value)} placeholder="Optional reference..." className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 pl-10 text-white text-xs font-medium" />
                 </div>
               </div>
               <div className="space-y-2 pt-4">
-                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Initial Status</label>
+                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Initial Status</label>
                  <div className="relative">
                    <button
                      type="button"
@@ -630,7 +683,7 @@ function NewInvoiceContent() {
                {/* Recurring Invoice Toggle */}
                <div className="space-y-3 pt-4 border-t border-slate-800/50">
                  <div className="flex items-center justify-between">
-                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Make Recurring</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Make Recurring</label>
                    <button
                      type="button"
                      onClick={() => setIsRecurring(!isRecurring)}
@@ -643,7 +696,7 @@ function NewInvoiceContent() {
                  {isRecurring && (
                    <div className="space-y-3 pt-2">
                      <div className="space-y-2">
-                       <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Frequency</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Frequency</label>
                        <select
                          value={recurringFrequency}
                          onChange={(e) => setRecurringFrequency(e.target.value)}
@@ -666,7 +719,7 @@ function NewInvoiceContent() {
                         onChange={setRecurringEndDate}
                       />
                      <div className="flex items-center justify-between">
-                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Auto-send</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Auto-send</span>
                        <button
                          type="button"
                          onClick={() => setRecurringAutoSend(!recurringAutoSend)}
@@ -675,7 +728,7 @@ function NewInvoiceContent() {
                          <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${recurringAutoSend ? 'left-6' : 'left-1'}`} />
                        </button>
                      </div>
-                     <p className="text-[9px] text-slate-500">
+                     <p className="text-[10px] text-slate-500">
                        {recurringAutoSend ? 'Automatically sent to client on schedule' : 'Creates draft for review'}
                      </p>
                    </div>

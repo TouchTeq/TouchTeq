@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { 
-  Receipt, 
-  Plus, 
+import {
+  Receipt,
+  Plus,
   AlertCircle,
   Clock,
   ArrowUpRight,
@@ -36,7 +36,7 @@ export default async function InvoicesPage({
   const status = typeof params.status === 'string' ? params.status : 'all';
   const range = typeof params.range === 'string' ? params.range : 'this-month';
   const tab = typeof params.tab === 'string' ? params.tab : 'invoices';
-  
+
   // Fetch recurring invoices if on recurring tab
   let recurringInvoices: any[] = [];
   if (tab === 'recurring') {
@@ -71,18 +71,21 @@ export default async function InvoicesPage({
   const now = new Date();
   if (range === 'this-month') {
     query = query.gte('issue_date', startOfMonth(now).toISOString().split('T')[0])
-                 .lte('issue_date', endOfMonth(now).toISOString().split('T')[0]);
+      .lte('issue_date', endOfMonth(now).toISOString().split('T')[0]);
   } else if (range === 'last-month') {
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     query = query.gte('issue_date', startOfMonth(lastMonth).toISOString().split('T')[0])
-                 .lte('issue_date', endOfMonth(lastMonth).toISOString().split('T')[0]);
+      .lte('issue_date', endOfMonth(lastMonth).toISOString().split('T')[0]);
   } else if (range === 'this-quarter') {
     const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
     const startOfQuarter = new Date(now.getFullYear(), quarterMonth, 1);
     query = query.gte('issue_date', startOfQuarter.toISOString().split('T')[0]);
   }
 
-  const { data: invoices } = await query.order('created_at', { ascending: false });
+  const { data: invoicesRaw } = await query.order('created_at', { ascending: false });
+
+  // Filter out invoices where the client has been deleted (orphaned invoices)
+  const invoices = invoicesRaw?.filter(inv => inv.clients !== null) || [];
 
   // Fetch credit notes if on credit-notes tab
   let creditNotes: any[] = [];
@@ -110,7 +113,7 @@ export default async function InvoicesPage({
     .lte('issue_date', lastDayMonth);
 
   const invoicedThisMonth = monthData?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
-  
+
   // Real collected this month might need checking payments table, 
   // but for simple dash we'll use sum of amount_paid for invoices issued this month for now 
   // or better: all amount_paid across all invoices? 
@@ -152,7 +155,7 @@ export default async function InvoicesPage({
             </button>
           </form>
           <InvoiceImportButton />
-          <Link 
+          <Link
             href="/office/invoices/new"
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition-all font-black text-xs uppercase tracking-widest text-white px-6 py-3 rounded-sm shadow-xl shadow-orange-500/20 w-fit"
           >
@@ -166,11 +169,10 @@ export default async function InvoicesPage({
       <div className="flex bg-[#151B28] p-1 rounded-lg border border-slate-800/50 w-fit">
         <Link
           href="/office/invoices"
-          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${
-            tab === 'invoices'
+          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${tab === 'invoices'
               ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
               : 'text-slate-500 hover:text-slate-300'
-          }`}
+            }`}
         >
           <span className="flex items-center gap-2">
             <Receipt size={14} /> Invoices
@@ -178,11 +180,10 @@ export default async function InvoicesPage({
         </Link>
         <Link
           href="/office/invoices?tab=credit-notes"
-          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${
-            tab === 'credit-notes'
+          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${tab === 'credit-notes'
               ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
               : 'text-slate-500 hover:text-slate-300'
-          }`}
+            }`}
         >
           <span className="flex items-center gap-2">
             <FileMinus size={14} /> Credit Notes
@@ -190,11 +191,10 @@ export default async function InvoicesPage({
         </Link>
         <Link
           href="/office/invoices?tab=recurring"
-          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${
-            tab === 'recurring'
+          className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${tab === 'recurring'
               ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
               : 'text-slate-500 hover:text-slate-300'
-          }`}
+            }`}
         >
           <span className="flex items-center gap-2">
             <RefreshCw size={14} /> Recurring
@@ -276,7 +276,7 @@ export default async function InvoicesPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-slate-500 text-[9px] uppercase font-black bg-slate-900/50 border-b border-slate-800">
+                    <tr className="text-slate-500 text-[10px] uppercase font-black bg-slate-900/50 border-b border-slate-800">
                       <th className="px-6 py-4">Invoice #</th>
                       <th className="px-6 py-4">Client</th>
                       <th className="px-6 py-4">Frequency</th>
@@ -306,7 +306,7 @@ export default async function InvoicesPage({
                           <span className="font-black text-white">{formatCurrency(inv.total)}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${inv.recurring_auto_send ? 'bg-green-500/10 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
+                          <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${inv.recurring_auto_send ? 'bg-green-500/10 text-green-500' : 'bg-slate-800 text-slate-500'}`}>
                             {inv.recurring_auto_send ? 'Yes' : 'No'}
                           </span>
                         </td>

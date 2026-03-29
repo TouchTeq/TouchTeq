@@ -137,15 +137,15 @@ export default function ExpenseSummaryReport() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Spent</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Spent</p>
             <h4 className="text-2xl font-black text-white">{formatCurrency(data.totalSpent)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Input VAT</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Total Input VAT</p>
             <h4 className="text-2xl font-black text-green-500">{formatCurrency(data.totalInputVat)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">Net Business Cost</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Net Business Cost</p>
             <h4 className="text-2xl font-black text-orange-500">{formatCurrency(data.totalSpent - data.totalInputVat)}</h4>
          </div>
       </div>
@@ -185,7 +185,7 @@ export default function ExpenseSummaryReport() {
          <div className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 overflow-hidden self-start">
             <table className="w-full text-left font-sans">
                <thead>
-                  <tr className="bg-slate-800/20 text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-slate-800">
+                  <tr className="bg-slate-800/20 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800">
                      <th className="px-6 py-5">Category</th>
                      <th className="px-6 py-5 text-right">Total Spent</th>
                      <th className="px-6 py-5 text-right">%</th>

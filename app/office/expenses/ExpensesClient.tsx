@@ -237,7 +237,7 @@ export default function ExpensesClient({ initialExpenses, vatPeriods, stats }: a
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800/50">
+              <tr className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50 border-b border-slate-800/50">
                 <th className="px-4 py-5 w-10">
                   <input
                     type="checkbox"
@@ -293,7 +293,7 @@ export default function ExpensesClient({ initialExpenses, vatPeriods, stats }: a
                     <p className="text-[10px] text-slate-500 font-medium truncate max-w-[200px] mt-0.5">{ex.description}</p>
                   </td>
                   <td className="px-6 py-6">
-                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded">
                       {ex.category}
                     </span>
                   </td>
@@ -302,23 +302,23 @@ export default function ExpensesClient({ initialExpenses, vatPeriods, stats }: a
                        <p className={`text-sm font-black ${ex.vat_claimable ? 'text-blue-500' : 'text-slate-600'}`}>
                         {formatCurrency(ex.input_vat_amount)}
                        </p>
-                       <p className="text-[9px] font-bold uppercase text-slate-500">
+                       <p className="text-[10px] font-bold uppercase text-slate-500">
                         {ex.vat_claimable ? 'Claimable' : 'Exempt'}
                        </p>
                     </div>
                   </td>
                   <td className="px-6 py-6">
                     <p className="font-black text-white text-sm">{formatCurrency(ex.amount_inclusive)}</p>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase">Excl: {formatCurrency(ex.amount_exclusive)}</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Excl: {formatCurrency(ex.amount_exclusive)}</p>
                   </td>
                   <td className="px-6 py-6">
                     {ex.receipt_url ? (
                       <div className="flex items-center gap-2 text-orange-500">
                         <FileText size={16} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Attached</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Attached</span>
                       </div>
                     ) : (
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">None</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">None</span>
                     )}
                   </td>
                   <td className="px-6 py-6 text-right">
@@ -368,7 +368,7 @@ export default function ExpensesClient({ initialExpenses, vatPeriods, stats }: a
                     {categorySummary.map((item: any) => (
                       <div key={item.category} className="flex flex-col gap-1">
                          <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-500">{item.category}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter text-slate-500">{item.category}</span>
                             <span className="text-[10px] font-black text-white">{formatCurrency(item.total)}</span>
                          </div>
                          <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">

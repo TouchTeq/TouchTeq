@@ -5,7 +5,7 @@ export default async function RemindersPage() {
   const supabase = await createClient();
 
   // 1. Fetch Overdue Invoices for Active Sequence
-  const { data: overdueInvoices } = await supabase
+  const { data: overdueInvoicesRaw } = await supabase
     .from('invoices')
     .select(`
       *,
@@ -13,6 +13,9 @@ export default async function RemindersPage() {
     `)
     .eq('status', 'Overdue')
     .order('due_date', { ascending: true });
+
+  // Filter out invoices where the client has been deleted (orphaned invoices)
+  const overdueInvoices = overdueInvoicesRaw?.filter(inv => inv.clients !== null) || [];
 
   // 2. Fetch Reminder History for current month
   const startOfMonth = new Date();
@@ -41,8 +44,8 @@ export default async function RemindersPage() {
         </div>
       </div>
 
-      <RemindersClient 
-        overdueInvoices={overdueInvoices || []} 
+      <RemindersClient
+        overdueInvoices={overdueInvoices || []}
         history={history || []}
         stats={{
           totalOverdueCount: overdueInvoices?.length || 0,

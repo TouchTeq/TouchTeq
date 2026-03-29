@@ -327,7 +327,7 @@ export default function CreateCreditNotePage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-black border-b border-slate-800">
+              <tr className="text-slate-500 text-[10px] uppercase font-black border-b border-slate-800">
                 <th className="px-4 py-3 w-10"></th>
                 <th className="px-4 py-3 text-left">Description</th>
                 <th className="px-4 py-3 text-right w-24">Qty</th>
@@ -351,25 +351,55 @@ export default function CreateCreditNotePage() {
                       type="text" 
                       value={item.description}
                       onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                      className="w-full bg-transparent border-none text-white text-sm focus:outline-none"
+                      className="w-full bg-[#0B0F19] border-none text-white text-sm focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-3">
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric"
                       value={item.quantity}
                       onFocus={(e) => e.target.select()}
-                      onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          updateItem(idx, 'quantity', '0');
+                        } else {
+                          const num = parseInt(val.replace(/\D/g, ''), 10);
+                          if (!isNaN(num)) updateItem(idx, 'quantity', String(num));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || isNaN(parseInt(val, 10))) {
+                          updateItem(idx, 'quantity', '1');
+                        }
+                      }}
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
                     />
                   </td>
                   <td className="px-4 py-3">
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="decimal"
                       value={item.unit_price}
                       onFocus={(e) => e.target.select()}
-                      onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          updateItem(idx, 'unit_price', '0');
+                        } else {
+                          const num = parseFloat(val.replace(/[^\d.]/g, ''));
+                          if (!isNaN(num)) updateItem(idx, 'unit_price', String(num));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || isNaN(parseFloat(val))) {
+                          updateItem(idx, 'unit_price', '0');
+                        }
+                      }}
+                      className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
                     />
                   </td>
                   <td className="px-4 py-3 text-right font-black text-white">

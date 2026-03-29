@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Send, 
-  Download, 
-  CheckCircle2, 
-  XCircle, 
-  FileText, 
+import {
+  ArrowLeft,
+  Send,
+  Download,
+  CheckCircle2,
+  XCircle,
+  FileText,
   Receipt,
   Mail,
   Loader2,
@@ -87,9 +87,9 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
         .from('quotes')
         .update({ status: newStatus })
         .eq('id', quote.id);
-      
+
       if (error) throw error;
-      
+
       if (newStatus === 'Accepted') {
         confetti({
           particleCount: 150,
@@ -131,7 +131,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
     setError(null);
     try {
       const blob = await pdf(<QuotePDF quote={quote} lineItems={lineItems} businessProfile={businessProfile} />).toBlob();
-      
+
       // Convert blob to base64
       const reader = new FileReader();
       const base64Promise = new Promise((resolve) => {
@@ -199,7 +199,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
       }));
 
       await supabase.from('invoice_line_items').insert(invoiceItems);
-      
+
       // Update quote
       await supabase
         .from('quotes')
@@ -228,11 +228,10 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Management Controls</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                quote.status === 'Draft' ? 'bg-slate-800 text-slate-400' : 
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${quote.status === 'Draft' ? 'bg-slate-800 text-slate-400' :
                 quote.status === 'Sent' ? 'bg-blue-500/10 text-blue-500' :
-                'bg-green-500/10 text-green-500'
-              }`}>
+                  'bg-green-500/10 text-green-500'
+                }`}>
                 {quote.status}
               </span>
               {quote.converted_to_invoice && (
@@ -247,7 +246,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
         <div className="flex items-center flex-wrap gap-3">
           {/* Main Actions */}
           {!isReadOnly && (
-            <Link 
+            <Link
               href={`/office/quotes/${quote.id}/edit`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-700 transition-all"
             >
@@ -255,16 +254,16 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
             </Link>
           )}
 
-          <button 
+          <button
             onClick={handleDownloadPDF}
             disabled={loading === 'pdf'}
             className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-700 transition-all"
           >
-            {loading === 'pdf' ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />} 
+            {loading === 'pdf' ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
             PDF
           </button>
 
-          <button 
+          <button
             onClick={() => setShowEmailModal(true)}
             className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded border border-blue-600/20 transition-all"
           >
@@ -273,13 +272,13 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
 
           {quote.status === 'Sent' && (
             <>
-              <button 
+              <button
                 onClick={() => handleUpdateStatus('Accepted')}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-green-600/10 text-green-500 hover:bg-green-600 hover:text-white rounded border border-green-600/20 transition-all"
               >
                 <CheckCircle2 size={14} /> Accept
               </button>
-              <button 
+              <button
                 onClick={() => handleUpdateStatus('Declined')}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white rounded border border-red-600/20 transition-all"
               >
@@ -289,7 +288,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           )}
 
           {quote.status === 'Accepted' && !quote.converted_to_invoice && (
-            <button 
+            <button
               onClick={handleConvertToInvoice}
               className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-orange-500 text-white hover:bg-orange-600 rounded shadow-lg shadow-orange-500/20 transition-all"
             >
@@ -298,7 +297,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           )}
 
           {quote.converted_to_invoice && (
-            <Link 
+            <Link
               href={`/office/invoices/${quote.invoice_id}`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-purple-500 text-white hover:bg-purple-600 rounded transition-all"
             >
@@ -321,12 +320,12 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Document Preview</p>
           <button
             onClick={() => setShowPreviewModal(true)}
-            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-orange-500 transition-colors"
           >
             <Maximize2 size={12} /> Fullscreen
           </button>
         </div>
-        
+
         <div
           className="w-full max-w-[800px] aspect-[1/1.41] bg-white text-slate-900 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] rounded-sm overflow-hidden p-12 flex flex-col cursor-zoom-in relative group"
           onClick={() => setShowPreviewModal(true)}
@@ -358,7 +357,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
               <div className="space-y-1">
                 <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
                 <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                <div className="pt-2 text-[9px] font-bold text-slate-400 space-y-0.5">
+                <div className="pt-2 text-[10px] font-bold text-slate-400 space-y-0.5">
                   <p>VAT Reg: {businessProfile.vat_number}</p>
                   <p>Reg No: {businessProfile.registration_number}</p>
                   <p>Email: {businessProfile.email}</p>
@@ -368,9 +367,9 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2">For:</h3>
               <div className="space-y-1">
-                <p className="font-black text-sm uppercase">{quote.clients.company_name}</p>
-                <p className="text-xs font-bold text-slate-700">Attn: {quote.clients.contact_person}</p>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients.physical_address}</p>
+                <p className="font-black text-sm uppercase">{quote.clients?.company_name || 'N/A'}</p>
+                <p className="text-xs font-bold text-slate-700">Attn: {quote.clients?.contact_person || 'N/A'}</p>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients?.physical_address || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -379,7 +378,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           <div className="flex-1">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest">
+                <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest">
                   <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
                   <th className="px-4 py-3 text-center">Qty</th>
                   <th className="px-4 py-3 text-right">Unit Price</th>
@@ -419,7 +418,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
 
           {quote.notes && (
             <div className="mt-12 bg-slate-50 p-6 rounded-sm border-l-4 border-orange-500">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Terms & Notes</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Terms & Notes</p>
               <p className="text-[10px] text-slate-600 leading-relaxed font-medium italic">{quote.notes}</p>
             </div>
           )}
@@ -473,7 +472,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                   <div className="space-y-1">
                     <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                    <div className="pt-2 text-[9px] font-bold text-slate-400 space-y-0.5">
+                    <div className="pt-2 text-[10px] font-bold text-slate-400 space-y-0.5">
                       <p>VAT Reg: {businessProfile.vat_number}</p>
                       <p>Reg No: {businessProfile.registration_number}</p>
                       <p>Email: {businessProfile.email}</p>
@@ -483,15 +482,15 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2">For:</h3>
                   <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{quote.clients.company_name}</p>
-                    <p className="text-xs font-bold text-slate-700">Attn: {quote.clients.contact_person}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients.physical_address}</p>
+                    <p className="font-black text-sm uppercase">{quote.clients?.company_name || 'N/A'}</p>
+                    <p className="text-xs font-bold text-slate-700">Attn: {quote.clients?.contact_person || 'N/A'}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients?.physical_address || 'N/A'}</p>
                   </div>
                 </div>
               </div>
               <table className="w-full mb-8">
                 <thead>
-                  <tr className="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest">
+                  <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest">
                     <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
                     <th className="px-4 py-3 text-center">Qty</th>
                     <th className="px-4 py-3 text-right">Unit Price</th>
@@ -532,14 +531,14 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
       <AnimatePresence>
         {showEmailModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowEmailModal(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -564,8 +563,8 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Personal Message (Optional)</label>
-                  <textarea 
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Personal Message (Optional)</label>
+                  <textarea
                     rows={4}
                     value={emailMessage}
                     onChange={(e) => setEmailMessage(e.target.value)}
@@ -575,7 +574,7 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                   <p className="text-[10px] text-slate-500 font-medium italic">The PDF quotation will be automatically attached.</p>
                 </div>
 
-                <button 
+                <button
                   onClick={handleSendEmail}
                   disabled={loading === 'email'}
                   className="w-full py-4 bg-orange-500 text-white font-black uppercase tracking-widest text-xs rounded-sm hover:bg-orange-600 transition-all flex items-center justify-center gap-3 disabled:opacity-50"

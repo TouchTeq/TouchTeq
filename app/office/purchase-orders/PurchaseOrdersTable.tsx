@@ -83,7 +83,7 @@ export default function PurchaseOrdersTable({ purchaseOrders, onRefresh }: Props
         <div className="overflow-x-auto">
           <table className="w-full text-left font-sans">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-black bg-slate-900/50 border-b border-slate-800">
+              <tr className="text-slate-500 text-[10px] uppercase font-black bg-slate-900/50 border-b border-slate-800">
                 <th className="px-6 py-4">PO Number</th>
                 <th className="px-6 py-4">Supplier</th>
                 <th className="px-6 py-4">Date Raised</th>
@@ -142,7 +142,7 @@ export default function PurchaseOrdersTable({ purchaseOrders, onRefresh }: Props
                     <span className="font-black text-white text-sm">{formatCurrency(po.total || 0)}</span>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded inline-flex items-center gap-1 border ${getStatusColor(po.status)} ${
+                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-flex items-center gap-1 border ${getStatusColor(po.status)} ${
                       po.status === 'Sent' ? 'border-blue-500/30' : 
                       po.status === 'Acknowledged' ? 'border-amber-500/30' :
                       po.status === 'Delivered' ? 'border-green-500/30' :

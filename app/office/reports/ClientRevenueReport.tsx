@@ -139,15 +139,15 @@ export default function ClientRevenueReport() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Total Clients Invoiced</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Total Clients Invoiced</p>
             <h4 className="text-2xl font-black text-white">{data.length}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Total Revenue</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Total Revenue</p>
             <h4 className="text-2xl font-black text-green-500">{formatCurrency(totals.rev)}</h4>
          </div>
          <div className="bg-[#0B0F19] p-6 rounded-xl border border-slate-800">
-            <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Total Outstanding</p>
+            <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Total Outstanding</p>
             <h4 className="text-2xl font-black text-orange-500">{formatCurrency(totals.out)}</h4>
          </div>
       </div>
@@ -186,7 +186,7 @@ export default function ClientRevenueReport() {
          <div className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 overflow-hidden">
             <table className="w-full text-left font-sans">
                <thead>
-                  <tr className="bg-slate-800/20 text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-slate-800">
+                  <tr className="bg-slate-800/20 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800">
                      <th className="px-6 py-4">Rank</th>
                      <th className="px-6 py-4">Client</th>
                      <th className="px-6 py-4 text-right">Invoiced</th>

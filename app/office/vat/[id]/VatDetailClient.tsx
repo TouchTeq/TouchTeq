@@ -76,17 +76,17 @@ export default function VatDetailClient({ period, invoices, expenses, businessPr
           <div className="p-8 border-b border-slate-800/50 bg-[#151B28]">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-1">
-                   <p className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2">Total Output VAT</p>
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2">Total Output VAT</p>
                    <h3 className="text-3xl font-black text-white">{formatCurrency(period.output_vat)}</h3>
                    <p className="text-[10px] text-slate-600 font-bold uppercase">{invoices.length} Invoices Captured</p>
                 </div>
                 <div className="space-y-1">
-                   <p className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2">Total Input VAT</p>
+                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2">Total Input VAT</p>
                    <h3 className="text-3xl font-black text-white">{formatCurrency(period.input_vat)}</h3>
                    <p className="text-[10px] text-slate-600 font-bold uppercase">{expenses.length} Claimable Expenses</p>
                 </div>
                 <div className="bg-orange-500/10 p-6 rounded-xl border border-orange-500/20 space-y-1">
-                   <p className="text-[9px] font-black uppercase text-orange-500 tracking-[0.3em] mb-2">Net VAT Payable</p>
+                   <p className="text-[10px] font-black uppercase text-orange-500 tracking-[0.3em] mb-2">Net VAT Payable</p>
                    <h3 className="text-4xl font-black text-orange-500">{formatCurrency(period.net_vat_payable)}</h3>
                    <p className="text-[10px] text-orange-500/60 font-medium uppercase tracking-tighter">Amount due to SARS</p>
                 </div>
@@ -163,12 +163,12 @@ export default function VatDetailClient({ period, invoices, expenses, businessPr
                       
                       <div className="flex items-center justify-center gap-6 pt-6">
                          <div className="text-left">
-                            <p className="text-[9px] font-black uppercase text-slate-500">Submission Date</p>
+                            <p className="text-[10px] font-black uppercase text-slate-500">Submission Date</p>
                             <p className="text-sm font-black text-white uppercase">{period.submission_date ? format(parseISO(period.submission_date), 'dd MMM yyyy') : 'NOT SUBMITTED'}</p>
                          </div>
                          <div className="w-px h-10 bg-slate-800" />
                          <div className="text-left">
-                            <p className="text-[9px] font-black uppercase text-slate-500">Payment Status</p>
+                            <p className="text-[10px] font-black uppercase text-slate-500">Payment Status</p>
                             <p className="text-sm font-black text-white uppercase">{period.payment_date ? format(parseISO(period.payment_date), 'dd MMM yyyy') : period.status}</p>
                          </div>
                       </div>
@@ -192,7 +192,7 @@ export default function VatDetailClient({ period, invoices, expenses, businessPr
                    <div className="border border-slate-800/50 rounded-xl overflow-hidden">
                       <table className="w-full text-left bg-slate-900/40">
                          <thead>
-                            <tr className="bg-[#0B0F19]/50 text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-slate-800">
+                            <tr className="bg-[#0B0F19]/50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800">
                                <th className="px-6 py-4">{activeTab === 'invoices' ? 'Invoice #' : 'Date'}</th>
                                <th className="px-6 py-4">{activeTab === 'invoices' ? 'Client' : 'Supplier'}</th>
                                <th className="px-6 py-4">{activeTab === 'invoices' ? 'Issue Date' : 'Category'}</th>

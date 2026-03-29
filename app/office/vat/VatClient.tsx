@@ -151,7 +151,7 @@ export default function VatClient({ periods, currentInvoices, currentExpenses, b
                  <h3 className="text-5xl font-black text-orange-500">
                     {formatCurrency(currentPeriod.net_vat_payable)}
                  </h3>
-                 <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 tracking-tighter">
+                 <p className="text-[10px] font-bold text-slate-500 uppercase mt-2 tracking-tighter">
                     Estimated balance due to SARS
                  </p>
               </div>
@@ -168,7 +168,7 @@ export default function VatClient({ periods, currentInvoices, currentExpenses, b
         <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-slate-500 text-[9px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50">
+              <tr className="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] bg-[#0B0F19]/50">
                 <th className="px-6 py-5">Period Range</th>
                 <th className="px-6 py-5">Output VAT</th>
                 <th className="px-6 py-5">Input VAT</th>
@@ -184,13 +184,13 @@ export default function VatClient({ periods, currentInvoices, currentExpenses, b
                     <p className="font-black text-white text-sm uppercase tracking-tight">
                        {format(parseISO(period.period_start), 'dd MMM')} — {format(parseISO(period.period_end), 'dd MMM yyyy')}
                     </p>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Due: {format(parseISO(period.due_date), 'dd MMM yyyy')}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Due: {format(parseISO(period.due_date), 'dd MMM yyyy')}</p>
                   </td>
                   <td className="px-6 py-6 text-slate-300 text-sm font-medium">{formatCurrency(period.output_vat)}</td>
                   <td className="px-6 py-6 text-slate-300 text-sm font-medium">{formatCurrency(period.input_vat)}</td>
                   <td className="px-6 py-6 font-black text-white text-sm">{formatCurrency(period.net_vat_payable)}</td>
                   <td className="px-6 py-6 font-black text-white text-sm">
-                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded inline-block ${
+                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${
                       period.status === 'Open' ? 'bg-orange-500/10 text-orange-500' :
                       period.status === 'Submitted' ? 'bg-blue-500/10 text-blue-500' :
                       'bg-green-500/10 text-green-500'
@@ -209,7 +209,7 @@ export default function VatClient({ periods, currentInvoices, currentExpenses, b
                        {period.status === 'Submitted' && (
                          <button 
                            onClick={() => setPayingPeriod(period)}
-                           className="text-[9px] font-black uppercase tracking-widest text-green-500 hover:bg-green-500/10 px-3 py-1.5 rounded transition-all border border-green-500/20"
+                           className="text-[10px] font-black uppercase tracking-widest text-green-500 hover:bg-green-500/10 px-3 py-1.5 rounded transition-all border border-green-500/20"
                          >
                             Mark Paid
                          </button>
