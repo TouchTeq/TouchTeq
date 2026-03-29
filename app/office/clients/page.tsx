@@ -19,7 +19,7 @@ const formatCurrency = (amount: number) =>
     .replace('ZAR', 'R');
 
 type CategoryFilter = '' | 'Service Support' | 'Projects' | 'Back up Power Supply' | 'Software Support';
-type BalanceFilter  = '' | 'has_balance';
+type BalanceFilter = '' | 'has_balance';
 
 export default async function ClientsPage({
   searchParams,
@@ -27,14 +27,14 @@ export default async function ClientsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const supabase = await createClient();
-  const params   = await searchParams;
+  const params = await searchParams;
 
-  const q        = typeof params.q        === 'string' ? params.q        : '';
-  const filter   = typeof params.filter   === 'string' ? params.filter   : 'active';
+  const q = typeof params.q === 'string' ? params.q : '';
+  const filter = typeof params.filter === 'string' ? params.filter : 'active';
   const category = typeof params.category === 'string' ? params.category : '';
-  const balance  = typeof params.balance  === 'string' ? params.balance  : '';
+  const balance = typeof params.balance === 'string' ? params.balance : '';
 
-  // ── Fetch clients ──────────────────────────────────────────────────────────
+  // ── Fetch clients with outstanding summary ─────────────────────────────────
   let query = supabase
     .from('clients')
     .select(`*, invoices(balance_due, status, due_date)`);
@@ -55,17 +55,34 @@ export default async function ClientsPage({
 
   const { data: clientsData } = await query.order('company_name', { ascending: true });
 
+  // Fetch outstanding summary for all clients
+  const { data: outstandingSummary } = await supabase
+    .from('client_outstanding_summary')
+    .select('client_id, invoice_balance, opening_balance, opening_balance_settled, total_outstanding');
+
+  const outstandingMap = new Map(
+    outstandingSummary?.map(s => [s.client_id, s]) || []
+  );
+
   // ── Process ────────────────────────────────────────────────────────────────
   let clients = clientsData?.map((client: any) => {
-    const outstanding = client.invoices?.reduce(
-      (sum: number, inv: any) => sum + (inv.balance_due || 0), 0
-    ) || 0;
-    return { ...client, outstanding_balance: outstanding };
+    const summary = outstandingMap.get(client.id);
+    const invoiceBalance = summary?.invoice_balance || 0;
+    const openingBalance = client.opening_balance || 0;
+    const openingBalanceSettled = summary?.opening_balance_settled || false;
+    const totalOutstanding = summary?.total_outstanding || 0;
+
+    return {
+      ...client,
+      outstanding_balance: totalOutstanding,
+      invoice_balance: invoiceBalance,
+      opening_balance_settled: openingBalanceSettled
+    };
   }) || [];
 
-  // Client-side balance filter (opening_balance non-zero)
+  // Client-side balance filter (has outstanding balance including opening balance)
   if (balance === 'has_balance') {
-    clients = clients.filter(c => (c.opening_balance || 0) !== 0);
+    clients = clients.filter(c => c.outstanding_balance > 0);
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -78,7 +95,7 @@ export default async function ClientsPage({
 
   const now = new Date();
   const totalOutstanding = allInvoices?.reduce((s: number, i: any) => s + (i.balance_due || 0), 0) || 0;
-  const totalOverdue     = allInvoices
+  const totalOverdue = allInvoices
     ?.filter((i: any) => new Date(i.due_date) < now)
     .reduce((s: number, i: any) => s + (i.balance_due || 0), 0) || 0;
 
@@ -148,10 +165,10 @@ export default async function ClientsPage({
                 {q
                   ? `No clients match your search "${q}".`
                   : category
-                  ? `No clients in the "${category}" category.`
-                  : balance === 'has_balance'
-                  ? 'No clients with outstanding balances.'
-                  : 'Your client database is empty. Add your first client to start creating quotes and invoices.'}
+                    ? `No clients in the "${category}" category.`
+                    : balance === 'has_balance'
+                      ? 'No clients with outstanding balances.'
+                      : 'Your client database is empty. Add your first client to start creating quotes and invoices.'}
               </p>
               {!q && !category && !balance && (
                 <Link

@@ -102,6 +102,9 @@ export default function MonthlyRevenueReport() {
 
   return (
     <div className="space-y-10">
+      {(yearOpen || monthOpen) && (
+        <div className="fixed inset-0 z-[99]" onClick={() => { setYearOpen(false); setMonthOpen(false); }} />
+      )}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-slate-800/50">
         <div className="flex flex-wrap items-center gap-4">
            <div className="flex bg-[#0B0F19] p-1 rounded-xl border border-slate-800">
@@ -123,7 +126,7 @@ export default function MonthlyRevenueReport() {
               <button
                 type="button"
                 onClick={() => setYearOpen(!yearOpen)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
+                className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
                   yearOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
                 }`}
               >
@@ -131,13 +134,13 @@ export default function MonthlyRevenueReport() {
                 <ChevronDown size={14} className={`text-slate-500 transition-transform ${yearOpen ? 'rotate-180' : ''}`} />
               </button>
               {yearOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50">
+                <div className="absolute top-full left-0 mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
                   {[2024, 2025, 2026].map(y => (
                     <button
                       key={y}
                       type="button"
                       onClick={() => { setYear(y); setYearOpen(false); }}
-                      className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-bold text-sm ${
+                      className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
                         year === y ? 'text-orange-500' : 'text-slate-300'
                       }`}
                     >
@@ -153,7 +156,7 @@ export default function MonthlyRevenueReport() {
                 <button
                   type="button"
                   onClick={() => setMonthOpen(!monthOpen)}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
+                  className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
                     monthOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
                   }`}
                 >
@@ -161,13 +164,13 @@ export default function MonthlyRevenueReport() {
                   <ChevronDown size={14} className={`text-slate-500 transition-transform ${monthOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {monthOpen && (
-                  <div className="absolute top-full left-0 mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                     {MONTHS.map((m, idx) => (
                       <button
                         key={m}
                         type="button"
                         onClick={() => { setMonth(idx + 1); setMonthOpen(false); }}
-                        className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-bold text-sm ${
+                        className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
                           month === idx + 1 ? 'text-orange-500' : 'text-slate-300'
                         }`}
                       >

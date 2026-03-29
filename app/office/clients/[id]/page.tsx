@@ -1,13 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
-import { 
-  ArrowLeft, 
-  Edit2, 
-  Building2, 
-  Mail, 
-  Phone, 
+import {
+  ArrowLeft,
+  Edit2,
+  Building2,
+  Mail,
+  Phone,
   PhoneCall,
-  MapPin, 
-  FileText, 
+  MapPin,
+  FileText,
   Receipt,
   Plus,
   ExternalLink,
@@ -28,6 +28,7 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { ClientCommunicationsLog } from '@/components/office/ClientCommunicationsLog';
 import { ClientDetailPageHeader } from './HeaderActions';
+import SettleOpeningBalanceButton from './SettleOpeningBalanceButton';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-ZA', {
@@ -67,10 +68,15 @@ export default async function ClientDetailPage({
   // Financial Summary Calculations
   const totalInvoiced = client.invoices?.reduce((sum: number, inv: any) => sum + (inv.total || 0), 0) || 0;
   const totalCollected = client.invoices?.reduce((sum: number, inv: any) => sum + (inv.amount_paid || 0), 0) || 0;
-  const totalOutstanding = client.invoices?.reduce((sum: number, inv: any) => sum + (inv.balance_due || 0), 0) || 0;
-  
+  const invoiceBalance = client.invoices?.reduce((sum: number, inv: any) => sum + (inv.balance_due || 0), 0) || 0;
+
   const now = new Date();
   const totalOverdue = client.invoices?.filter((inv: any) => (inv.status !== 'Paid' && new Date(inv.due_date) < now)).reduce((sum: number, inv: any) => sum + (inv.balance_due || 0), 0) || 0;
+
+  // Combined outstanding: invoice balance + unsettled opening balance
+  const openingBalance = client.opening_balance || 0;
+  const openingBalanceSettled = client.opening_balance_settled || false;
+  const totalOutstanding = openingBalanceSettled ? invoiceBalance : invoiceBalance + openingBalance;
 
   const contacts = (client.client_contacts || [])
     .slice()
@@ -79,9 +85,9 @@ export default async function ClientDetailPage({
   return (
     <div className="space-y-8 pb-20">
       {/* Header & Back Link */}
-      <ClientDetailPageHeader 
-        id={id} 
-        companyName={client.company_name} 
+      <ClientDetailPageHeader
+        id={id}
+        companyName={client.company_name}
         clientEmail={client.email}
       />
 
@@ -96,7 +102,7 @@ export default async function ClientDetailPage({
             {formatCurrency(client.quotes?.reduce((s: number, q: any) => s + (q.total || 0), 0) || 0)}
           </h3>
         </div>
-        
+
         <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Receipt size={40} className="text-orange-500" />
@@ -142,14 +148,13 @@ export default async function ClientDetailPage({
               <Info size={18} className="text-orange-500" />
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Client Summary</h2>
             </div>
-            
+
             <div className="p-8 space-y-6">
 
               {/* Status + Flags Row */}
               <div className="flex flex-wrap gap-2">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest ${
-                  client.is_active ? 'bg-green-500/10 text-green-500' : 'bg-slate-800 text-slate-500'
-                }`}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest ${client.is_active ? 'bg-green-500/10 text-green-500' : 'bg-slate-800 text-slate-500'
+                  }`}>
                   <CheckCircle2 size={12} />
                   {client.is_active ? 'Active' : 'Inactive'}
                 </span>
@@ -178,10 +183,9 @@ export default async function ClientDetailPage({
                   <div className="p-2 bg-white/5 rounded-lg text-slate-500"><Wallet size={16} /></div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Opening Balance (Sage)</p>
-                    <p className={`text-sm font-black mt-0.5 ${
-                      client.opening_balance < 0 ? 'text-red-400' :
+                    <p className={`text-sm font-black mt-0.5 ${client.opening_balance < 0 ? 'text-red-400' :
                       client.opening_balance > 0 ? 'text-amber-400' : 'text-slate-500'
-                    }`}>
+                      }`}>
                       {formatCurrency(client.opening_balance)}
                     </p>
                   </div>
@@ -323,31 +327,28 @@ export default async function ClientDetailPage({
           <div className="flex bg-[#151B28] p-1 rounded-sm border border-slate-800/50 w-fit">
             <Link
               href={`/office/clients/${id}?tab=quotes`}
-              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${
-                tab === 'quotes' 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10' 
-                  : 'text-slate-500 hover:text-white'
-              }`}
+              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${tab === 'quotes'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
+                : 'text-slate-500 hover:text-white'
+                }`}
             >
               <FileText size={16} /> Quotes
             </Link>
             <Link
               href={`/office/clients/${id}?tab=invoices`}
-              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${
-                tab === 'invoices' 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10' 
-                  : 'text-slate-500 hover:text-white'
-              }`}
+              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${tab === 'invoices'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
+                : 'text-slate-500 hover:text-white'
+                }`}
             >
               <Receipt size={16} /> Invoices
             </Link>
             <Link
               href={`/office/clients/${id}?tab=communications`}
-              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${
-                tab === 'communications' 
-                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10' 
-                  : 'text-slate-500 hover:text-white'
-              }`}
+              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${tab === 'communications'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
+                : 'text-slate-500 hover:text-white'
+                }`}
             >
               <MessageSquare size={16} /> Comms
               {client.client_communications?.length > 0 && (
@@ -449,11 +450,10 @@ export default async function ClientDetailPage({
                                 {formatCurrency(inv.balance_due || 0)}
                               </td>
                               <td className="px-6 py-4 text-right">
-                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${
-                                  inv.status === 'Paid' ? 'bg-green-500/10 text-green-500' :
+                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${inv.status === 'Paid' ? 'bg-green-500/10 text-green-500' :
                                   isOverdue ? 'bg-red-500/10 text-red-500' :
-                                  'bg-amber-500/10 text-amber-500'
-                                }`}>
+                                    'bg-amber-500/10 text-amber-500'
+                                  }`}>
                                   {isOverdue ? 'Overdue' : inv.status}
                                 </span>
                               </td>
@@ -480,29 +480,64 @@ export default async function ClientDetailPage({
               <TrendingUp size={18} className="text-orange-500" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white">Financial Summary</h3>
             </div>
-            <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Invoiced Total</p>
-                <p className="text-xl font-black text-white">{formatCurrency(totalInvoiced)}</p>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Invoiced Total</p>
+                  <p className="text-xl font-black text-white">{formatCurrency(totalInvoiced)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Collected Total</p>
+                  <p className="text-xl font-black text-green-500">{formatCurrency(totalCollected)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/70">Outstanding</p>
+                  <p className="text-xl font-black text-amber-500">{formatCurrency(totalOutstanding)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-red-500/70">Overdue Amount</p>
+                  <p className="text-xl font-black text-red-500">{formatCurrency(totalOverdue)}</p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Collected Total</p>
-                <p className="text-xl font-black text-green-500">{formatCurrency(totalCollected)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/70">Outstanding</p>
-                <p className="text-xl font-black text-amber-500">{formatCurrency(totalOutstanding)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-500/70">Overdue Amount</p>
-                <p className="text-xl font-black text-red-500">{formatCurrency(totalOverdue)}</p>
-              </div>
-              {(client.opening_balance !== null && client.opening_balance !== undefined && client.opening_balance !== 0) && (
-                <div className="space-y-1 col-span-2 md:col-span-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Opening Balance</p>
-                  <p className={`text-xl font-black ${
-                    client.opening_balance < 0 ? 'text-red-400' : 'text-slate-300'
-                  }`}>{formatCurrency(client.opening_balance)}</p>
+
+              {/* Three-line breakdown */}
+              {(openingBalance !== 0 || invoiceBalance > 0) && (
+                <div className="pt-6 border-t border-slate-800/50 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Balance Breakdown</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-400">Invoice Balances:</span>
+                    <span className="text-sm font-black text-white">{formatCurrency(invoiceBalance)}</span>
+                  </div>
+                  {openingBalance !== 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-400">Opening Balance:</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-black ${openingBalanceSettled ? 'text-slate-500 line-through' : 'text-amber-400'}`}>
+                          {formatCurrency(openingBalance)}
+                        </span>
+                        {openingBalanceSettled ? (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-800 text-slate-500 rounded">
+                            Settled
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded">
+                            Imported from Sage
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-800/50">
+                    <span className="text-xs font-black text-white uppercase">Total Outstanding:</span>
+                    <span className="text-lg font-black text-amber-500">{formatCurrency(totalOutstanding)}</span>
+                  </div>
+
+                  {/* Mark as Settled Button */}
+                  {openingBalance !== 0 && !openingBalanceSettled && (
+                    <div className="pt-4">
+                      <SettleOpeningBalanceButton clientId={id} openingBalance={openingBalance} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -358,13 +358,13 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
           <View style={styles.supplierInfo}>
             <Text style={styles.supplierName}>{invoice.clients?.company_name}</Text>
             {invoice.clients?.contact_person && (
-              <Text style={styles.supplierDetail}>Attn: {invoice.clients.contact_person}</Text>
+              <Text style={styles.supplierDetail}>Attn: {invoice.clients?.contact_person}</Text>
             )}
             {invoice.clients?.physical_address && (
-              <Text style={styles.supplierAddress}>{invoice.clients.physical_address}</Text>
+              <Text style={styles.supplierAddress}>{invoice.clients?.physical_address}</Text>
             )}
             {invoice.clients?.vat_number && (
-              <Text style={styles.supplierDetail}>VAT No: {invoice.clients.vat_number}</Text>
+              <Text style={styles.supplierDetail}>VAT No: {invoice.clients?.vat_number}</Text>
             )}
           </View>
         </View>

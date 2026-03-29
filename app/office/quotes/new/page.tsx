@@ -423,10 +423,13 @@ function NewQuoteContent() {
 
   return (
     <div className="w-full space-y-10 pb-24">
+      {statusOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setStatusOpen(false)} />
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4">
-          <Link 
+          <Link
             href="/office/quotes"
             className="flex items-center gap-2 text-slate-500 hover:text-orange-500 font-bold uppercase tracking-widest text-[10px] transition-colors"
           >
@@ -667,7 +670,7 @@ function NewQuoteContent() {
         {/* Sidebar Column */}
         <div className="space-y-8">
           {/* Quote Settings */}
-          <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-6 space-y-6">
+          <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-visible shadow-2xl p-6 space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-800/50 pb-4">
               <Calendar className="text-orange-500" size={18} />
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Dates & Status</h2>
@@ -702,7 +705,7 @@ function NewQuoteContent() {
                      <ChevronDown size={14} className={`text-slate-500 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
                    </button>
                    {statusOpen && (
-                     <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-700 rounded-lg shadow-xl z-50">
+                     <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
                        {['Draft', 'Sent', 'Accepted'].map((status) => (
                          <button
                            key={status}
@@ -711,7 +714,7 @@ function NewQuoteContent() {
                              handleFormFieldChange('status', status);
                              setStatusOpen(false);
                            }}
-                           className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-bold text-sm uppercase tracking-widest ${
+                           className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm uppercase tracking-widest ${
                              formData.status === status ? 'text-orange-500' : 'text-slate-300'
                            }`}
                          >

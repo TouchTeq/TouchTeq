@@ -1,13 +1,13 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { 
-  startOfMonth, 
-  endOfMonth, 
-  format, 
-  startOfYear, 
-  endOfYear, 
-  differenceInDays, 
+import {
+  startOfMonth,
+  endOfMonth,
+  format,
+  startOfYear,
+  endOfYear,
+  differenceInDays,
   parseISO,
   subMonths,
   addMonths,
@@ -19,7 +19,7 @@ import {
 
 export async function getMonthlyRevenueReport(year: number) {
   const supabase = await createClient();
-  
+
   const startDate = `${year}-01-01`;
   const endDate = `${year}-12-31`;
 
@@ -114,11 +114,11 @@ export async function getSingleMonthRevenueReport(year: number, month: number) {
 
 export async function getClientRevenueReport(dateRange: string) {
   const supabase = await createClient();
-  
+
   let startDate: string | null = null;
   const now = new Date();
 
-  switch(dateRange) {
+  switch (dateRange) {
     case 'This Month': startDate = format(startOfMonth(now), 'yyyy-MM-dd'); break;
     case 'Last Month': startDate = format(startOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'); break;
     case 'This Quarter': startDate = format(startOfQuarter(now), 'yyyy-MM-dd'); break;
@@ -174,8 +174,16 @@ export async function getDebtorsReport() {
     .gt('balance_due', 0)
     .neq('status', 'Draft');
 
+  // Get all clients with unsettled opening balances
+  const { data: clientsWithOpeningBalance } = await supabase
+    .from('clients')
+    .select('*')
+    .not('opening_balance', 'eq', 0)
+    .eq('opening_balance_settled', false)
+    .eq('is_active', true);
+
   const ageing: Record<string, any> = {};
-  
+
   invoices?.forEach(inv => {
     const cid = inv.client_id;
     if (!ageing[cid]) {
@@ -187,7 +195,9 @@ export async function getDebtorsReport() {
         age60: 0,
         age90: 0,
         agePlus: 0,
-        total: 0
+        total: 0,
+        hasOpeningBalance: false,
+        openingBalance: 0
       };
     }
 
@@ -196,7 +206,7 @@ export async function getDebtorsReport() {
     const daysOverdue = differenceInDays(now, dueDate);
 
     ageing[cid].total += balance;
-    
+
     if (daysOverdue <= 0) {
       ageing[cid].current += balance;
     } else if (daysOverdue <= 30) {
@@ -208,6 +218,34 @@ export async function getDebtorsReport() {
     } else {
       ageing[cid].agePlus += balance;
     }
+  });
+
+  // Add opening balances to the 90+ days bucket
+  clientsWithOpeningBalance?.forEach(client => {
+    const cid = client.id;
+    const openingBalance = Number(client.opening_balance);
+
+    if (!ageing[cid]) {
+      ageing[cid] = {
+        clientName: client.company_name,
+        clientId: cid,
+        current: 0,
+        age30: 0,
+        age60: 0,
+        age90: 0,
+        agePlus: 0,
+        total: 0,
+        hasOpeningBalance: true,
+        openingBalance: openingBalance
+      };
+    } else {
+      ageing[cid].hasOpeningBalance = true;
+      ageing[cid].openingBalance = openingBalance;
+    }
+
+    // Add opening balance to 90+ bucket and total
+    ageing[cid].agePlus += openingBalance;
+    ageing[cid].total += openingBalance;
   });
 
   const detailedInvoices = invoices?.map(inv => ({
@@ -226,7 +264,7 @@ export async function getExpenseReport(dateRange: string, category: string = 'Al
   const now = new Date();
   let startDate: string | null = null;
 
-  switch(dateRange) {
+  switch (dateRange) {
     case 'This Month': startDate = format(startOfMonth(now), 'yyyy-MM-dd'); break;
     case 'Last Month': startDate = format(startOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'); break;
     case 'This Quarter': startDate = format(startOfQuarter(now), 'yyyy-MM-dd'); break;
@@ -254,7 +292,7 @@ export async function getExpenseReport(dateRange: string, category: string = 'Al
     categorySummary[cat].vat += Number(ex.input_vat_amount);
     categorySummary[cat].net += Number(ex.amount_exclusive);
     categorySummary[cat].count += 1;
-    
+
     totalSpent += Number(ex.amount_inclusive);
     totalInputVat += Number(ex.input_vat_amount);
   });
@@ -274,7 +312,7 @@ export async function getExpenseReport(dateRange: string, category: string = 'Al
 
 export async function getVatHistoryReport() {
   const supabase = await createClient();
-  
+
   const { data: periods } = await supabase
     .from('vat_periods')
     .select('*')
@@ -295,7 +333,7 @@ export async function getVatHistoryReport() {
 
 export async function getAnnualSummary(startYear: number) {
   const supabase = await createClient();
-  
+
   // SA Tax Year: March to February
   const startDate = `${startYear}-03-01`;
   const endDate = `${startYear + 1}-02-28`;

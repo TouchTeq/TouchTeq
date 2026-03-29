@@ -105,7 +105,7 @@ export default function CommandPalette({
               </button>
             </div>
 
-            <div className="max-h-[55vh] overflow-auto">
+            <div className="max-h-[55vh] overflow-auto" onWheel={(e) => e.stopPropagation()}>
               {filtered.length === 0 ? (
                 <div className="p-10 text-center">
                   <p className="text-slate-500 text-xs font-black uppercase tracking-[0.25em]">

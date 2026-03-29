@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"setPaymentMethodOpen\\\\|setXxxOpen\\\\|useState.*Open\" 'g:/AntiGravity Projects/touch-teq/app/office' --include=*.tsx)"
+    ]
+  }
+}

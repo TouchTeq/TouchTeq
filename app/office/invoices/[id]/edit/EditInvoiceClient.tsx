@@ -242,6 +242,9 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
 
   return (
     <div className="w-full space-y-10 pb-24">
+      {statusOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setStatusOpen(false)} />
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4">
@@ -394,18 +397,18 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
                      <ChevronDown size={14} className={`text-slate-500 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
                    </button>
                    {statusOpen && (
-                     <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-700 rounded-lg shadow-xl z-50">
-                       {['Draft', 'Sent'].map((status) => (
-                         <button
-                           key={status}
-                           type="button"
-                           onClick={() => {
-                             setFormData({...formData, status});
-                             setStatusOpen(false);
-                           }}
-                           className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-bold text-sm uppercase tracking-widest ${
-                             formData.status === status ? 'text-orange-500' : 'text-slate-300'
-                           }`}
+<div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                        {['Draft', 'Sent'].map((status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => {
+                              setFormData({...formData, status});
+                              setStatusOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm uppercase tracking-widest ${
+                              formData.status === status ? 'text-orange-500' : 'text-slate-300'
+                            }`}
                          >
                            {status}
                          </button>

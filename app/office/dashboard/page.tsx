@@ -34,14 +34,15 @@ export default async function DashboardPage() {
   const firstDayOfMonth = format(startOfMonth(now), 'yyyy-MM-dd');
   const lastDayOfMonth = format(endOfMonth(now), 'yyyy-MM-dd');
 
-  // 1. Total outstanding invoices
-  const { data: outstandingData } = await supabase
-    .from('invoices')
-    .select('total, balance_due')
-    .in('status', ['Sent', 'Partially Paid']);
+  // 1. Total outstanding (combines invoices + opening balances from Sage)
+  const { data: outstandingSummary } = await supabase
+    .from('client_outstanding_summary')
+    .select('invoice_balance, opening_balance, total_outstanding, opening_balance_settled');
 
-  const outstandingCount = outstandingData?.length || 0;
-  const outstandingValue = outstandingData?.reduce((sum, inv) => sum + (inv.balance_due || 0), 0) || 0;
+  const outstandingValue = outstandingSummary?.reduce((sum, c) => sum + (c.total_outstanding || 0), 0) || 0;
+  const invoiceBalanceTotal = outstandingSummary?.reduce((sum, c) => sum + (c.invoice_balance || 0), 0) || 0;
+  const openingBalanceTotal = outstandingSummary?.filter(c => !c.opening_balance_settled).reduce((sum, c) => sum + (c.opening_balance || 0), 0) || 0;
+  const outstandingCount = outstandingSummary?.filter(c => c.total_outstanding > 0).length || 0;
 
   // 2. Total overdue invoices
   const { data: overdueData } = await supabase
@@ -157,10 +158,26 @@ export default async function DashboardPage() {
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Receipt size={80} className="text-orange-500" />
           </div>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Outstanding Invoices</p>
-          <div className="flex items-baseline gap-3">
-            <h3 className="text-3xl font-black text-white">{formatRand(outstandingValue)}</h3>
-            <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded">{outstandingCount} Active</span>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Total Outstanding</p>
+              <div className="flex items-baseline gap-3">
+                <h3 className="text-4xl font-black text-white">{formatRand(outstandingValue)}</h3>
+                <span className="text-xs font-bold px-2 py-1 bg-orange-500/10 text-orange-500 rounded">{outstandingCount} Clients</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Invoices</span>
+              <span className="text-[10px] font-black text-orange-500">{formatRand(invoiceBalanceTotal)}</span>
+            </div>
+            <div className="w-px h-8 bg-slate-800" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Imported</span>
+              <span className="text-[10px] font-black text-amber-500">{formatRand(openingBalanceTotal)}</span>
+            </div>
           </div>
         </div>
 
@@ -275,8 +292,8 @@ export default async function DashboardPage() {
                   <tr key={i} className="group hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-5">
                       <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${act.type === 'Quote' ? 'bg-blue-500/10 text-blue-500' :
-                          act.type === 'Invoice' ? 'bg-orange-500/10 text-orange-500' :
-                            'bg-green-500/10 text-green-500'
+                        act.type === 'Invoice' ? 'bg-orange-500/10 text-orange-500' :
+                          'bg-green-500/10 text-green-500'
                         }`}>
                         {act.type}
                       </span>
@@ -286,9 +303,9 @@ export default async function DashboardPage() {
                     <td className="px-6 py-5 font-black text-white text-sm">{formatRand(act.amount)}</td>
                     <td className="px-6 py-5">
                       <span className={`text-xs font-bold ${act.status === 'Draft' ? 'text-slate-500' :
-                          ['Sent', 'Partially Paid'].includes(act.status) ? 'text-amber-500' :
-                            ['Accepted', 'Paid', 'Success'].includes(act.status) ? 'text-green-500' :
-                              'text-red-500'
+                        ['Sent', 'Partially Paid'].includes(act.status) ? 'text-amber-500' :
+                          ['Accepted', 'Paid', 'Success'].includes(act.status) ? 'text-green-500' :
+                            'text-red-500'
                         }`}>
                         {act.status}
                       </span>

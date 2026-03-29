@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Trash2, 
-  Save, 
-  ArrowLeft, 
+import {
+  Plus,
+  Trash2,
+  Save,
+  ArrowLeft,
   Send,
   Download,
   Loader2,
   FileText,
   ChevronDown,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Package
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
@@ -55,6 +56,7 @@ export default function NewPurchaseOrderPage() {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { description: '', quantity: 1, unit_price: 0, total: 0 }
   ]);
+  const descriptionRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
   const [quotes, setQuotes] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -66,7 +68,7 @@ export default function NewPurchaseOrderPage() {
         .select('id, quote_number, clients(company_name)')
         .in('status', ['Accepted'])
         .order('created_at', { ascending: false });
-      
+
       const { data: invoicesData } = await supabase
         .from('invoices')
         .select('id, invoice_number, clients(company_name)')
@@ -112,7 +114,7 @@ export default function NewPurchaseOrderPage() {
     return { subtotal, vat_amount, total };
   }, [lineItems]);
 
-  const formatCurrency = (amount: number) => 
+  const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount).replace('ZAR', 'R');
 
   const handleSave = async (sendToSupplier: boolean = false) => {
@@ -177,9 +179,9 @@ export default function NewPurchaseOrderPage() {
       if (sendToSupplier && formData.supplier_email) {
         try {
           // Generate PDF
-          const fullPO = { 
-            ...po, 
-            purchase_order_items: itemsToInsert 
+          const fullPO = {
+            ...po,
+            purchase_order_items: itemsToInsert
           };
           const blob = await pdf(<PurchaseOrderPDF po={fullPO} />).toBlob();
           const reader = new FileReader();
@@ -201,7 +203,7 @@ export default function NewPurchaseOrderPage() {
             recipientEmail: formData.supplier_email,
             recipientName: formData.supplier_contact || formData.supplier_name
           });
-          
+
           toast.success({ title: 'Sent', message: `PO ${poNumber} sent to ${formData.supplier_email}.` });
         } catch (emailErr) {
           console.error('Email error:', emailErr);
@@ -221,7 +223,7 @@ export default function NewPurchaseOrderPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -234,7 +236,7 @@ export default function NewPurchaseOrderPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => handleSave(false)}
             disabled={loading}
             className="flex items-center gap-2 px-6 py-2 text-xs font-black uppercase bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700"
@@ -242,7 +244,7 @@ export default function NewPurchaseOrderPage() {
             {loading ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
             Save Draft
           </button>
-          <button 
+          <button
             onClick={() => handleSave(true)}
             disabled={loading}
             className="flex items-center gap-2 px-6 py-2 text-xs font-black uppercase bg-orange-500 text-white rounded-lg hover:bg-orange-600"
@@ -268,7 +270,7 @@ export default function NewPurchaseOrderPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">Supplier Name *</label>
-                <input 
+                <input
                   type="text"
                   value={formData.supplier_name}
                   onChange={(e) => handleFieldChange('supplier_name', e.target.value)}
@@ -278,7 +280,7 @@ export default function NewPurchaseOrderPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">Contact Person</label>
-                <input 
+                <input
                   type="text"
                   value={formData.supplier_contact}
                   onChange={(e) => handleFieldChange('supplier_contact', e.target.value)}
@@ -288,7 +290,7 @@ export default function NewPurchaseOrderPage() {
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">Supplier Email</label>
-                <input 
+                <input
                   type="email"
                   value={formData.supplier_email}
                   onChange={(e) => handleFieldChange('supplier_email', e.target.value)}
@@ -300,42 +302,48 @@ export default function NewPurchaseOrderPage() {
           </div>
 
           {/* Line Items */}
-          <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-black uppercase text-slate-500">Line Items</h2>
-              <button 
-                onClick={addLineItem}
-                className="flex items-center gap-1 text-orange-500 text-xs font-black uppercase hover:text-orange-400"
-              >
-                <Plus size={14} /> Add Item
-              </button>
+          <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-800/50 flex items-center gap-3">
+              <Package className="text-orange-500" size={18} />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Order Items</h2>
             </div>
-            
+
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-500 text-[10px] uppercase font-black border-b border-slate-800">
-                    <th className="text-left py-3 px-2">Description</th>
-                    <th className="text-right py-3 px-2 w-24">Qty</th>
-                    <th className="text-right py-3 px-2 w-32">Unit Price</th>
-                    <th className="text-right py-3 px-2 w-32">Total</th>
-                    <th className="w-10"></th>
+                  <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] border-b border-slate-800/50">
+                    <th className="px-8 py-4 w-1/2">Description</th>
+                    <th className="px-6 py-4">Qty</th>
+                    <th className="px-6 py-4">Unit Price (R)</th>
+                    <th className="px-6 py-4 text-right">Total</th>
+                    <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/30">
                   {lineItems.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="py-3 px-2">
-                        <input 
-                          type="text"
+                    <tr key={idx} className="bg-[#0B0F19]/20 group">
+                      <td className="px-8 py-4">
+                        <textarea
+                          ref={(el) => { descriptionRefs.current[idx] = el; }}
                           value={item.description}
-                          onChange={(e) => updateLineItem(idx, 'description', e.target.value)}
+                          onChange={(e) => {
+                            updateLineItem(idx, 'description', e.target.value);
+                            setTimeout(() => {
+                              const textarea = descriptionRefs.current[idx];
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = textarea.scrollHeight + 'px';
+                              }
+                            }, 0);
+                          }}
                           placeholder="Item description"
-                          className="w-full bg-[#0B0F19] border-none text-white text-sm focus:outline-none"
+                          className="w-full bg-[#0B0F19] border border-slate-800 rounded outline-none text-slate-200 text-sm font-medium"
+                          rows={1}
+                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
                         />
                       </td>
-                      <td className="py-3 px-2">
-                        <input 
+                      <td className="px-6 py-4">
+                        <input
                           type="text"
                           inputMode="numeric"
                           value={item.quantity}
@@ -345,21 +353,21 @@ export default function NewPurchaseOrderPage() {
                             if (val === '') {
                               updateLineItem(idx, 'quantity', 0);
                             } else {
-                              const num = parseFloat(val.replace(/\D/g, ''));
+                              const num = parseInt(val.replace(/\D/g, ''), 10);
                               if (!isNaN(num)) updateLineItem(idx, 'quantity', num);
                             }
                           }}
                           onBlur={(e) => {
                             const val = e.target.value;
-                            if (val === '' || isNaN(parseFloat(val))) {
+                            if (val === '' || isNaN(parseInt(val, 10))) {
                               updateLineItem(idx, 'quantity', 1);
                             }
                           }}
-                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
+                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold"
                         />
                       </td>
-                      <td className="py-3 px-2">
-                        <input 
+                      <td className="px-6 py-4">
+                        <input
                           type="text"
                           inputMode="decimal"
                           value={item.unit_price}
@@ -379,19 +387,19 @@ export default function NewPurchaseOrderPage() {
                               updateLineItem(idx, 'unit_price', 0);
                             }
                           }}
-                          className="w-full bg-[#0B0F19] border border-slate-800 rounded px-2 py-1 text-white text-sm text-right"
+                          className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold"
                         />
                       </td>
-                      <td className="py-3 px-2 text-right font-black text-white">
+                      <td className="px-6 py-4 text-right font-black text-sm text-slate-200">
                         {formatCurrency(item.total)}
                       </td>
-                      <td className="py-3 px-2">
-                        <button 
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          type="button"
                           onClick={() => removeLineItem(idx)}
-                          className="p-1 text-slate-500 hover:text-red-500"
-                          disabled={lineItems.length === 1}
+                          className={`p-2 text-slate-700 hover:text-red-500 transition-colors ${lineItems.length === 1 ? 'opacity-0 pointer-events-none' : ''}`}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -400,20 +408,26 @@ export default function NewPurchaseOrderPage() {
               </table>
             </div>
 
-            {/* Totals */}
-            <div className="mt-6 flex justify-end">
-              <div className="w-64 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Subtotal</span>
-                  <span className="text-white font-bold">{formatCurrency(totals.subtotal)}</span>
+            <div className="p-8 flex flex-col md:flex-row justify-between items-start gap-8">
+              <button
+                type="button"
+                onClick={addLineItem}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors"
+              >
+                <Plus size={16} /> Add Line Item
+              </button>
+              <div className="w-full md:w-96 md:ml-auto space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-right min-w-[120px]">{formatCurrency(totals.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">VAT (15%)</span>
-                  <span className="text-white font-bold">{formatCurrency(totals.vat_amount)}</span>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                  <span>VAT (15%)</span>
+                  <span className="font-bold text-right min-w-[120px]">{formatCurrency(totals.vat_amount)}</span>
                 </div>
-                <div className="flex justify-between border-t border-slate-800 pt-2">
-                  <span className="text-white font-black uppercase">Total</span>
-                  <span className="text-orange-500 font-black text-lg">{formatCurrency(totals.total)}</span>
+                <div className="flex justify-between items-center py-4 border-t border-slate-800">
+                  <span className="text-xs font-black uppercase text-white">Total</span>
+                  <span className="text-2xl font-black text-orange-500 text-right min-w-[120px]">{formatCurrency(totals.total)}</span>
                 </div>
               </div>
             </div>
@@ -426,12 +440,12 @@ export default function NewPurchaseOrderPage() {
           <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl">
             <h2 className="text-xs font-black uppercase text-slate-500 mb-4">Order Details</h2>
             <div className="space-y-4">
-              <DatePicker 
+              <DatePicker
                 label="Date Raised"
                 value={formData.date_raised}
                 onChange={(val) => handleFieldChange('date_raised', val)}
               />
-              <DatePicker 
+              <DatePicker
                 label="Expected Delivery"
                 value={formData.delivery_date}
                 onChange={(val) => handleFieldChange('delivery_date', val)}
@@ -508,7 +522,7 @@ export default function NewPurchaseOrderPage() {
           {/* Notes */}
           <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl">
             <h2 className="text-xs font-black uppercase text-slate-500 mb-4">Notes</h2>
-            <textarea 
+            <textarea
               value={formData.notes}
               onChange={(e) => handleFieldChange('notes', e.target.value)}
               rows={4}

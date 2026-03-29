@@ -74,6 +74,9 @@ export default function AnnualIncomeSummary() {
 
   return (
     <div className="space-y-12">
+      {taxYearOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setTaxYearOpen(false)} />
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-800/50">
         <div className="flex items-center gap-4">
            <div className="relative">
@@ -81,22 +84,22 @@ export default function AnnualIncomeSummary() {
                type="button"
                onClick={() => setTaxYearOpen(!taxYearOpen)}
                className={`flex items-center gap-2 px-4 py-3 border rounded-xl transition-all font-black text-[10px] uppercase tracking-widest bg-[#0B0F19] ${
-                 taxYearOpen ? 'border-amber-500' : 'border-slate-700 hover:border-slate-600'
+                 taxYearOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
                }`}
              >
                <span className="text-white">Tax Year Mar {startYear} - Feb {startYear + 1}</span>
                <ChevronDown size={14} className={`text-slate-500 transition-transform ${taxYearOpen ? 'rotate-180' : ''}`} />
              </button>
              {taxYearOpen && (
-               <div className="absolute top-full left-0 mt-2 bg-[#0B0F19] border border-slate-700 rounded-xl shadow-xl z-50">
-                 {[2024, 2025, 2026].map(y => (
-                   <button
-                     key={y}
-                     type="button"
-                     onClick={() => { setStartYear(y); setTaxYearOpen(false); }}
-                     className={`w-full px-4 py-3 text-left hover:bg-[#151B28] transition-colors font-black text-[10px] uppercase tracking-widest ${
-                       startYear === y ? 'text-amber-500' : 'text-slate-300'
-                     }`}
+<div className="absolute top-full left-0 mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                  {[2024, 2025, 2026].map(y => (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => { setStartYear(y); setTaxYearOpen(false); }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-800 transition-colors font-black text-[10px] uppercase tracking-widest ${
+                        startYear === y ? 'text-orange-500' : 'text-slate-300'
+                      }`}
                    >
                      Tax Year Mar {y} - Feb {y + 1}
                    </button>

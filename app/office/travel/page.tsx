@@ -27,6 +27,7 @@ import { format, startOfMonth, endOfMonth, parseISO, subMonths } from 'date-fns'
 import { createClient } from '@/lib/supabase/client';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { MonthPicker } from '@/components/ui/MonthPicker';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -516,6 +517,9 @@ function TravelLogbookContent() {
 
   return (
     <div className="space-y-8">
+      {(vehicleFilterOpen || clientFilterOpen) && (
+        <div className="fixed inset-0 z-[99]" onClick={() => { setVehicleFilterOpen(false); setClientFilterOpen(false); }} />
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -564,45 +568,34 @@ function TravelLogbookContent() {
         <>
           {/* Filters */}
           <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2 bg-[#151B28] border border-slate-800 rounded-lg px-4 py-2">
-              <ChevronLeft 
-                size={16} 
-                className="text-slate-500 cursor-pointer hover:text-white"
-                onClick={() => setMonthFilter(format(subMonths(parseISO(monthFilter + '-01'), 1), 'yyyy-MM'))}
-              />
-              <input 
-                type="month" 
-                value={monthFilter}
-                onChange={(e) => setMonthFilter(e.target.value)}
-                className="bg-transparent text-white font-bold text-sm outline-none w-32"
-              />
-              <ChevronRight 
-                size={16} 
-                className="text-slate-500 cursor-pointer hover:text-white"
-                onClick={() => setMonthFilter(format(subMonths(parseISO(monthFilter + '-01'), -1), 'yyyy-MM'))}
-              />
-            </div>
+            <MonthPicker 
+              value={monthFilter}
+              onChange={(val) => setMonthFilter(val)}
+              placeholder="Select month"
+            />
 
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setVehicleFilterOpen(!vehicleFilterOpen)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+                className={`flex items-center justify-between px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#151B28] w-[200px] ${
                   vehicleFilterOpen ? 'border-orange-500 bg-[#0B0F19]' : 'border-slate-700 hover:border-slate-600'
                 }`}
               >
-                <Car size={14} className="text-slate-500" />
-                <span className="text-white">
-                  {vehicleFilter === 'all' ? 'All Vehicles' : vehicles.find(v => v.id === vehicleFilter)?.vehicle_description.split(' ')[0] || 'Select'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <Car size={14} className="text-slate-500" />
+                  <span className="text-white">
+                    {vehicleFilter === 'all' ? 'All Vehicles' : vehicles.find(v => v.id === vehicleFilter)?.vehicle_description.split(' ')[0] || 'Select'}
+                  </span>
+                </div>
                 <ChevronDown size={14} className={`text-slate-500 transition-transform ${vehicleFilterOpen ? 'rotate-180' : ''}`} />
               </button>
               {vehicleFilterOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-[#151B28] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+<div className="absolute top-full left-0 mt-2 w-64 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                   <button
                     type="button"
                     onClick={() => { setVehicleFilter('all'); setVehicleFilterOpen(false); }}
-                    className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-medium text-sm ${
+                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
                       vehicleFilter === 'all' ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
                     }`}
                   >
@@ -613,7 +606,7 @@ function TravelLogbookContent() {
                       key={v.id}
                       type="button"
                       onClick={() => { setVehicleFilter(v.id); setVehicleFilterOpen(false); }}
-                      className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-medium text-sm ${
+                      className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
                         vehicleFilter === v.id ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
                       }`}
                     >
@@ -628,23 +621,25 @@ function TravelLogbookContent() {
             <button
               type="button"
               onClick={() => setClientFilterOpen(!clientFilterOpen)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+              className={`flex items-center justify-between px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#151B28] w-[180px] ${
                 clientFilterOpen ? 'border-orange-500 bg-[#0B0F19]' : 'border-slate-700 hover:border-slate-600'
               }`}
             >
-              <Users size={14} className="text-slate-500" />
-              <span className="text-white">
-                {clientFilter === 'all' ? 'All Clients' : clients.find(c => c.id === clientFilter)?.company_name.split(' ')[0] || 'Select'}
-              </span>
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-slate-500" />
+                <span className="text-white">
+                  {clientFilter === 'all' ? 'All Clients' : clients.find(c => c.id === clientFilter)?.company_name.split(' ')[0] || 'Select'}
+                </span>
+              </div>
               <ChevronDown size={14} className={`text-slate-500 transition-transform ${clientFilterOpen ? 'rotate-180' : ''}`} />
             </button>
             {clientFilterOpen && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-[#151B28] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-2 w-64 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                 <button
                   type="button"
                   onClick={() => { setClientFilter('all'); setClientFilterOpen(false); }}
-                  className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-medium text-sm ${
-                    clientFilter === 'all' ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
+                  className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
+                    clientFilter === 'all' ? 'text-orange-500 bg-slate-800' : 'text-slate-300'
                   }`}
                 >
                   All Clients
@@ -654,7 +649,7 @@ function TravelLogbookContent() {
                     key={c.id}
                     type="button"
                     onClick={() => { setClientFilter(c.id); setClientFilterOpen(false); }}
-                    className={`w-full px-4 py-2.5 text-left hover:bg-[#0B0F19] transition-colors font-medium text-sm ${
+                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
                       clientFilter === c.id ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
                     }`}
                   >
@@ -697,7 +692,7 @@ function TravelLogbookContent() {
                       </td>
                     </tr>
                   ) : filteredTrips.map(trip => (
-                    <tr key={trip.id} className={`hover:bg-[#0B0F19]/50 transition-colors ${trip.client_id ? 'bg-green-500/5' : ''}`}>
+                    <tr key={trip.id} className={`hover:bg-slate-800/50 transition-colors ${trip.client_id ? 'bg-green-500/5' : ''}`}>
                       <td className="px-6 py-5">
                         <p className="text-[10px] text-slate-500 font-bold uppercase">
                           {format(parseISO(trip.date), 'dd MMM yyyy')}
@@ -857,7 +852,7 @@ function TravelLogbookContent() {
                       <ChevronDown size={14} className={`text-slate-500 transition-transform ${exportVehicleFilterOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {exportVehicleFilterOpen && (
-                      <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                         <button
                           type="button"
                           onClick={() => { setExportVehicleFilter('all'); setExportVehicleFilterOpen(false); }}
@@ -951,7 +946,7 @@ function TravelLogbookContent() {
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
-              className="bg-[#151B28] border border-slate-800 w-full max-w-2xl rounded-2xl overflow-hidden relative z-10"
+              className="bg-[#151B28] border border-slate-800 w-full max-w-2xl rounded-2xl overflow-visible relative z-10"
             >
               <div className="p-6 border-b border-slate-800 flex items-center justify-between">
                 <h3 className="text-white font-black uppercase tracking-widest text-sm">
@@ -986,7 +981,7 @@ function TravelLogbookContent() {
                       <ChevronDown size={14} className={`text-slate-500 transition-transform ${formVehicleOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {formVehicleOpen && (
-                      <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                         {vehicles.filter(v => v.is_active).map(v => (
                           <button
                             key={v.id}
@@ -1042,7 +1037,7 @@ function TravelLogbookContent() {
                         <ChevronDown size={14} className={`text-slate-500 transition-transform ${formClientOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {formClientOpen && (
-                        <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
                           <button
                             type="button"
                             onClick={() => { setFormData(prev => ({ ...prev, client_id: '' })); setFormClientOpen(false); }}

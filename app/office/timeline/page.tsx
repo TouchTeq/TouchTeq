@@ -66,6 +66,8 @@ export default async function TimelinePage() {
   for (const q of quotesRes.data || []) {
     const ts = toIso(q.created_at);
     if (!ts) continue;
+    // Skip quotes where client has been deleted (orphaned)
+    if (!q.clients) continue;
     events.push({
       id: `quote:${q.id}`,
       kind: 'quote',
@@ -81,6 +83,8 @@ export default async function TimelinePage() {
   for (const i of invoicesRes.data || []) {
     const ts = toIso(i.created_at);
     if (!ts) continue;
+    // Skip invoices where client has been deleted (orphaned)
+    if (!i.clients) continue;
     events.push({
       id: `invoice:${i.id}`,
       kind: 'invoice',
@@ -97,6 +101,8 @@ export default async function TimelinePage() {
     const ts = toIso(p.created_at) || toIso(p.payment_date);
     if (!ts) continue;
     const invoice = Array.isArray(p.invoices) ? p.invoices[0] : p.invoices;
+    // Skip payments for orphaned invoices (where client was deleted)
+    if (!invoice?.clients) continue;
     const invoiceNo = invoice?.invoice_number;
     const clientName = pickCompanyName(invoice?.clients);
     const invoiceId = invoice?.id;
@@ -116,6 +122,8 @@ export default async function TimelinePage() {
     const ts = toIso(r.sent_at);
     if (!ts) continue;
     const invoice = Array.isArray(r.invoices) ? r.invoices[0] : r.invoices;
+    // Skip reminders for orphaned invoices (where client was deleted)
+    if (!invoice?.clients) continue;
     const invoiceNo = invoice?.invoice_number;
     const clientName = pickCompanyName(invoice?.clients);
     const invoiceId = invoice?.id;

@@ -171,6 +171,9 @@ export default function TravelSettingsTab({ profile }: { profile: any }) {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-10"
     >
+      {fuelTypeOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setFuelTypeOpen(false)} />
+      )}
       {/* Vehicles Section */}
       <section className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 p-8 shadow-xl">
         <div className="flex items-center justify-between mb-8">
@@ -408,7 +411,7 @@ export default function TravelSettingsTab({ profile }: { profile: any }) {
                         <ChevronDown size={14} className={`text-slate-500 transition-transform ${fuelTypeOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {fuelTypeOpen && (
-                        <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50">
+                        <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
                           {(['Diesel', 'Petrol', 'Electric', 'Hybrid'] as const).map((type) => (
                             <button
                               key={type}
@@ -417,7 +420,7 @@ export default function TravelSettingsTab({ profile }: { profile: any }) {
                                 setEditingVehicle(prev => prev ? ({ ...prev, fuel_type: type }) : null);
                                 setFuelTypeOpen(false);
                               }}
-                              className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-medium text-sm ${
+                              className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
                                 editingVehicle?.fuel_type === type ? 'text-orange-500' : 'text-slate-300'
                               }`}
                             >

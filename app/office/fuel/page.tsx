@@ -7,8 +7,7 @@ import {
   Car, 
   Calendar, 
   Search, 
-  Filter, 
-  Download, 
+  Download,
   Trash2, 
   Eye, 
   Paperclip,
@@ -17,6 +16,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
@@ -28,6 +28,7 @@ import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { getFuelLogs, deleteFuelLog, type FuelLogEntry, getSignedFuelReceiptUrl } from '@/lib/fuel/actions';
 import { getVehicles, type Vehicle } from '@/lib/office/vehicles';
 import AddFillUpModal from '@/components/office/AddFillUpModal';
+import { MonthPicker } from '@/components/ui/MonthPicker';
 import { DeleteConfirmationModal, type DeletableItem } from '@/components/office/DeleteConfirmationModal';
 import { 
   BarChart, 
@@ -59,6 +60,8 @@ export default function FuelTrackerPage() {
   const [monthFilter, setMonthFilter] = useState(format(new Date(), 'yyyy-MM'));
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [fuelTypeFilter, setFuelTypeFilter] = useState('all');
+  const [vehicleFilterOpen, setVehicleFilterOpen] = useState(false);
+  const [fuelTypeFilterOpen, setFuelTypeFilterOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -204,6 +207,9 @@ export default function FuelTrackerPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {(vehicleFilterOpen || fuelTypeFilterOpen) && (
+        <div className="fixed inset-0 z-[99]" onClick={() => { setVehicleFilterOpen(false); setFuelTypeFilterOpen(false); }} />
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -249,51 +255,88 @@ export default function FuelTrackerPage() {
         <>
           {/* Filters & Totals Row */}
           <div className="flex flex-wrap gap-4 items-center bg-[#151B28]/50 p-6 rounded-xl border border-slate-800/50">
-            <div className="flex items-center gap-2 bg-[#0B0F19] border border-slate-800 rounded-lg px-4 py-2">
-              <ChevronLeft 
-                size={16} 
-                className="text-slate-500 cursor-pointer hover:text-white"
-                onClick={() => setMonthFilter(format(subMonths(parseISO(monthFilter + '-01'), 1), 'yyyy-MM'))}
-              />
-              <input 
-                type="month" 
-                value={monthFilter}
-                onChange={(e) => setMonthFilter(e.target.value)}
-                className="bg-transparent text-white font-black text-xs uppercase outline-none w-32 cursor-pointer"
-              />
-              <ChevronRight 
-                size={16} 
-                className="text-slate-500 cursor-pointer hover:text-white"
-                onClick={() => setMonthFilter(format(subMonths(parseISO(monthFilter + '-01'), -1), 'yyyy-MM'))}
-              />
+            <MonthPicker 
+              value={monthFilter}
+              onChange={(val) => setMonthFilter(val)}
+              placeholder="Select month"
+            />
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setVehicleFilterOpen(!vehicleFilterOpen); setFuelTypeFilterOpen(false); }}
+                className={`flex items-center justify-between px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#151B28] w-[200px] ${
+                  vehicleFilterOpen ? 'border-orange-500 bg-[#0B0F19]' : 'border-slate-700 hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Car size={14} className="text-slate-500" />
+                  <span className="text-white">
+                    {vehicleFilter === 'all' ? 'All Vehicles' : vehicles.find(v => v.id === vehicleFilter)?.vehicle_description.split(' ')[0] || 'Select'}
+                  </span>
+                </div>
+                <ChevronDown size={14} className={`text-slate-500 transition-transform ${vehicleFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {vehicleFilterOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto p-1">
+                  <button
+                    type="button"
+                    onClick={() => { setVehicleFilter('all'); setVehicleFilterOpen(false); }}
+                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
+                      vehicleFilter === 'all' ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
+                    }`}
+                  >
+                    All Vehicles
+                  </button>
+                  {vehicles.map(v => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => { setVehicleFilter(v.id); setVehicleFilterOpen(false); }}
+                      className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
+                        vehicleFilter === v.id ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
+                      }`}
+                    >
+                      {v.vehicle_description.split(' ')[0]}
+                      <span className="text-slate-500 text-xs block">{v.registration_number}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="relative group">
-              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-hover:text-orange-500 transition-colors" size={14} />
-              <select 
-                value={vehicleFilter}
-                onChange={(e) => setVehicleFilter(e.target.value)}
-                className="bg-[#0B0F19] border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-white font-bold text-xs uppercase outline-none appearance-none min-w-[180px] cursor-pointer hover:border-slate-700 transition-colors"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setFuelTypeFilterOpen(!fuelTypeFilterOpen); setVehicleFilterOpen(false); }}
+                className={`flex items-center justify-between px-4 py-2.5 border rounded-lg transition-all font-bold text-sm bg-[#151B28] w-[180px] ${
+                  fuelTypeFilterOpen ? 'border-orange-500 bg-[#0B0F19]' : 'border-slate-700 hover:border-slate-600'
+                }`}
               >
-                <option value="all">All Vehicles</option>
-                {vehicles.map(v => (
-                  <option key={v.id} value={v.id}>{v.vehicle_description.split(' ')[0]} ({v.registration_number})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="relative group">
-              <Fuel className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-hover:text-orange-500 transition-colors" size={14} />
-              <select 
-                value={fuelTypeFilter}
-                onChange={(e) => setFuelTypeFilter(e.target.value)}
-                className="bg-[#0B0F19] border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-white font-bold text-xs uppercase outline-none appearance-none min-w-[150px] cursor-pointer hover:border-slate-700 transition-colors"
-              >
-                <option value="all">Fuel Types</option>
-                <option value="Diesel">Diesel</option>
-                <option value="Petrol 95">Petrol 95</option>
-                <option value="Petrol 93">Petrol 93</option>
-              </select>
+                <div className="flex items-center gap-2">
+                  <Fuel size={14} className="text-slate-500" />
+                  <span className="text-white">
+                    {fuelTypeFilter === 'all' ? 'Fuel Types' : fuelTypeFilter}
+                  </span>
+                </div>
+                <ChevronDown size={14} className={`text-slate-500 transition-transform ${fuelTypeFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {fuelTypeFilterOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                  {['all', 'Diesel', 'Petrol 95', 'Petrol 93'].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => { setFuelTypeFilter(type); setFuelTypeFilterOpen(false); }}
+                      className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
+                        fuelTypeFilter === type ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'
+                      }`}
+                    >
+                      {type === 'all' ? 'Fuel Types' : type}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="ml-auto flex gap-8 items-center">

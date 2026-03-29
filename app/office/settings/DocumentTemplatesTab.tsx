@@ -68,6 +68,9 @@ export default function DocumentTemplatesTab({ profile, setProfile }: { profile:
       animate={{ opacity: 1, y: 0 }}
       className="space-y-10"
     >
+      {fontOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setFontOpen(false)} />
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
          <form onSubmit={handleUpdate} className="space-y-8">
             {/* Quote Settings */}
@@ -176,7 +179,7 @@ export default function DocumentTemplatesTab({ profile, setProfile }: { profile:
                             <button
                               type="button"
                               onClick={() => setFontOpen(!fontOpen)}
-                              className={`w-full flex items-center justify-between px-5 py-4 border rounded-xl transition-all font-medium bg-slate-900 ${
+                              className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
                                 fontOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
                               }`}
                             >
@@ -184,7 +187,7 @@ export default function DocumentTemplatesTab({ profile, setProfile }: { profile:
                               <ChevronDown size={14} className={`text-slate-500 transition-transform ${fontOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {fontOpen && (
-                              <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-50">
+                              <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
                                 {['Arial', 'Calibri', 'Times New Roman'].map(font => (
                                   <button
                                     key={font}
@@ -193,7 +196,7 @@ export default function DocumentTemplatesTab({ profile, setProfile }: { profile:
                                       updateSettings('font_family', font);
                                       setFontOpen(false);
                                     }}
-                                    className={`w-full px-5 py-3 text-left hover:bg-slate-800 transition-colors font-medium ${
+                                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
                                       settings.font_family === font ? 'text-orange-500' : 'text-slate-300'
                                     }`}
                                   >

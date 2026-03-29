@@ -128,6 +128,9 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
 
   return (
     <div className="w-full pb-20">
+      {categoryOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setCategoryOpen(false)} />
+      )}
       <div className="flex items-center gap-4 mb-10">
         <Link 
           href="/office/expenses"
@@ -167,8 +170,8 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
                          <button
                            type="button"
                            onClick={() => setCategoryOpen(!categoryOpen)}
-                           className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-medium text-sm bg-[#0B0F19] ${
-                             categoryOpen ? 'border-orange-500' : 'border-slate-800/50 hover:border-slate-700'
+                           className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#0B0F19] ${
+                             categoryOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
                            }`}
                          >
                            <div className="flex items-center gap-3">
@@ -178,18 +181,18 @@ export default function ExpenseForm({ initialData }: { initialData?: any }) {
                            <ChevronDown size={14} className={`text-slate-500 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
                          </button>
                          {categoryOpen && (
-                           <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50">
-                             {['Materials', 'Travel', 'Equipment', 'Software', 'Professional Fees', 'Other'].map((cat) => (
-                               <button
-                                 key={cat}
-                                 type="button"
-                                 onClick={() => {
-                                   setFormData(prev => ({ ...prev, category: cat }));
-                                   setCategoryOpen(false);
-                                 }}
-                                 className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-medium text-sm ${
-                                   formData.category === cat ? 'text-orange-500' : 'text-slate-300'
-                                 }`}
+<div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                              {['Materials', 'Travel', 'Equipment', 'Software', 'Professional Fees', 'Other'].map((cat) => (
+                                <button
+                                  key={cat}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, category: cat }));
+                                    setCategoryOpen(false);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-medium text-sm ${
+                                    formData.category === cat ? 'text-orange-500' : 'text-slate-300'
+                                  }`}
                                >
                                  {cat}
                                </button>

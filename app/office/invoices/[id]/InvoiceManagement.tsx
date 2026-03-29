@@ -261,6 +261,9 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
   return (
     <div className="space-y-10">
+      {paymentMethodOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setPaymentMethodOpen(false)} />
+      )}
       {/* Management Toolbar */}
       <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl flex flex-wrap items-center justify-between gap-6 shadow-2xl">
         <div className="flex items-center gap-4">
@@ -402,7 +405,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                   <p className="font-black text-sm uppercase">{invoice.clients?.company_name || 'N/A'}</p>
                   <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients?.contact_person || 'N/A'}</p>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients?.physical_address || 'N/A'}</p>
-                  {invoice.clients?.vat_number && <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients.vat_number}</p>}
+                  {invoice.clients?.vat_number && <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients?.vat_number}</p>}
                 </div>
               </div>
             </div>
@@ -802,7 +805,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                         <ChevronDown size={14} className={`text-slate-500 transition-transform ${paymentMethodOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {paymentMethodOpen && (
-                        <div className="absolute top-full left-0 w-full mt-2 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl z-50">
+                        <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
                           {['EFT', 'Cash', 'Other'].map((method) => (
                             <button
                               key={method}
@@ -811,7 +814,7 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                                 setPaymentForm({ ...paymentForm, method });
                                 setPaymentMethodOpen(false);
                               }}
-                              className={`w-full px-4 py-2.5 text-left hover:bg-[#151B28] transition-colors font-bold text-sm uppercase tracking-widest ${paymentForm.method === method ? 'text-orange-500' : 'text-slate-300'
+                              className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm uppercase tracking-widest ${paymentForm.method === method ? 'text-orange-500' : 'text-slate-300'
                                 }`}
                             >
                               {method}

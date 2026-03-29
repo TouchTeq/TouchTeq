@@ -191,7 +191,7 @@ export default function AddFillUpModal({ vehicles, onClose, onSuccess, lastOdom 
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-visible flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-[#0B0F19]/50">
           <div className="flex items-center gap-3">
