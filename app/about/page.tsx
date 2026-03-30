@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, ArrowRight, ArrowUpRight, CheckCircle2, Globe, ShieldCheck, 
+import {
+  ChevronRight, ArrowRight, ArrowUpRight, CheckCircle2, Globe, ShieldCheck,
   Clock, Award, FileText, Phone, Mail, MapPin, Users, User,
   Zap, Cpu, Flame, AlertTriangle, PhoneCall, Plus, Minus
 } from 'lucide-react';
@@ -12,6 +12,8 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
 
 const principles = [
   {
@@ -217,6 +219,18 @@ export default function AboutPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'About Us', url: 'https://touchteq.co.za/about' },
+        ]}
+      />
+      <FAQJsonLd
+        faqs={faqs.map((faq) => ({
+          question: faq.q,
+          answer: faq.a,
+        }))}
+      />
       <Header />
       
       {/* Hero Section */}

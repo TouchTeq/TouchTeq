@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import { sendGAEvent } from '@next/third-parties/google';
 import { Turnstile } from '@marsidev/react-turnstile';
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
@@ -129,6 +130,12 @@ export default function InsightsPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
+        ]}
+      />
       <Header />
       
       {/* Hero Section */}

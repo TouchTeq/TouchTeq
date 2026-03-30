@@ -458,7 +458,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                 <motion.aside
                   initial={false}
                   animate={{
-                    width: isMobile ? (isSidebarOpen ? 236 : 0) : isCollapsed ? 65 : 220,
+                    width: isMobile ? (isSidebarOpen ? 236 : 0) : isCollapsed ? 70 : 220,
                     x: isMobile && !isSidebarOpen ? -236 : 0
                   }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}

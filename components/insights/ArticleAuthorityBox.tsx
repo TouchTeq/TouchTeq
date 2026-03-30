@@ -1,11 +1,9 @@
 type ArticleAuthorityBoxProps = {
-  published: string;
   updated: string;
   topics: string[];
 };
 
 export default function ArticleAuthorityBox({
-  published,
   updated,
   topics,
 }: ArticleAuthorityBoxProps) {
@@ -26,10 +24,7 @@ export default function ArticleAuthorityBox({
         detection, control and instrumentation, hazardous area classification,
         and electrical engineering work in Southern Africa.
       </p>
-      <div className="mt-6 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-        <p>
-          <span className="font-bold text-[#1A2B4C]">Published:</span> {published}
-        </p>
+      <div className="mt-6 text-sm text-slate-600">
         <p>
           <span className="font-bold text-[#1A2B4C]">Last reviewed:</span> {updated}
         </p>

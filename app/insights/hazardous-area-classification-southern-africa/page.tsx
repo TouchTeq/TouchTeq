@@ -11,133 +11,113 @@ import BackToTop from '@/components/BackToTop';
 import { ShareButton } from '@/components/ui/share-button';
 import ArticleAuthorityBox from '@/components/insights/ArticleAuthorityBox';
 import JsonLd from '@/components/seo/JsonLd';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 
-const markdownContent = `# A Guide to Hazardous Area Classification in Southern Africa
+const markdownContent = `# Hazardous Area Classification in Southern Africa
 
-Walk into any refinery, chemical plant, gas processing facility, or underground mine in Southern Africa and you're likely standing near equipment that was specifically selected, certified, and installed because someone classified the space around it first. That process is called **Hazardous Area Classification (HAC)** — and if you operate a site where flammable gases, vapours, or combustible dust are present, it's not optional.
+Walk into any refinery, chemical plant, gas processing facility, or underground mine in Southern Africa and you'll find equipment that was selected and installed based on how the surrounding space was classified. That process is Hazardous Area Classification, or HAC. If your site handles flammable gases, vapours, or combustible dust, you're legally required to do it.
 
----
+## What HAC is (and what it isn't)
 
-## What It Is — and What It Isn't
+HAC identifies the three-dimensional spaces where a flammable or explosive atmosphere could form in concentrations high enough to need ignition-source controls. The deliverable is a zone map: a documented, site-specific record of where explosive atmospheres can occur, how often, and for how long.
 
-HAC is the process of identifying three-dimensional spaces where a flammable or explosive atmosphere may exist in sufficient concentration to require ignition-source controls. The output is a zone map — a documented, site-specific record of where explosive atmospheres can occur, how often, and for how long.
+It's not a full risk assessment. Classification tells you where the hazard may exist. It doesn't evaluate what happens if ignition occurs, and it doesn't replace a process hazard analysis. But it's the foundation that everything else builds on. Equipment selection, installation standards, inspection intervals, maintenance procedures: all of these follow from the classification. Get it wrong and every decision downstream inherits the error.
 
-It is not a full risk assessment on its own. Classification tells you *where* the hazard may exist. It doesn't evaluate the consequences of ignition, and it doesn't replace a proper process hazard analysis. It's the first link in a chain — the one everything else is built on.
+The technical framework comes from two IEC standards: IEC 60079-10-1 for explosive gas atmospheres and IEC 60079-10-2 for explosive dust atmospheres. South Africa adopts these as SANS 60079-10-1 and SANS 60079-10-2 under SANS 10108, the primary standard for classification and equipment selection in the country. The 7th edition of SANS 10108 was published in February 2023.
 
-The technical framework comes from two IEC standards: **IEC 60079-10-1** for explosive gas atmospheres and **IEC 60079-10-2** for explosive dust atmospheres. In South Africa these are adopted as **SANS 60079-10-1** and **SANS 60079-10-2**, sitting under **SANS 10108** — the primary standard for classification and equipment selection in the country. The 7th edition of SANS 10108 was published in February 2023.
+## The legal position in South Africa
 
----
+HAC is a legal requirement, not a guideline.
 
-## The Legal Position in South Africa
+Under the Occupational Health and Safety Act (Act 85 of 1993) and its Electrical Machinery Regulations (Clause 9.1), every employer must identify all hazardous locations and classify them in accordance with the applicable standards. You cannot operate electrical machinery where flammable gases, vapours, or dusts are present unless the location has been formally classified and the equipment matches.
 
-HAC is a legal requirement, not a best-practice guideline.
+Mining falls under separate authority: the Mine Health and Safety Act (Act 29 of 1996), enforced by the Department of Mineral Resources and Energy. This matters more than people realise. Underground coal mines deal with methane and suspended coal dust in ways that need a completely different engineering approach. Equipment certified for a surface petrochemical plant is not automatically suitable underground. Different regulators, different equipment groups, different rules. Don't treat them as interchangeable.
 
-Under the **Occupational Health and Safety Act (Act 85 of 1993)** and its Electrical Machinery Regulations (Clause 9.1), every employer must identify all hazardous locations and classify them in accordance with the applicable standards. No employer may operate electrical machinery in a location where flammable gases, vapours, or dusts are present unless that location has been formally classified and the equipment matches the classification.
+Non-compliance carries real consequences: fines, operational shutdown, and in serious cases, criminal liability for plant owners and responsible persons.
 
-Mining operations fall under separate authority — the **Mine Health and Safety Act (Act 29 of 1996)**, enforced by the Department of Mineral Resources and Energy. The distinction matters. Underground coal mines deal with methane gas and suspended coal dust in ways that need a different engineering approach entirely. Equipment certified for a surface petrochemical plant is not automatically suitable for underground mining. The two environments are governed by different regulators, use different equipment groups, and should not be treated as interchangeable.
+## The zone system
 
-Non-compliance carries real consequences — fines, operational shutdown, and in serious cases, criminal liability for plant owners and responsible persons.
-
----
-
-## The Zone System
-
-Southern Africa uses the **IEC Zone system**, not the North American Division system. If you're working with equipment or drawings from the United States, that distinction matters.
+Southern Africa uses the IEC zone system, not the North American division system. If you're working with equipment or drawings from the US, keep that in mind.
 
 **For gas, vapour, and mist hazards:**
 
-- **Zone 0** — explosive atmosphere present continuously or for long periods (more than 1,000 hours per year)
-- **Zone 1** — likely to occur occasionally in normal operation (10–1,000 hours per year)
-- **Zone 2** — unlikely in normal operation; brief if it occurs (under 10 hours per year)
+*   **Zone 0:** Explosive atmosphere present continuously or for long periods (more than 1,000 hours per year)
+*   **Zone 1:** Likely to occur occasionally in normal operation (10 to 1,000 hours per year)
+*   **Zone 2:** Unlikely in normal operation, brief if it occurs (under 10 hours per year)
 
 **For combustible dust:**
 
-- **Zone 20** — dust cloud present continuously or for long periods
-- **Zone 21** — dust cloud likely in normal operation occasionally
-- **Zone 22** — dust cloud unlikely in normal operation; brief if it occurs
+*   **Zone 20:** Dust cloud present continuously or for long periods
+*   **Zone 21:** Dust cloud likely in normal operation occasionally
+*   **Zone 22:** Dust cloud unlikely in normal operation, brief if it occurs
 
-Dust hazards are underestimated at many facilities. Grain storage, flour milling, woodworking, and certain chemical processing operations all generate combustible dust. A settled dust layer on a surface can ignite and feed a larger explosion. If your site handles powders or generates fine particulates, dust zone classification belongs in your HAC study — not as a separate exercise done later.
+Dust hazards are underestimated at far too many facilities. Grain storage, flour milling, woodworking, and certain chemical processing operations all generate combustible dust. A settled dust layer on a surface can ignite and feed a larger explosion. If your site handles powders or generates fine particulates, dust zone classification belongs in your HAC study, not as something you get to later.
 
----
-
-## How Classification Is Done
+## How classification is done
 
 A proper HAC study follows a structured process:
 
-1. Identify the flammable substances on site using safety data sheets and process data
-2. Identify sources of release — continuous, normal operation, or abnormal/unplanned
-3. Assess ventilation and how far a flammable atmosphere could realistically extend
-4. Consider internal spaces of equipment where flammable material and air may mix
-5. Map zone boundaries in three dimensions
-6. Document and maintain the classification as a live record
+1.  Identify the flammable substances on site using safety data sheets and process data.
+2.  Identify sources of release (continuous, normal operation, or abnormal/unplanned).
+3.  Assess ventilation and how far a flammable atmosphere could realistically extend.
+4.  Consider internal spaces of equipment where flammable material and air may mix.
+5.  Map zone boundaries in three dimensions.
+6.  Document and maintain the classification as a live record.
 
-Classification must be carried out by a qualified engineer or a competent person with relevant knowledge of the process, the equipment, and the applicable standards. A team approach produces better results — process, production, maintenance, and safety staff all hold information that a single engineer working in isolation won't have.
+Classification must be carried out by a qualified engineer or a competent person with relevant knowledge of the process, the equipment, and the applicable standards. A team approach works better. Process, production, maintenance, and safety staff all hold information that a single engineer working alone simply won't have.
 
-For complex or new plants, HAC should draw from a broader process hazard study such as a **HAZOP** or **PHA**, particularly where atmospheric dispersion modelling is needed.
+For complex or new plants, HAC should draw from a broader process hazard study such as a HAZOP or PHA, particularly where atmospheric dispersion modelling is needed.
 
----
+## Equipment selection and certification
 
-## Equipment Selection and Certification
+Once you've established zones, electrical equipment in those areas must match the classification. Equipment is categorised by Equipment Protection Level (EPL):
 
-Once zones are established, electrical equipment installed in those areas must be matched to the classification. Equipment is categorised by **Equipment Protection Level (EPL)**:
+*   **Zone 0 / Zone 20:** EPL Ga or Da (intrinsic safety or encapsulation)
+*   **Zone 1 / Zone 21:** EPL Gb or Db (flameproof, increased safety, or intrinsic safety)
+*   **Zone 2 / Zone 22:** EPL Gc or Dc (non-sparking, restricted breathing, or energy-limited)
 
-- **Zone 0 / Zone 20** — EPL Ga or Da (intrinsic safety or encapsulation)
-- **Zone 1 / Zone 21** — EPL Gb or Db (flameproof, increased safety, or intrinsic safety)
-- **Zone 2 / Zone 22** — EPL Gc or Dc (non-sparking, restricted breathing, or energy-limited)
+In South Africa, explosion-protected apparatus must hold a valid Inspection Authority (IA) certificate issued by an Approved Test Laboratory, such as MASC or Explolabs. This is a legal prerequisite for installation. IA certificates have a 10-year validity period, unlike ATEX or IECEx certificates which don't expire.
 
-In South Africa, explosion-protected apparatus must hold a valid **Inspection Authority (IA) certificate** issued by an **Approved Test Laboratory (ATL)** — such as MASC or Explolabs. This is a legal prerequisite for installation. IA certificates carry a 10-year validity period, unlike ATEX or IECEx certificates which don't expire.
+Imported equipment certified under ATEX or IECEx may be accepted without full re-testing, but it still needs to meet local certification requirements before installation. A European certificate on its own doesn't clear the equipment for use on a South African site.
 
-Imported equipment certified under ATEX or IECEx may be accepted without full re-testing, but it still needs to meet local certification requirements before installation. A European certificate alone does not clear the equipment for use on a South African site.
+All Ex equipment installations require Certificates of Compliance (COCs), which must be obtained and maintained.
 
-All Ex equipment installations require **Certificates of Compliance (COCs)**, which must be obtained and maintained.
+## Beyond South Africa
 
----
+South Africa has the most developed regulatory and accreditation infrastructure for this work on the continent. MASC is the only IECEx-accredited certification body and test laboratory in Sub-Saharan Africa. The South African Flameproof Association (SAFA) provides liaison between industry, regulators, and international standards bodies.
 
-## The Broader Southern African Picture
+Across the wider SADC region, the technical approach is broadly IEC-based. Similar zone language and equipment standards apply in Namibia, Botswana, Zimbabwe, and elsewhere. But the legal trigger, approval path, and enforcement body differ by country. SADCAS provides accreditation services across 13 SADC member states that don't have their own national bodies.
 
-South Africa has the most developed regulatory and accreditation infrastructure on the continent for this area of work. MASC is the only IECEx-accredited certification body and test laboratory in Sub-Saharan Africa. The **South African Flameproof Association (SAFA)** provides an important liaison function between industry, regulators, and international standards bodies.
+If your operations extend beyond South Africa, the technical framework translates reasonably well. But verify the specific regulatory requirements in each country. South African compliance does not automatically satisfy another jurisdiction's legal obligations.
 
-Across the wider SADC region, the technical approach is broadly IEC-based — similar zone language and equipment standards apply in Namibia, Botswana, Zimbabwe, and elsewhere. But the legal trigger, approval path, and enforcement body differ by country. **SADCAS** provides accreditation services across 13 SADC member states that don't have their own national bodies.
+## Where it goes wrong
 
-If your operations extend beyond South Africa, the technical framework may translate reasonably well — but verify the specific regulatory requirements in each country. South African compliance does not automatically satisfy another jurisdiction's legal obligations.
+The same mistakes keep showing up, and most of them are avoidable:
 
----
+*   Treating the HAC drawing as a once-off deliverable instead of a live document that needs updating when anything changes.
+*   Classifying gas hazards but missing combustible dust hazards on the same site.
+*   Using equipment labels as the only check, without verifying that the EPL matches the zone and the specific gas or dust group.
+*   Applying surface-plant logic to mining environments.
+*   Not updating the classification after process modifications, layout changes, or new equipment.
 
-## Where It Goes Wrong
+A HAC study that was accurate five years ago may not reflect what's happening on the plant today. Every time ventilation changes, process conditions shift, or new equipment comes in, the classification should be reviewed. That's how a site that started with a solid study quietly accumulates risk.
 
-The same mistakes come up repeatedly across the region:
+## What a well-managed site should have
 
-- Treating the HAC drawing as a once-off deliverable rather than a live document that needs to be updated when anything changes
-- Classifying gas hazards but missing combustible dust hazards on the same site
-- Using equipment labels as the only check, without verifying that the EPL matches the zone and the specific gas or dust group on site
-- Applying surface-plant logic to mining areas
-- Not updating the classification after process modifications, layout changes, or new equipment is added
+*   A site-specific HAC study, not a copied template from another facility.
+*   Zone drawings that are current, version-controlled, and reflect the actual plant layout.
+*   Equipment registers that cross-reference EPL requirements against what's installed.
+*   Valid IA certificates and COCs for all Ex equipment.
+*   A clear trigger for classification review within the management of change process.
+*   Qualified, competent people involved in any classification, selection, or inspection work.
 
-A HAC study that was accurate five years ago may not reflect what's happening on the plant today. Every time ventilation changes, process conditions shift, or new equipment comes in, the classification should be reviewed. This is where sites that start with a good study gradually accumulate risk without realising it.
-
----
-
-## What a Well-Managed Site Should Have
-
-- A site-specific HAC study — not a copied template from another facility
-- Zone drawings that are current, version-controlled, and reflect the actual plant layout
-- Equipment registers that cross-reference EPL requirements against what's installed
-- Valid IA certificates and COCs for all Ex equipment
-- A clear trigger for classification review within the management of change process
-- Qualified, competent people involved in any classification, selection, or inspection work
-
-HAC sits at the base of everything. Equipment selection, installation standards, inspection intervals, and maintenance procedures all follow from it. If the classification is wrong or out of date, the layers built on top of it are too.
-
----
-
-*This article is intended as a general overview for plant operators and managers. For site-specific classification studies, equipment selection, or compliance advice, consult a qualified engineer familiar with SANS 10108 and the applicable regulatory framework for your facility.*`;
+All of this traces back to the zone map. If the classification is wrong or outdated, the rest falls apart.`;
 
 const title = "A Guide to Hazardous Area Classification in Southern Africa";
 const wordCount = markdownContent.trim().split(/\s+/).length;
 const readingTime = Math.round(wordCount / 200);
 const detailTags = ["Hazardous Areas", "SANS 10108", "IEC 60079"];
-const publishedDate = '2024-02-01';
-const reviewedDate = '2026-03-24';
+const reviewedDate = 'March 2026';
 
 const articleJsonLd = {
   '@context': 'https://schema.org',
@@ -152,8 +132,7 @@ const articleJsonLd = {
     name: 'Touch Teq Engineering Services',
     logo: 'https://touchteq.co.za/TT-logo-orange-trans.png',
   },
-  datePublished: `${publishedDate}T00:00:00Z`,
-  dateModified: `${reviewedDate}T00:00:00Z`,
+  dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
   mainEntityOfPage: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa',
   keywords:
@@ -229,7 +208,7 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
   return (
     <div className="bg-[#1A2B4C] rounded-lg p-4 mb-8">
       <audio ref={audioRef} src={audioSrc} preload="metadata" />
-      
+
       <div className="flex items-center gap-4">
         <button
           onClick={togglePlay}
@@ -237,7 +216,7 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
         >
           {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
         </button>
-        
+
         <div className="flex-1 min-w-0">
           <input
             type="range"
@@ -260,9 +239,16 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
 export default function HACInsightsDetailPage() {
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
+          { name: 'Hazardous Area Classification', url: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa' },
+        ]}
+      />
       <JsonLd data={articleJsonLd} />
       <Header />
-      
+
       {/* Hero Section */}
       <section className="pt-32 pb-24 md:pt-48 md:pb-32 bg-[#1A2B4C] relative overflow-hidden">
         {/* Background Image */}
@@ -277,14 +263,14 @@ export default function HACInsightsDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#1A2B4C] via-[#1A2B4C]/50 to-transparent"></div>
         </div>
         <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <Link 
-            href="/insights" 
+          <Link
+            href="/insights"
             className="inline-flex items-center text-orange-500 font-black text-xs uppercase tracking-widest mb-8 hover:text-orange-400 transition-colors"
           >
             <ArrowLeft size={14} className="mr-2" />
             Back to Insights
           </Link>
-          
+
           <div className="flex flex-wrap items-center gap-4 mb-6">
             <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
               Hazardous Areas
@@ -301,7 +287,7 @@ export default function HACInsightsDetailPage() {
               ))}
             </div>
           </div>
-          
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -311,21 +297,21 @@ export default function HACInsightsDetailPage() {
           </motion.h1>
         </div>
       </section>
-      
+
       {/* Article Content */}
       <section className="py-16">
         <div className="container mx-auto px-4 md:px-8">
           <article className="max-w-[720px] mx-auto">
-            <ShareButton 
+            <ShareButton
               title="A Guide to Hazardous Area Classification in Southern Africa"
               description="A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements."
               url="https://touchteq.co.za/insights/hazardous-area-classification-southern-africa"
               className="mb-6"
             />
-            
+
             {/* Audio Player - Pass audioSrc prop if available */}
             <AudioPlayer audioSrc="/content/audio/hac-southern-africa.mp3" />
-            
+
             <div className="text-base leading-relaxed">
               <ReactMarkdown
                 components={{
@@ -347,15 +333,9 @@ export default function HACInsightsDetailPage() {
               >
                 {markdownContent}
               </ReactMarkdown>
-              
-              {/* Disclaimer */}
-              <div className="mt-16 pt-8 border-t border-slate-200">
-                <p className="text-slate-400 text-sm italic leading-relaxed">
-                  This article is intended as a general overview for plant operators and managers. For site-specific classification studies, equipment selection, or compliance advice, consult a qualified engineer familiar with SANS 10108 and the applicable regulatory framework for your facility.
-                </p>
-              </div>
+
+              <div className="mt-16 pt-8 border-t border-slate-200"></div>
               <ArticleAuthorityBox
-                published={publishedDate}
                 updated={reviewedDate}
                 topics={['Hazardous area classification', 'SANS 10108', 'IEC 60079', 'Equipment selection in explosive atmospheres']}
               />
@@ -378,7 +358,7 @@ export default function HACInsightsDetailPage() {
               <p className="text-slate-300 text-sm leading-relaxed mb-8">
                 Takes 2 minutes. Get an instant gap analysis of your safety documentation, detector coverage, and compliance status.
               </p>
-              <Link 
+              <Link
                 href="/risk-assessment"
                 className="group inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20"
               >
@@ -389,7 +369,7 @@ export default function HACInsightsDetailPage() {
           </div>
         </div>
       </section>
-      
+
       <BackToTop />
       <Footer />
     </main>

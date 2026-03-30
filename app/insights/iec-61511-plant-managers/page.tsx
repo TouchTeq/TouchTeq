@@ -11,100 +11,85 @@ import BackToTop from '@/components/BackToTop';
 import { ShareButton } from '@/components/ui/share-button';
 import ArticleAuthorityBox from '@/components/insights/ArticleAuthorityBox';
 import JsonLd from '@/components/seo/JsonLd';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 
 // Read the markdown file as a string
-const markdownContent = `# Understanding IEC 61511: What Plant Managers in South Africa Need to Know
+const markdownContent = `# IEC 61511 in South Africa: what plant managers need to know
 
-If you manage a process plant in South Africa — a refinery, chemical facility, gas processing plant, or similar operation — there's a standard worth understanding beyond its acronym: **IEC 61511**. It governs how safety instrumented systems are designed, operated, and maintained. More practically, it defines what you're accountable for when things go wrong.
+If you manage a process plant in South Africa (a refinery, chemical facility, gas processing plant, or similar operation), there's a standard worth understanding beyond its acronym: IEC 61511. It governs how safety instrumented systems are designed, operated, and maintained. More to the point, it defines what you're accountable for when things go wrong.
 
----
+## What is IEC 61511?
 
-## What Is IEC 61511?
+IEC 61511 is an international standard from the International Electrotechnical Commission, written for Safety Instrumented Systems (SIS) in the process industry. These are the automated safety systems that kick in when a process goes off-script: shutting valves, triggering alarms, isolating equipment before a deviation turns into something worse.
 
-IEC 61511 is an international standard from the International Electrotechnical Commission, written for **Safety Instrumented Systems (SIS)** in the process industry. These are the automated safety systems that respond when a process deviates — shutting valves, triggering alarms, isolating equipment — before a deviation becomes something worse.
+The standard covers the full life of a SIS, from initial concept through design, installation, operation, maintenance, and eventual decommissioning. It's not a document you satisfy once during a capital project. It's a management obligation that runs for as long as the system exists.
 
-The standard covers the full life of a SIS: initial concept, design, installation, operation, maintenance, and eventual decommissioning. It's not a document you satisfy once during a capital project. It's a management obligation that runs for the life of the system.
+## Who does it apply to?
 
----
+In South Africa, process plants subject to the Occupational Health and Safety Act (OHSA) and the Major Hazard Installation (MHI) Regulations (2022) are directly in scope. The MHI Regulations require facilities handling hazardous substances above defined thresholds to demonstrate that risks are properly identified and controlled. IEC 61511 is the accepted standard for doing that on the instrumented safety side.
 
-## Who Does It Apply To?
+This is not an engineering department problem. As the plant manager or facility owner, you are the Duty Holder. You can outsource the engineering work. You cannot outsource the accountability. South African regulatory and legal frameworks assign primary liability to the facility operator, and investigations after serious incidents don't stop at the contractor boundary.
 
-In South Africa, process plants subject to the **Occupational Health and Safety Act (OHSA)** and the **Major Hazard Installation (MHI) Regulations (2022)** are directly in scope. The MHI Regulations require facilities handling hazardous substances above defined thresholds to demonstrate that risks are properly identified and controlled. IEC 61511 is the accepted standard for doing that on the instrumented safety side.
+## The core concept: safety integrity levels (SIL)
 
-This is not an engineering department problem. As the plant manager or facility owner, you are the **Duty Holder**. You can outsource the engineering work. You cannot outsource the accountability. South African regulatory and legal frameworks assign primary liability to the facility operator, and investigations after serious incidents don't stop at the contractor boundary.
+IEC 61511 is built around Safety Integrity Levels, or SILs, which measure how reliably a specific safety function must perform.
 
----
+*   **SIL 1:** Roughly a 10-fold reduction in risk
+*   **SIL 2:** 100-fold
+*   **SIL 3:** 1,000-fold
+*   **SIL 4:** 10,000-fold (reserved for extreme hazard scenarios; rare in practice)
 
-## The Core Concept: Safety Integrity Levels (SIL)
+The required SIL for any given function comes from a formal Hazard and Risk Assessment, often using LOPA (Layer of Protection Analysis). Over-engineering a low-risk function wastes capital. Under-engineering a high-risk one gets people hurt.
 
-IEC 61511 is built around **Safety Integrity Levels**, or SILs — a measure of how reliably a specific safety function must perform.
+## The safety lifecycle
 
-- **SIL 1** — roughly a 10-fold reduction in risk
-- **SIL 2** — 100-fold
-- **SIL 3** — 1,000-fold
-- **SIL 4** — 10,000-fold (reserved for the most extreme hazard scenarios; rare in practice)
+IEC 61511 requires a structured safety lifecycle covering:
 
-The required SIL for any given function comes from a formal **Hazard and Risk Assessment**, often using **LOPA (Layer of Protection Analysis)**. Over-engineering a low-risk function wastes capital. Under-engineering a high-risk one is a different kind of problem entirely.
+1.  Hazard and risk assessment
+2.  Safety requirements specification
+3.  System design and engineering
+4.  Installation, commissioning, and validation
+5.  Operation and maintenance
+6.  Management of change
+7.  Decommissioning
 
----
+The upfront phases (design, engineering, commissioning) tend to get attention because they're tied to project budgets and timelines. The operational phases are where discipline erodes. Proof tests fall behind schedule. Bypasses stay in place longer than they should. Change management becomes informal.
 
-## The Safety Lifecycle
+These gaps don't announce themselves. They compound quietly until a demand event reveals how far the actual system has drifted from what the documentation describes.
 
-IEC 61511 requires a structured **safety lifecycle** covering:
+## What functional safety management actually looks like
 
-1. Hazard and risk assessment
-2. Safety requirements specification
-3. System design and engineering
-4. Installation, commissioning, and validation
-5. Operation and maintenance
-6. Management of change
-7. Decommissioning
+IEC 61511 requires a Functional Safety Management (FSM) system: procedures, competency frameworks, documentation controls, and audit processes governing how the safety lifecycle is managed at your site.
 
-The upfront phases — design, engineering, commissioning — tend to get attention because they're tied to project budgets and timelines. The operational phases are where discipline erodes. Proof tests fall behind schedule. Bypasses stay in place longer than they should. Change management becomes informal. These gaps don't usually announce themselves. They compound quietly until a demand event reveals how far the actual system has drifted from what the documentation describes.
+Three areas that plant managers tend to underestimate:
 
----
+**Competency.** Having qualified people on your org chart isn't enough. The people performing SIS activities (engineers, technicians, operators) need to be demonstrably competent for the specific tasks they carry out. The 2016 edition strengthened this requirement considerably. Records matter; intentions don't.
 
-## What Functional Safety Management Means in Practice
+**Proof testing.** A SIS sits dormant until it's needed. Failures hide inside it without triggering any alarm. Proof testing at defined intervals is how you find those failures before a real demand does. Skipping or deferring these tests is one of the most common ways sites quietly accumulate risk they can't see.
 
-IEC 61511 requires a **Functional Safety Management (FSM) system** — procedures, competency frameworks, documentation controls, and audit processes governing how the safety lifecycle is managed at your site. Three areas plant managers tend to underestimate:
+**Management of change.** Equipment gets swapped, setpoints shift, logic gets modified. Each change can affect a safety function. A weak MOC process is where IEC 61511 compliance falls apart at operating facilities, usually without anyone noticing until it's too late.
 
-**Competency.** It's not enough to have qualified people on your org chart. The people performing SIS activities — engineers, technicians, operators — need to be demonstrably competent for the specific tasks they carry out. The 2016 edition of the standard strengthened this requirement considerably. Records matter; intentions don't.
+## The 2026 update
 
-**Proof testing.** A SIS sits dormant until it's needed. Failures hide inside it without triggering any alarm. Proof testing at defined intervals is how you find those failures before a real demand does. Skipping or deferring these tests is one of the most common ways sites accumulate undetected risk.
+IEC 61511:2026 was published in February 2026. It strengthens requirements around cybersecurity (a formal security risk assessment is now expected), competency demonstration, and how failure rate data for field devices must be substantiated. If your SIS connects to broader plant networks, the cybersecurity piece deserves attention now rather than later.
 
-**Management of change.** Equipment gets swapped, setpoints shift, logic gets modified. Each change has the potential to affect a safety function. A weak MOC process is where IEC 61511 compliance quietly comes apart at operating facilities.
+## Why this matters in South Africa
 
----
+South Africa's process sector spans petrochemicals (Sasol, Natref), mining and minerals processing, power generation, and chemical manufacturing. SIS failures in these industries have serious consequences. The MHI Regulations introduced clearer compliance timelines in 2022, and regulatory scrutiny has grown since.
 
-## The 2026 Update
+The business case isn't complicated. A properly run functional safety program reduces unplanned downtime, supports better asset decisions, and produces documentation that holds up when regulators or insurers come asking questions. A poorly run one produces paperwork that looks fine right up until the moment it actually matters.
 
-A new edition — **IEC 61511:2026** — was published in February 2026. It strengthens requirements around cybersecurity (a formal security risk assessment is now expected), competency demonstration, and how failure rate data for field devices must be substantiated. Facilities with SIS connected to broader plant networks should pay attention to the cybersecurity requirements sooner rather than later.
-
----
-
-## Why This Matters in the South African Context
-
-South Africa's process sector spans petrochemicals (Sasol, Natref), mining and minerals processing, power generation, and chemical manufacturing — industries where SIS failures have serious consequences. The MHI Regulations introduced clearer compliance timelines in 2022, and regulatory scrutiny has grown since.
-
-The practical business case is not complicated. A properly run functional safety program reduces unplanned downtime, supports better asset decisions, and produces documentation that holds up when regulators or insurers need answers. A poorly run one produces paperwork that looks fine until the moment it matters most.
-
----
-
-## Where to Start
+## Where to start
 
 If you're not sure where your facility stands:
 
-- Commission a **gap analysis** against IEC 61511 — a Functional Safety Assessment (FSA) by a qualified independent party will identify what's missing.
-- Confirm your **proof testing schedule** is current and that results are documented and acted on.
-- Review **competency records** for the people responsible for SIS activities.
-- Make sure your **MOC process** explicitly captures safety instrumented system impacts.
-- If your SIS connects to plant or corporate networks, initiate a **cybersecurity risk review**.
+1.  Commission a gap analysis against IEC 61511. A Functional Safety Assessment (FSA) by a qualified independent party will tell you what's missing.
+2.  Confirm your proof testing schedule is current and that results are documented and acted on.
+3.  Review competency records for the people responsible for SIS activities.
+4.  Make sure your MOC process explicitly captures safety instrumented system impacts.
+5.  If your SIS connects to plant or corporate networks, get a cybersecurity risk review started.
 
-The engineering requirements in IEC 61511 are demanding. The management discipline required to sustain them over decades is harder. Sites that treat functional safety as a one-time project deliverable tend to find out what they've missed at the worst possible time.
-
----
-
-*This article is intended as a general overview. For site-specific implementation, consult a qualified functional safety engineer or refer to the full IEC 61511 standard.*`;
+The engineering requirements in IEC 61511 are demanding. The management discipline required to sustain them over decades is harder. Sites that treat functional safety as a one-time project deliverable tend to find out what they've missed at the worst possible time.`;
 
 // Extract title from first H1
 const extractTitle = (content: string): string => {
@@ -122,8 +107,7 @@ const calculateReadingTime = (content: string): number => {
 const title = extractTitle(markdownContent);
 const readingTime = calculateReadingTime(markdownContent);
 const detailTags = ["Functional Safety", "IEC 61511", "Safety Instrumented Systems"];
-const publishedDate = '2024-01-15';
-const reviewedDate = '2026-03-24';
+const reviewedDate = 'March 2026';
 
 const articleJsonLd = {
   '@context': 'https://schema.org',
@@ -138,8 +122,7 @@ const articleJsonLd = {
     name: 'Touch Teq Engineering Services',
     logo: 'https://touchteq.co.za/TT-logo-orange-trans.png',
   },
-  datePublished: `${publishedDate}T00:00:00Z`,
-  dateModified: `${reviewedDate}T00:00:00Z`,
+  dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
   mainEntityOfPage: 'https://touchteq.co.za/insights/iec-61511-plant-managers',
   keywords:
@@ -215,7 +198,7 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
   return (
     <div className="bg-[#1A2B4C] rounded-lg p-4 mb-8">
       <audio ref={audioRef} src={audioSrc} preload="metadata" />
-      
+
       <div className="flex items-center gap-4">
         <button
           onClick={togglePlay}
@@ -223,7 +206,7 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
         >
           {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
         </button>
-        
+
         <div className="flex-1 min-w-0">
           <input
             type="range"
@@ -246,9 +229,16 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
 export default function InsightsDetailPage() {
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
+          { name: 'IEC 61511 for Plant Managers', url: 'https://touchteq.co.za/insights/iec-61511-plant-managers' },
+        ]}
+      />
       <JsonLd data={articleJsonLd} />
       <Header />
-      
+
       {/* Hero Section */}
       <section className="pt-32 pb-24 md:pt-48 md:pb-32 bg-[#1A2B4C] relative overflow-hidden">
         {/* Background Image */}
@@ -263,14 +253,14 @@ export default function InsightsDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#1A2B4C] via-[#1A2B4C]/50 to-transparent"></div>
         </div>
         <div className="container mx-auto px-4 md:px-8 relative z-10">
-          <Link 
-            href="/insights" 
+          <Link
+            href="/insights"
             className="inline-flex items-center text-orange-500 font-black text-xs uppercase tracking-widest mb-8 hover:text-orange-400 transition-colors"
           >
             <ArrowLeft size={14} className="mr-2" />
             Back to Insights
           </Link>
-          
+
           <div className="flex flex-wrap items-center gap-4 mb-6">
             <span className="bg-orange-500 text-white px-3 py-1 rounded-sm text-[10px] font-black uppercase tracking-widest">
               Industry Standards
@@ -287,7 +277,7 @@ export default function InsightsDetailPage() {
               ))}
             </div>
           </div>
-          
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -297,21 +287,21 @@ export default function InsightsDetailPage() {
           </motion.h1>
         </div>
       </section>
-      
+
       {/* Article Content */}
       <section className="py-16">
         <div className="container mx-auto px-4 md:px-8">
           <article className="max-w-[720px] mx-auto">
-            <ShareButton 
+            <ShareButton
               title="Understanding IEC 61511: What Plant Managers in South Africa Need to Know"
               description="IEC 61511 governs safety instrumented systems across South African process plants. Learn what plant managers need to know about SIL, SIS design, and OHS Act compliance."
               url="https://touchteq.co.za/insights/iec-61511-plant-managers"
               className="mb-6"
             />
-            
+
             {/* Audio Player */}
             <AudioPlayer audioSrc="/content/audio/IEC_61511_Insight_Post.mp3" />
-            
+
             <div className="text-base leading-relaxed">
               <ReactMarkdown
                 components={{
@@ -333,15 +323,9 @@ export default function InsightsDetailPage() {
               >
                 {markdownContent}
               </ReactMarkdown>
-              
-              {/* Disclaimer */}
-              <div className="mt-16 pt-8 border-t border-slate-200">
-                <p className="text-slate-400 text-sm italic leading-relaxed">
-                  This article is intended as a general overview. For site-specific implementation, consult a qualified functional safety engineer or refer to the full IEC 61511 standard.
-                </p>
-              </div>
+
+              <div className="mt-16 pt-8 border-t border-slate-200"></div>
               <ArticleAuthorityBox
-                published={publishedDate}
                 updated={reviewedDate}
                 topics={['Functional safety', 'IEC 61511', 'Safety instrumented systems', 'Process plant compliance']}
               />
@@ -364,7 +348,7 @@ export default function InsightsDetailPage() {
               <p className="text-slate-300 text-sm leading-relaxed mb-8">
                 Takes 2 minutes. Get an instant gap analysis of your safety documentation, detector coverage, and compliance status.
               </p>
-              <Link 
+              <Link
                 href="/risk-assessment"
                 className="group inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20"
               >
@@ -375,7 +359,7 @@ export default function InsightsDetailPage() {
           </div>
         </div>
       </section>
-      
+
       <BackToTop />
       <Footer />
     </main>

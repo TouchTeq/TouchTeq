@@ -39,6 +39,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://touchteq.co.za'),
   alternates: {
     canonical: '/',
+    languages: {
+      'en-ZA': '/',
+      'en': '/',
+    },
   },
   category: 'industrial engineering',
   openGraph: {
@@ -101,6 +105,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 postalCode: '1724',
                 addressCountry: 'ZA',
               },
+              geo: {
+                '@type': 'GeoCoordinates',
+                latitude: '-26.1715',
+                longitude: '27.8725',
+              },
               telephone: '+27-72-552-2110',
               email: 'info@touchteq.co.za',
               areaServed: [
@@ -118,6 +127,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 'IEC 61511 Compliance',
                 'Industrial Electrical Engineering',
               ],
+              priceRange: '$$$$',
+              paymentAccepted: 'Cash, Credit Card, Bank Transfer, Invoice',
+              currenciesAccepted: 'ZAR',
               sameAs: [
                 'https://www.linkedin.com/company/touch-teqniques-engineering-services/',
                 'https://www.facebook.com/TouchTeqniques',

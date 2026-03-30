@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Phone, Mail, MapPin, Clock, ChevronRight, ArrowRight, 
+import {
+  Phone, Mail, MapPin, Clock, ChevronRight, ArrowRight,
   Check, ChevronDown, Globe, ShieldCheck, MessageSquare,
   Headphones, AlertCircle, Building2, Plus, Minus, FileUp,
   ArrowUpRight
@@ -13,6 +13,8 @@ import { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
 import { 
   validateName, 
   validateCompanyName, 
@@ -288,6 +290,18 @@ export default function ContactPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Contact Us', url: 'https://touchteq.co.za/contact' },
+        ]}
+      />
+      <FAQJsonLd
+        faqs={faqs.map((faq) => ({
+          question: faq.q,
+          answer: faq.a,
+        }))}
+      />
       <Header />
       
       {/* Hero Section */}
