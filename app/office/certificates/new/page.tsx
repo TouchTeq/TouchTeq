@@ -82,7 +82,8 @@ function NewCertificateContent() {
     pass_fail_status: true,
     notes: '',
     next_inspection_date: format(addDays(new Date(), 365), 'yyyy-MM-dd'),
-    document_data: {} as Record<string, any>
+    document_data: {} as Record<string, any>,
+    require_client_sign_off: false
   });
 
   // Load clients
@@ -208,7 +209,9 @@ function NewCertificateContent() {
           notes: formData.notes,
           next_inspection_date: formData.next_inspection_date,
           document_data: formData.document_data,
-          supersedes_certificate_id: supersedeId || null
+          supersedes_certificate_id: supersedeId || null,
+          require_client_sign_off: formData.require_client_sign_off,
+          client_signature_status: 'Unsigned'
         })
         .select()
         .single();
@@ -408,6 +411,25 @@ function NewCertificateContent() {
                              <X size={14} /> Fail
                           </button>
                        </div>
+                    </div>
+
+                    <div className="bg-[#0B0F19] p-4 rounded-xl border border-slate-800">
+                       <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Client Sign-off</label>
+                       <button
+                         type="button"
+                         onClick={() => setFormData({...formData, require_client_sign_off: !formData.require_client_sign_off})}
+                         className={`w-full py-3 rounded-lg border transition-all text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 ${
+                           formData.require_client_sign_off
+                             ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+                             : 'bg-slate-800/30 border-slate-700 text-slate-500 hover:text-slate-300'
+                         }`}
+                       >
+                         {formData.require_client_sign_off ? <CheckCircle2 size={14} /> : <X size={14} />}
+                         {formData.require_client_sign_off ? 'Require Client Sign-off' : 'No Client Sign-off Required'}
+                       </button>
+                       <p className="text-[10px] text-slate-500 mt-2">
+                         When enabled, the certificate PDF will include a client acceptance block for physical signature.
+                       </p>
                     </div>
                   </div>
                 </div>

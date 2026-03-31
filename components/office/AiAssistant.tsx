@@ -7,6 +7,7 @@ import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { useAiDraft, type AiDraftType } from '@/components/office/AiDraftContext';
 import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
 import { createClient } from '@/lib/supabase/client';
+import AiMorningBriefing from '@/components/office/AiMorningBriefing';
 import { createFuelLog } from '@/lib/fuel/actions';
 import { format } from 'date-fns';
 import { 
@@ -27,8 +28,92 @@ import {
   ExternalLink,
   Undo2,
   Car,
-  ShieldAlert
+  ShieldAlert,
+  Paperclip,
+  Command,
+  Plus,
+  FileText,
+  Mail,
+  Package,
+  SendHorizonal,
+  Gauge,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  XCircle,
+  Clock
 } from 'lucide-react';
+
+type ActionStatusType = "confirmed" | "attempted" | "could_not_verify" | "failed" | "need_info" | "unsupported";
+
+interface ParsedActionStatus {
+  action: string;
+  targetType: string;
+  targetReference: string;
+  toolUsed: string;
+  status: ActionStatusType;
+  attempted: boolean;
+  verified: boolean;
+  summary: string;
+  error: string | null;
+  nextStep: string;
+}
+
+function extractActionStatus(text: string): ParsedActionStatus | null {
+  try {
+    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[1]);
+    if (parsed?.actionStatus && parsed.actionStatus.status) {
+      return parsed.actionStatus as ParsedActionStatus;
+    }
+    if (parsed?.action && parsed?.status) {
+      return parsed as ParsedActionStatus;
+    }
+  } catch {
+    // Not JSON
+  }
+  return null;
+}
+
+function cleanActionText(text: string): string {
+  return text.replace(/```json\s*[\s\S]*?\s*```/g, '').trim();
+}
+
+const STATUS_CONFIG: Record<ActionStatusType, { color: string; bg: string; border: string; icon: React.FC<any>; label: string }> = {
+  confirmed: { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', icon: Check, label: 'Confirmed' },
+  attempted: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: Clock, label: 'Attempted' },
+  could_not_verify: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: AlertTriangle, label: 'Unverified' },
+  failed: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: XCircle, label: 'Failed' },
+  need_info: { color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', icon: Info, label: 'Need Info' },
+  unsupported: { color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: AlertCircle, label: 'Unsupported' },
+};
+
+function ActionStatusBadge({ actionStatus }: { actionStatus: ParsedActionStatus }) {
+  const config = STATUS_CONFIG[actionStatus.status] || STATUS_CONFIG.attempted;
+  const StatusIcon = config.icon;
+
+  return (
+    <div className={`mt-2 rounded-lg border ${config.border} ${config.bg} p-3`}>
+      <div className="flex items-center gap-2 mb-1">
+        <StatusIcon size={12} className={config.color} />
+        <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${config.color}`}>{config.label}</span>
+        {actionStatus.targetReference && (
+          <span className="text-[9px] font-bold text-slate-400 ml-auto">{actionStatus.targetReference}</span>
+        )}
+      </div>
+      {actionStatus.summary && (
+        <p className="text-[11px] text-slate-300 font-medium leading-relaxed">{actionStatus.summary}</p>
+      )}
+      {actionStatus.error && (
+        <p className="text-[11px] text-red-400 font-medium mt-1">{actionStatus.error}</p>
+      )}
+      {actionStatus.nextStep && actionStatus.status !== 'confirmed' && (
+        <p className="text-[10px] text-slate-500 font-bold mt-1.5">{actionStatus.nextStep}</p>
+      )}
+    </div>
+  );
+}
 
 const SUGGESTIONS = [
   "Create a quotation",
@@ -36,13 +121,66 @@ const SUGGESTIONS = [
   "Create an invoice"
 ];
 
+const SHORTCUT_ITEMS = [
+  { icon: FileText, label: 'Create Invoice', command: '/invoice', starter: 'Create an invoice for ' },
+  { icon: FileText, label: 'Create Quotation', command: '/quote', starter: 'Create a quotation for ' },
+  { icon: Package, label: 'Create Purchase Order', command: '/po', starter: 'Create a purchase order for ' },
+  { icon: FileText, label: 'Create Credit Note', command: '/creditnote', starter: 'Create a credit note for invoice ' },
+  { icon: Mail, label: 'Draft Email', command: '/email', starter: 'Draft an email to ' },
+  { icon: Car, label: 'Log a Trip', command: '/trip', starter: 'Log a trip to ' },
+  { icon: Gauge, label: 'Log Fuel', command: '/fuel', starter: 'Log fuel purchase, ' },
+  { icon: ShieldAlert, label: 'Generate Certificate', command: '/certificate', starter: 'Generate a commissioning certificate for ' },
+] as const;
+
+const QUICK_ACTIONS = [
+  {
+    title: 'Create Invoice',
+    description: 'Generate a new tax invoice for a client',
+    command: '/invoice',
+    starter: 'Create an invoice for ',
+    Icon: FileText,
+  },
+  {
+    title: 'Create Quote',
+    description: 'Draft a quotation with line items',
+    command: '/quote',
+    starter: 'Create a quotation for ',
+    Icon: FileText,
+  },
+  {
+    title: 'Draft Email',
+    description: 'Compose a professional business email',
+    command: '/email',
+    starter: 'Draft an email to ',
+    Icon: Mail,
+  },
+  {
+    title: 'Purchase Order',
+    description: 'Raise a PO for equipment or services',
+    command: '/po',
+    starter: 'Create a purchase order for ',
+    Icon: Package,
+  },
+] as const;
+
+const SHORTCUT_STARTERS: Record<string, string> = {
+  '/invoice': 'Create an invoice for ',
+  '/quote': 'Create a quotation for ',
+  '/po': 'Create a purchase order for ',
+  '/creditnote': 'Create a credit note for invoice ',
+  '/email': 'Draft an email to ',
+  '/trip': 'Log a trip to ',
+  '/fuel': 'Log fuel purchase, ',
+  '/certificate': 'Generate a commissioning certificate for ',
+};
+
 const VOICE_PAUSE_MS = 3500;
 const VOICE_SESSION_TIMEOUT_MS = 20000;
 const HANDS_FREE_IDLE_TIMEOUT_MS = 10000;
 const VOICE_PAUSE_OPTIONS = [
-  { label: 'Short', value: 2500 },
-  { label: 'Normal', value: 3500 },
-  { label: 'Long', value: 5000 },
+  { label: '2.5 sec', value: 2500 },
+  { label: '3.5 sec', value: 3500 },
+  { label: '5 sec', value: 5000 },
 ];
 const CONFIRMATION_PHRASES = ["yes", "confirm", "go ahead", "send it", "do it", "proceed", "correct", "that's right", "yep", "ja"];
 const CANCELLATION_PHRASES = ["no", "cancel", "stop", "don't", "nope", "negative"];
@@ -61,6 +199,7 @@ const DIRECT_ACTION_TOOLS = new Set([
 
 const NAVIGATION_ROUTES: Record<string, string> = {
   dashboard: '/office/dashboard',
+  'ai-assistant': '/office/ai-assistant',
   invoices: '/office/invoices',
   quotes: '/office/quotes',
   clients: '/office/clients',
@@ -82,7 +221,68 @@ interface Message {
   text: string;
   sender: 'user' | 'assistant';
   timestamp: Date;
+  attachments?: AttachmentSummary[];
 }
+
+let messageIdCounter = 0;
+
+function createMessageId(prefix = 'msg') {
+  messageIdCounter += 1;
+  const randomPart =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${messageIdCounter}-${randomPart}`;
+}
+
+function createWelcomeMessage(): Message {
+  return {
+    id: createMessageId('welcome'),
+    text: "Hi! I can help you create quotes, invoices, and emails. What do you need?",
+    sender: 'assistant',
+    timestamp: new Date(),
+  };
+}
+
+type AttachmentSummary = {
+  name: string;
+  type: string;
+  size: number;
+};
+
+type PendingAttachment = AttachmentSummary & {
+  dataUrl: string;
+};
+
+type AiAssistantProps = {
+  mode?: 'floating' | 'page';
+};
+
+type CachedBusinessProfile = {
+  business_name?: string;
+  vat_number?: string;
+  address?: string;
+  email?: string;
+} | null;
+
+type CachedClient = {
+  id?: string;
+  company_name?: string;
+  email?: string;
+  phone?: string;
+};
+
+type CachedAiMemory = {
+  category: string;
+  key: string;
+  value: string;
+};
+
+type AssistantSessionCache = {
+  businessProfile: CachedBusinessProfile;
+  clients: CachedClient[];
+  aiMemory: CachedAiMemory[];
+};
 
 type AssistantLanguagePreference = 'south_african_english' | 'british_english';
 
@@ -90,18 +290,36 @@ type AssistantRuntimeSettings = {
   requireConfirmationBeforeSend: boolean;
   conciseResponses: boolean;
   languagePreference: AssistantLanguagePreference;
-  alwaysIncludeVat: boolean;
-  defaultEmailSignature: string;
+  alwaysIncludeVatInvoice: boolean;
+  alwaysIncludeVatQuote: boolean;
+  personalEmailSignature: string;
+  accountsEmailSignature: string;
   handsFreeMode: boolean;
 };
 
-const DEFAULT_EMAIL_SIGNATURE = 'Kind regards, [owner name] | Touch Teqniques Engineering Services | +27 72 552 2110 | info@touchteq.co.za';
+const DEFAULT_PERSONAL_SIGNATURE = `Kind regards,
+Thabo Matona | Pr Tech Eng (Elec)
+Founder & Principal Engineer
+Touch Teqniques Engineering Services
+T: +27 72 552 2110
+E: sales@touchteq.co.za
+W: www.touchteq.co.za
+SAQCC Fire Reg: DGS15/0130 | B-BBEE Level 1`;
+
+const DEFAULT_ACCOUNTS_SIGNATURE = `Kind regards,
+Touch Teq Accounts
+Touch Teqniques Engineering Services
+T: +27 72 552 2110
+E: accounts@touchteq.co.za
+W: www.touchteq.co.za`;
 const DEFAULT_ASSISTANT_SETTINGS: AssistantRuntimeSettings = {
   requireConfirmationBeforeSend: true,
   conciseResponses: true,
   languagePreference: 'south_african_english',
-  alwaysIncludeVat: true,
-  defaultEmailSignature: DEFAULT_EMAIL_SIGNATURE,
+  alwaysIncludeVatInvoice: true,
+  alwaysIncludeVatQuote: true,
+  personalEmailSignature: DEFAULT_PERSONAL_SIGNATURE,
+  accountsEmailSignature: DEFAULT_ACCOUNTS_SIGNATURE,
   handsFreeMode: true,
 };
 
@@ -114,8 +332,10 @@ function sanitizeAssistantSettings(raw: any): AssistantRuntimeSettings {
     requireConfirmationBeforeSend: aiPreferences?.require_confirmation_before_send !== false,
     conciseResponses: aiPreferences?.concise_responses !== false,
     languagePreference: aiPreferences?.language_preference === 'british_english' ? 'british_english' : 'south_african_english',
-    alwaysIncludeVat: documentSettings?.always_include_vat !== false,
-    defaultEmailSignature: emailSettings?.default_email_signature || DEFAULT_EMAIL_SIGNATURE,
+    alwaysIncludeVatInvoice: documentSettings?.invoice_always_include_vat !== false,
+    alwaysIncludeVatQuote: documentSettings?.quote_always_include_vat !== false,
+    personalEmailSignature: emailSettings?.personal_email_signature || DEFAULT_PERSONAL_SIGNATURE,
+    accountsEmailSignature: emailSettings?.accounts_email_signature || DEFAULT_ACCOUNTS_SIGNATURE,
     handsFreeMode: aiPreferences?.hands_free_mode !== false,
   };
 }
@@ -231,7 +451,79 @@ function formatRand(value: number) {
   }).format(value).replace('ZAR', 'R');
 }
 
-export default function AiAssistant() {
+function getGreetingForHour(hour: number) {
+  if (hour >= 5 && hour < 12) return { text: 'Good morning, Thabo. What are we working on today?', isTwoLine: false };
+  if (hour >= 12 && hour < 17) return { text: 'Good afternoon, Thabo. Ready to get things done?', isTwoLine: false };
+  if (hour >= 17 && hour < 21) return { text: "Good evening, Thabo.<br/>Let's wrap up the day.", isTwoLine: true };
+  return { text: "Working late, Thabo.<br/>I'm here to help.", isTwoLine: true };
+}
+
+function formatAttachmentSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 102.4) / 10} KB`;
+  return `${Math.round(size / 104857.6) / 10} MB`;
+}
+
+function compactMessageSnippet(text: string) {
+  return text.replace(/\s+/g, ' ').trim().slice(0, 140);
+}
+
+function buildCompressedHistory(history: Message[]) {
+  if (history.length <= 10) {
+    return history.map((message) => ({ sender: message.sender, text: message.text }));
+  }
+
+  const recentMessages = history.slice(-4);
+  const olderMessages = history.slice(0, -4);
+  const userTopics = olderMessages
+    .filter((message) => message.sender === 'user')
+    .slice(-3)
+    .map((message) => compactMessageSnippet(message.text));
+  const assistantOutcomes = olderMessages
+    .filter((message) => message.sender === 'assistant')
+    .slice(-2)
+    .map((message) => compactMessageSnippet(message.text));
+  const attachmentMention = olderMessages.some((message) => (message.attachments?.length || 0) > 0)
+    ? 'Files were attached earlier for context.'
+    : '';
+
+  const summaryParts = [
+    userTopics.length > 0 ? `Earlier requests focused on ${userTopics.join('; ')}.` : '',
+    assistantOutcomes.length > 0 ? `Assistant progress so far: ${assistantOutcomes.join('; ')}.` : '',
+    attachmentMention,
+  ].filter(Boolean);
+
+  return [
+    {
+      sender: 'user' as const,
+      text: `Conversation summary: ${summaryParts.slice(0, 3).join(' ')}`,
+    },
+    ...recentMessages.map((message) => ({ sender: message.sender, text: message.text })),
+  ];
+}
+
+function selectRelevantClients(clients: CachedClient[], query: string) {
+  const normalizedQuery = query.toLowerCase();
+  const ranked = clients
+    .map((client) => {
+      const haystack = `${client.company_name || ''} ${client.email || ''} ${client.phone || ''}`.toLowerCase();
+      let score = 0;
+      if (client.company_name && normalizedQuery.includes(client.company_name.toLowerCase())) score += 4;
+      if (client.email && normalizedQuery.includes(client.email.toLowerCase())) score += 3;
+      if (client.phone && normalizedQuery.includes(client.phone.toLowerCase())) score += 2;
+      if (haystack && normalizedQuery.split(/\s+/).some((token) => token.length > 2 && haystack.includes(token))) score += 1;
+      return { client, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((entry) => entry.client);
+
+  return ranked.length > 0 ? ranked : clients.slice(0, 5);
+}
+
+export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
+  const isPageMode = mode === 'page';
   const router = useRouter();
   const toast = useOfficeToast();
   const supabase = useMemo(() => createClient(), []);
@@ -248,19 +540,27 @@ export default function AiAssistant() {
     clearDocumentSession,
   } = useActiveDocument();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isPageMode);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hi! I can help you create quotes, invoices, and emails. What do you need?",
-      sender: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  
+  // Close shortcuts menu when clicking outside
+  const shortcutsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showShortcuts) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shortcutsRef.current && !shortcutsRef.current.contains(event.target as Node)) {
+        setShowShortcuts(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showShortcuts]);
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  const [messages, setMessages] = useState<Message[]>([createWelcomeMessage()]);
   const [isTyping, setIsTyping] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
@@ -277,6 +577,15 @@ export default function AiAssistant() {
   const [assistantSettings, setAssistantSettings] = useState<AssistantRuntimeSettings>(DEFAULT_ASSISTANT_SETTINGS);
   const [voicePauseMs, setVoicePauseMs] = useState(VOICE_PAUSE_MS);
   const [showDriveModeTip, setShowDriveModeTip] = useState(false);
+  const [sessionCache, setSessionCache] = useState<AssistantSessionCache>({
+    businessProfile: null,
+    clients: [],
+    aiMemory: [],
+  });
+  const [sessionCacheStatus, setSessionCacheStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [isStreamingResponse, setIsStreamingResponse] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Persist TTS Setting
   useEffect(() => {
@@ -290,6 +599,9 @@ export default function AiAssistant() {
   const [wasLastInputVoice, setWasLastInputVoice] = useState(false);
   const [isTtsActive, setIsTtsActive] = useState(false);
   const [driveMode, setDriveMode] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceModeStatus, setVoiceModeStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
+  const [voiceModePaused, setVoiceModePaused] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: string; data: any } | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const latestTranscriptRef = useRef('');
@@ -299,6 +611,8 @@ export default function AiAssistant() {
   const manualStopRef = useRef(false);
   const autoActivatedRef = useRef(false);
   const suppressAutoRestartRef = useRef(false);
+  const speechNetworkErrorCountRef = useRef(0);
+  const speechRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const confirmationHandledRef = useRef(false);
   const isOpenRef = useRef(isOpen);
   const isRecordingRef = useRef(isRecording);
@@ -422,7 +736,12 @@ export default function AiAssistant() {
     if (savedHistory) {
       try {
         const history = JSON.parse(savedHistory);
-        setMessages(history.slice(-10).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
+        const restoredMessages = history.slice(-10).map((m: any) => ({
+          ...m,
+          id: createMessageId(m.sender || 'restored'),
+          timestamp: new Date(m.timestamp),
+        }));
+        setMessages(restoredMessages.length > 0 ? restoredMessages : [createWelcomeMessage()]);
       } catch (e) {
         console.error("Failed to restore history", e);
       }
@@ -437,6 +756,33 @@ export default function AiAssistant() {
       window.removeEventListener('touchteq-settings-change', onSettingsChange);
     };
   }, [supabase]);
+
+  const loadSessionCache = useCallback(async () => {
+    if (!isPageMode) return;
+
+    setSessionCacheStatus('loading');
+    try {
+      const response = await fetch('/api/office/assistant-context', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to load assistant context');
+      }
+
+      const payload = await response.json();
+      setSessionCache({
+        businessProfile: payload.businessProfile || null,
+        clients: payload.clients || [],
+        aiMemory: payload.aiMemory || [],
+      });
+      setSessionCacheStatus('ready');
+    } catch (error) {
+      console.error('Failed to load assistant session context', error);
+      setSessionCacheStatus('error');
+    }
+  }, [isPageMode]);
+
+  useEffect(() => {
+    void loadSessionCache();
+  }, [loadSessionCache]);
 
   // Persist History
   useEffect(() => {
@@ -474,6 +820,7 @@ export default function AiAssistant() {
       if (silenceTimeout) clearTimeout(silenceTimeout);
       if (undoTimeout) clearTimeout(undoTimeout);
       if (thinkingTimeout) clearTimeout(thinkingTimeout);
+      if (speechRestartTimeoutRef.current) clearTimeout(speechRestartTimeoutRef.current);
       if (activeAudio) {
         activeAudio.pause();
         if (audioRef.current === activeAudio) {
@@ -482,6 +829,12 @@ export default function AiAssistant() {
       }
     };
   }, []);
+  useEffect(() => {
+    if (isPageMode) {
+      setIsOpen(true);
+    }
+  }, [isPageMode]);
+
   useEffect(() => {
     if (!isOpen) {
       manualStopRef.current = true;
@@ -495,16 +848,13 @@ export default function AiAssistant() {
         audioRef.current = null;
       }
       setIsTtsActive(false);
-      setMessages([{
-        id: '1',
-        text: "Hi! I can help you create quotes, invoices, and emails. What do you need?",
-        sender: 'assistant',
-        timestamp: new Date()
-      }]);
+      setMessages([createWelcomeMessage()]);
       setToolCall(null);
       latestTranscriptRef.current = '';
       committedTranscriptRef.current = '';
       shouldAutoSendTranscriptRef.current = false;
+      setAttachments([]);
+      setShowShortcuts(false);
     }
   }, [isOpen]);
 
@@ -512,7 +862,7 @@ export default function AiAssistant() {
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: createMessageId('assistant'),
         text,
         sender: 'assistant',
         timestamp: new Date(),
@@ -672,6 +1022,11 @@ export default function AiAssistant() {
 
     recognition.onstart = () => {
       manualStopRef.current = false;
+      speechNetworkErrorCountRef.current = 0;
+      if (speechRestartTimeoutRef.current) {
+        clearTimeout(speechRestartTimeoutRef.current);
+        speechRestartTimeoutRef.current = null;
+      }
       setIsRecording(true);
       setHasError(false);
       startTimeout(autoActivatedRef.current ? HANDS_FREE_IDLE_TIMEOUT_MS : VOICE_SESSION_TIMEOUT_MS);
@@ -680,6 +1035,11 @@ export default function AiAssistant() {
     recognition.onresult = (event: any) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+      
+      // Reset idle timer in Voice Mode
+      if (voiceMode && !voiceModePaused) {
+        resetVoiceModeIdleTimer();
+      }
       
       let committedTranscript = committedTranscriptRef.current;
       let interimTranscript = '';
@@ -740,10 +1100,52 @@ export default function AiAssistant() {
         }
         return;
       }
+      if (event.error === 'network') {
+        speechNetworkErrorCountRef.current += 1;
+
+        const canAutoRecover =
+          (autoListenRef.current || driveModeRef.current || autoActivatedRef.current) &&
+          isOpenRef.current &&
+          !manualStopRef.current &&
+          !suppressAutoRestartRef.current;
+
+        if (canAutoRecover) {
+          if (speechRestartTimeoutRef.current) {
+            clearTimeout(speechRestartTimeoutRef.current);
+          }
+
+          const retryDelay = Math.min(1500, 300 * speechNetworkErrorCountRef.current);
+          speechRestartTimeoutRef.current = setTimeout(() => {
+            speechRestartTimeoutRef.current = null;
+            try {
+              startListening('hands-free');
+            } catch {}
+          }, retryDelay);
+
+          if (speechNetworkErrorCountRef.current >= 3) {
+            setHasError(true);
+            setTimeout(() => setHasError(false), 500);
+          }
+        } else {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: createMessageId('assistant'),
+              text: "Voice input lost its network connection. Please try the mic again, or type your request below.",
+              sender: 'assistant',
+              timestamp: new Date(),
+            },
+          ]);
+          setHasError(true);
+          setTimeout(() => setHasError(false), 500);
+        }
+        return;
+      }
+
       console.error('Speech Recognition Error:', event.error);
       if (event.error === 'not-allowed') {
         setMessages(prev => [...prev, {
-          id: Date.now().toString(),
+          id: createMessageId('assistant'),
           text: "Microphone access denied. You can still type below.",
           sender: 'assistant',
           timestamp: new Date()
@@ -840,6 +1242,101 @@ export default function AiAssistant() {
       startListening('manual');
     }
   }, [isRecording, startListening, stopAudioPlayback]);
+
+  const voiceModeIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetVoiceModeIdleTimer = useCallback(() => {
+    if (voiceModeIdleTimeoutRef.current) clearTimeout(voiceModeIdleTimeoutRef.current);
+    voiceModeIdleTimeoutRef.current = setTimeout(() => {
+      if (voiceMode && !voiceModePaused) {
+        setVoiceModePaused(true);
+        setVoiceModeStatus('idle');
+        if (isRecording) {
+          manualStopRef.current = true;
+          suppressAutoRestartRef.current = true;
+          recognitionRef.current?.stop();
+        }
+      }
+    }, 30000);
+  }, [voiceMode, voiceModePaused, isRecording]);
+
+  const toggleVoiceMode = useCallback(() => {
+    if (voiceMode) {
+      // Exit Voice Mode
+      setVoiceMode(false);
+      setVoiceModeStatus('idle');
+      setVoiceModePaused(false);
+      if (voiceModeIdleTimeoutRef.current) clearTimeout(voiceModeIdleTimeoutRef.current);
+      manualStopRef.current = true;
+      suppressAutoRestartRef.current = true;
+      if (isRecording) {
+        recognitionRef.current?.stop();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        if (audioRef.current) {
+          audioRef.current = null;
+        }
+      }
+      setIsTtsActive(false);
+    } else {
+      // Enter Voice Mode
+      setVoiceMode(true);
+      setVoiceModePaused(false);
+      setVoiceModeStatus('listening');
+      setIsOpen(true);
+      // Start listening after a short delay
+      setTimeout(() => {
+        try {
+          startListening('hands-free');
+          resetVoiceModeIdleTimer();
+        } catch {}
+      }, 300);
+    }
+  }, [voiceMode, isRecording, startListening, resetVoiceModeIdleTimer]);
+
+  const resumeVoiceMode = useCallback(() => {
+    setVoiceModePaused(false);
+    setVoiceModeStatus('listening');
+    setTimeout(() => {
+      try {
+        startListening('hands-free');
+        resetVoiceModeIdleTimer();
+      } catch {}
+    }, 300);
+  }, [startListening, resetVoiceModeIdleTimer]);
+
+  // Voice Mode: Auto-restart listening after TTS finishes speaking
+  useEffect(() => {
+    if (!voiceMode || voiceModePaused) return;
+    
+    if (!isTtsActive && !isRecording) {
+      const timer = setTimeout(() => {
+        if (voiceMode && !voiceModePaused && !isRecording) {
+          setVoiceModeStatus('listening');
+          try {
+            startListening('hands-free');
+            resetVoiceModeIdleTimer();
+          } catch {}
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isTtsActive, voiceMode, voiceModePaused, isRecording, startListening, resetVoiceModeIdleTimer]);
+
+  // Voice Mode: Update status based on recording/TTS state
+  useEffect(() => {
+    if (!voiceMode) return;
+    if (isTtsActive) {
+      setVoiceModeStatus('speaking');
+    } else if (isRecording) {
+      setVoiceModeStatus('listening');
+    } else if (isTyping) {
+      setVoiceModeStatus('thinking');
+    } else if (!voiceModePaused) {
+      setVoiceModeStatus('idle');
+    }
+  }, [isTtsActive, isRecording, isTyping, voiceMode, voiceModePaused]);
 
   const resolveDocumentReference = useCallback(async (value: string) => {
     const match = value.match(/\b(?:amend|edit)\s+(invoice|quote|quotation)\s+([a-z0-9-]+)/i);
@@ -955,20 +1452,75 @@ export default function AiAssistant() {
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages.length, isTyping]);
 
+  const readAttachment = useCallback((file: File) => new Promise<PendingAttachment>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result) {
+        reject(new Error(`Could not read ${file.name}.`));
+        return;
+      }
+      resolve({
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        dataUrl: result,
+      });
+    };
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.readAsDataURL(file);
+  }), []);
+
+  const handleAttachmentSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = Array.from(event.target.files || []);
+    if (!fileList.length) {
+      return;
+    }
+
+    const supportedFiles = fileList.filter((file) => file.type.startsWith('image/') || file.type === 'application/pdf');
+    if (supportedFiles.length !== fileList.length) {
+      toast.error({
+        title: 'Unsupported file',
+        message: 'Please attach a PDF or image file.',
+      });
+    }
+
+    try {
+      const nextFiles = await Promise.all(supportedFiles.map(readAttachment));
+      setAttachments((prev) => [...prev, ...nextFiles].slice(0, 4));
+      inputRef.current?.focus();
+    } catch (error: any) {
+      toast.error({
+        title: 'Attachment failed',
+        message: error?.message || 'The file could not be attached.',
+      });
+    } finally {
+      event.target.value = '';
+    }
+  }, [readAttachment, toast]);
+
+  const removeAttachment = useCallback((name: string) => {
+    setAttachments((prev) => prev.filter((file) => file.name !== name));
+  }, []);
+
   const handleSend = useCallback(async (fromVoice = false, textOverride?: string) => {
     const userText = (textOverride ?? inputText).trim();
     if (!userText) return;
     setWasLastInputVoice(fromVoice);
+    const outgoingAttachments = attachments;
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: createMessageId('user'),
       text: userText,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachments: outgoingAttachments.map(({ name, type, size }) => ({ name, type, size })),
     };
 
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
+    setAttachments([]);
+    setShowShortcuts(false);
     latestTranscriptRef.current = '';
     committedTranscriptRef.current = '';
     shouldAutoSendTranscriptRef.current = false;
@@ -990,17 +1542,37 @@ export default function AiAssistant() {
     thinkingRef.current = setTimeout(() => setThinkingTime(true), 10000);
 
     const abortController = new AbortController();
+    const assistantId = createMessageId('assistant');
     const timeoutId = setTimeout(() => {
       abortController.abort(new DOMException('Request timed out', 'AbortError'));
     }, 45000);
 
     try {
+      const requestHistory = buildCompressedHistory(messages);
+      const relevantClients = selectRelevantClients(sessionCache.clients, userText);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantId,
+          text: '',
+          sender: 'assistant',
+          timestamp: new Date(),
+        },
+      ]);
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            history: messages.map(m => ({ sender: m.sender, text: m.text })),
+            history: requestHistory,
             message: userText,
+            attachments: outgoingAttachments.map(({ name, type, dataUrl, size }) => ({
+              name,
+              type,
+              size,
+              dataUrl,
+            })),
             wantsAudio: isTtsEnabled || driveMode || fromVoice,
             activeDocumentSession: {
               documentType: activeDocumentType,
@@ -1012,7 +1584,13 @@ export default function AiAssistant() {
               requireConfirmationBeforeSend: assistantSettings.requireConfirmationBeforeSend,
               conciseResponses: assistantSettings.conciseResponses,
               languagePreference: assistantSettings.languagePreference,
-              alwaysIncludeVat: assistantSettings.alwaysIncludeVat,
+              alwaysIncludeVatInvoice: assistantSettings.alwaysIncludeVatInvoice,
+              alwaysIncludeVatQuote: assistantSettings.alwaysIncludeVatQuote,
+            },
+            sessionContext: {
+              businessProfile: sessionCache.businessProfile,
+              clients: relevantClients,
+              aiMemory: sessionCache.aiMemory,
             },
         }),
         signal: abortController.signal
@@ -1046,26 +1624,82 @@ export default function AiAssistant() {
         
         throw new Error(`API rejected request with status ${response.status}`);
       }
-      const payload = await response.json();
-      const chunk = payload;
 
-      const assistantText = chunk.text || "";
-      const audioBase64 = chunk.audio || chunk.audioBase64 || "";
-      const audioMimeType = chunk.audioMimeType || chunk.mimeType || "audio/mp3";
-      const toolCall = chunk.toolCall || null;
+      if (!response.body) {
+        throw new Error('Streaming response body was empty.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalPayload: any = null;
+      let accumulatedText = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          const event = JSON.parse(line);
+          if (event.type === 'start') {
+            setIsStreamingResponse(true);
+          }
+
+          if (event.type === 'delta') {
+            accumulatedText += event.text || '';
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === assistantId
+                  ? { ...message, text: accumulatedText }
+                  : message
+              )
+            );
+          }
+
+          if (event.type === 'done') {
+            finalPayload = event;
+          }
+
+          if (event.type === 'error') {
+            throw new Error(event.error || 'Streaming failed');
+          }
+        }
+      }
+
+      if (!finalPayload) {
+        throw new Error('No final payload received from assistant stream.');
+      }
+
+      const assistantText = finalPayload.text || accumulatedText;
+      const audioBase64 = finalPayload.audio || finalPayload.audioBase64 || '';
+      const audioMimeType = finalPayload.audioMimeType || finalPayload.mimeType || 'audio/mp3';
+      const toolCall = finalPayload.toolCall || null;
 
       setIsTyping(false);
+      setIsStreamingResponse(false);
       if (thinkingRef.current) clearTimeout(thinkingRef.current);
       setThinkingTime(false);
-      
-      const assistantId = Date.now().toString();
-      
-      setMessages(prev => [...prev, {
-        id: assistantId,
-        text: assistantText,
-        sender: 'assistant',
-        timestamp: new Date()
-      }]);
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                text:
+                  assistantText ||
+                  (toolCall
+                    ? `I triggered ${toolCall.name}, but I didn't receive a readable summary back.`
+                    : "I finished processing that, but I didn't receive a readable response back."),
+              }
+            : message
+        )
+      );
 
       const resumeListening = () => {
         if (autoListenRef.current && isOpenRef.current && !manualStopRef.current) {
@@ -1108,7 +1742,7 @@ export default function AiAssistant() {
         // In Drive Mode, add a voice prompt message
         if (driveMode && wasLastInputVoice) {
           const promptMsg: Message = {
-            id: (Date.now() + 1).toString(),
+            id: createMessageId('assistant'),
             text: "Say 'Yes' to proceed or 'No' to cancel.",
             sender: 'assistant',
             timestamp: new Date()
@@ -1122,19 +1756,22 @@ export default function AiAssistant() {
     } catch (err: any) {
       if (err?.name === 'AbortError') {
         setIsTyping(false);
+        setIsStreamingResponse(false);
         if (thinkingRef.current) clearTimeout(thinkingRef.current);
         setThinkingTime(false);
         return;
       }
       console.error(err);
       setIsTyping(false);
+      setIsStreamingResponse(false);
+      setMessages((prev) => prev.filter((message) => !(message.id === assistantId && !message.text.trim())));
       if (thinkingRef.current) clearTimeout(thinkingRef.current);
       setThinkingTime(false);
       setFailCount(prev => prev + 1);
       
       if (err.name !== 'AbortError') {
         setMessages(prev => [...prev, {
-          id: 'error',
+          id: createMessageId('error'),
           text: failCount >= 1 
             ? "The AI seems to be having trouble. Check your internet connection or try again in a moment."
             : "Something went wrong on my end. Please try again.",
@@ -1143,10 +1780,11 @@ export default function AiAssistant() {
         }]);
       }
     } finally {
+      clearTimeout(timeoutId);
       if (thinkingRef.current) clearTimeout(thinkingRef.current);
       setThinkingTime(false);
     }
-  }, [activeDocumentData, activeDocumentId, activeDocumentIsOpen, activeDocumentType, assistantSettings, clearDocumentSession, driveMode, failCount, handleLocalAssistantIntent, inputText, isTtsEnabled, messages, playAudio, router, startListening, supabase, toast, wasLastInputVoice]);
+  }, [activeDocumentData, activeDocumentId, activeDocumentIsOpen, activeDocumentType, assistantSettings, attachments, driveMode, failCount, handleLocalAssistantIntent, inputText, isTtsEnabled, messages, playAudio, sessionCache, startListening, toast, wasLastInputVoice]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -1154,19 +1792,22 @@ export default function AiAssistant() {
   };
 
   const clearChat = () => {
-    if (confirm("Clear conversation history?")) {
-      setMessages([{
-        id: '1',
-        text: "Hi! I can help you create quotes, invoices, and emails. What do you need?",
-        sender: 'assistant',
-        timestamp: new Date()
-      }]);
-      setToolCall(null);
-      latestTranscriptRef.current = '';
-      committedTranscriptRef.current = '';
-      shouldAutoSendTranscriptRef.current = false;
-      sessionStorage.removeItem('touchteq_ai_history');
+    if (!isPageMode && !confirm("Clear conversation history?")) {
+      return;
     }
+
+    setMessages([createWelcomeMessage()]);
+    setToolCall(null);
+    setAttachments([]);
+    setInputText('');
+    latestTranscriptRef.current = '';
+    committedTranscriptRef.current = '';
+    shouldAutoSendTranscriptRef.current = false;
+    sessionStorage.removeItem('touchteq_ai_history');
+    if (isPageMode) {
+      void loadSessionCache();
+    }
+    window.setTimeout(() => inputRef.current?.focus(), 20);
   };
 
   const handleToolClick = useCallback(async () => {
@@ -1203,7 +1844,11 @@ export default function AiAssistant() {
       args.clientPhone = args.clientPhone.replace(/[a-zA-Z]/g, '').trim();
     }
     if (toolToUse.name === 'composeEmail') {
-      const signature = assistantSettingsRef.current.defaultEmailSignature.trim();
+      const settings = assistantSettingsRef.current;
+      const senderEmail = String(args.senderEmail || '').toLowerCase();
+      const signature = senderEmail.includes('accounts') 
+        ? settings.accountsEmailSignature.trim()
+        : settings.personalEmailSignature.trim();
       const existingBody = String(args.body || '').trim();
       if (signature && !existingBody.includes(signature)) {
         args.body = existingBody ? `${existingBody}\n\n${signature}` : signature;
@@ -1212,8 +1857,9 @@ export default function AiAssistant() {
     
     // Server-side tools — these execute in the API route and return text.
     // If a tool call somehow reaches the client, just ignore it.
-    const SERVER_SIDE_TOOL_NAMES = ['logTrip', 'queryBusinessData', 'createClient', 'logExpense', 'recordPayment', 'draftQuote', 'draftInvoice'];
+    const SERVER_SIDE_TOOL_NAMES = ['logTrip', 'queryBusinessData', 'createClient', 'logExpense', 'recordPayment', 'draftQuote', 'draftInvoice', 'logFuelPurchase'];
     if (SERVER_SIDE_TOOL_NAMES.includes(toolToUse.name)) {
+      appendAssistantMessage(`I started ${toolToUse.name}, but the server did not return a client action for me to complete here.`);
       setToolCall(null);
       setPendingAction(null);
       return;
@@ -1284,41 +1930,6 @@ export default function AiAssistant() {
       return;
     }
 
-    if (toolToUse.name === 'logFuelPurchase') {
-      try {
-        const payload = {
-          date: args.date || new Date().toISOString().split('T')[0],
-          supplier_name: args.supplierName,
-          fuel_type: args.fuelType || 'Diesel',
-          litres: Number(args.litres || 0),
-          price_per_litre: Number(args.pricePerLitre || 0),
-          total_amount: Number(args.totalAmount || 0),
-          odometer: Number(args.odometer || 0),
-          payment_method: args.paymentMethod || 'Card',
-          vehicle_id: ''
-        };
-        
-        // Find vehicle ID if possible
-        if (args.vehicleName) {
-           const { data: vData } = await supabase.from('vehicles').select('id').ilike('vehicle_description', `%${args.vehicleName}%`).eq('is_active', true).limit(1).maybeSingle();
-           if (vData) payload.vehicle_id = vData.id;
-        }
-
-        const res = await createFuelLog(payload);
-        if (res.success) {
-          toast.success({ title: "Fuel Log Saved", message: `Successfully recorded fill-up at ${args.supplierName}` });
-          appendAssistantMessage(`All set! I've logged that fuel purchase of ${args.totalAmount} ZAR at ${args.supplierName}. Anything else?`);
-        } else {
-          toast.error({ title: "Error Saving Log", message: "Could not save the fuel log." });
-        }
-      } catch (err: any) {
-        toast.error({ title: "Failed to Save", message: err.message });
-      }
-      setPendingAction(null);
-      setToolCall(null);
-      return;
-    }
-
     setAiDraft(type, args);
     router.push(path);
     
@@ -1332,7 +1943,7 @@ export default function AiAssistant() {
     
     // Start 10s undo window (UI only for now as requested)
     clearTimeout(undoRef.current!);
-  }, [autoListen, isOpen, isRecording, pendingAction, router, setAiDraft, toast, toggleRecording, toolCall, wasLastInputVoice]);
+  }, [appendAssistantMessage, autoListen, isOpen, isRecording, pendingAction, router, setAiDraft, toast, toggleRecording, toolCall, wasLastInputVoice]);
 
   const handleUndo = () => {
     setActionHistory([]);
@@ -1355,7 +1966,7 @@ export default function AiAssistant() {
       const type = args.documentType || 'Email';
       
       setMessages(prev => [...prev, {
-        id: Date.now().toString(),
+        id: createMessageId('assistant'),
         text: `${type} sent successfully. ${ref !== 'N/A' ? `Reference: ${ref}` : ''}`,
         sender: 'assistant',
         timestamp: new Date()
@@ -1602,8 +2213,595 @@ export default function AiAssistant() {
     }
   };
 
+const triggerShortcut = (command: string, starter?: string) => {
+    const text = starter || SHORTCUT_STARTERS[command] || command;
+    setInputText(text);
+    setShowShortcuts(false);
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+      // Place cursor at the end of the text
+      if (inputRef.current) {
+        inputRef.current.setSelectionRange(text.length, text.length);
+      }
+    }, 10);
+  };
+
+  const hasConversationStarted = messages.some((message) => message.sender === 'user');
+  const showHero = isPageMode && !hasConversationStarted;
+  const currentGreeting = getGreetingForHour(new Date().getHours());
+  const orbIsProcessing = isTyping || thinkingTime || isStreamingResponse;
+  const orbIsActive = isRecording || isTranscribing;
+
+  const toggleDriveMode = () => {
+    if (isTtsActive) {
+      stopAudioPlayback();
+    }
+    const newDriveMode = !driveMode;
+    setDriveMode(newDriveMode);
+    if (newDriveMode) {
+      setAutoListen(true);
+      setIsTtsEnabled(true);
+      window.setTimeout(() => {
+        if (!isRecordingRef.current && isOpenRef.current) {
+          startListening('hands-free');
+        }
+      }, 300);
+    }
+  };
+
+  const renderOrb = (size: 'large' | 'small') => {
+    const dimensions = size === 'large' ? 'h-36 w-36 md:h-44 md:w-44' : 'h-14 w-14';
+
+    return (
+      <motion.div
+        animate={
+          orbIsActive
+            ? { scale: [1, 1.08, 1], opacity: [0.95, 1, 0.95] }
+            : orbIsProcessing
+              ? { scale: [1, 1.04, 1], opacity: [0.95, 1, 0.95] }
+              : { scale: [1, 1.02, 1], opacity: [0.92, 1, 0.92] }
+        }
+        transition={{
+          duration: orbIsActive ? 1.1 : orbIsProcessing ? 1.8 : 3.6,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        className={`relative ${dimensions}`}
+      >
+        <div className="absolute inset-[-30%] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.38),rgba(249,115,22,0.08)_45%,transparent_72%)] blur-2xl" />
+        {orbIsActive && <div className="absolute inset-[-18%] rounded-full border border-orange-300/40 animate-ping" />}
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,243,228,0.9),rgba(251,146,60,0.92)_24%,rgba(234,88,12,0.92)_55%,rgba(124,45,18,0.95)_100%)] shadow-[0_0_40px_rgba(249,115,22,0.35),inset_0_6px_24px_rgba(255,255,255,0.3),inset_0_-20px_30px_rgba(124,45,18,0.75)]" />
+        <div className="absolute inset-[16%] rounded-full border border-white/15 bg-white/5 backdrop-blur-sm" />
+        <div className="absolute left-[24%] top-[20%] h-[22%] w-[22%] rounded-full bg-white/60 blur-md" />
+      </motion.div>
+    );
+  };
+
+  const renderToolActions = () =>
+    toolCall ? (
+      <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="flex justify-start">
+        {toolCall.name === 'stageEmailForConfirmation' ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={confirmPendingAction}
+              disabled={isSendingEmail}
+              className="group flex items-center gap-3 rounded-xl border border-orange-400 bg-orange-500 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-2xl transition-all disabled:opacity-50"
+            >
+              {isSendingEmail ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              Confirm Send
+            </button>
+            <button
+              onClick={cancelPendingConfirmation}
+              disabled={isSendingEmail}
+              className="group flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 transition-all disabled:opacity-50 hover:bg-slate-700 hover:text-white"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : driveMode ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={confirmPendingAction}
+                className="group flex items-center gap-3 rounded-xl border border-orange-400 bg-orange-500 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-2xl transition-all"
+              >
+                <Check size={14} />
+                {getToolLabel(toolCall.name)} (Tap to Confirm)
+              </button>
+              <button
+                onClick={cancelPendingConfirmation}
+                className="group flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 transition-all hover:bg-slate-700 hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+              Or say &quot;Yes&quot; to proceed, &quot;No&quot; to cancel
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={confirmPendingAction}
+              className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-2xl backdrop-blur-md transition-all hover:border-orange-400 hover:bg-orange-500"
+            >
+              {getToolLabel(toolCall.name)}
+            </button>
+            <button
+              onClick={cancelPendingConfirmation}
+              className="group flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 transition-all hover:bg-slate-700 hover:text-white"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </motion.div>
+    ) : null;
+
+  const renderMessageList = (className: string) => (
+    <div
+      ref={scrollRef}
+      onScroll={() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        isNearBottomRef.current = distanceFromBottom < 80;
+      }}
+      className={className}
+    >
+      {isTtsActive && (
+        <div className="sticky top-0 z-10 flex justify-end pb-2">
+          <button
+            onClick={stopAudioPlayback}
+            className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-[#0B0F19]/95 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-orange-300 shadow-xl backdrop-blur-md hover:bg-orange-500/15"
+          >
+            <Volume2 size={12} />
+            Stop Voice Reply
+          </button>
+        </div>
+      )}
+
+      {messages.map((msg) => {
+        const actionStatus = msg.sender === 'assistant' ? extractActionStatus(msg.text) : null;
+        const cleanText = actionStatus ? cleanActionText(msg.text) : msg.text;
+
+        return (
+          <motion.div
+            key={msg.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} group`}
+          >
+            <div className="flex max-w-[88%] flex-col gap-2">
+              <div
+                className={`relative rounded-2xl px-4 py-3 text-sm font-medium leading-relaxed shadow-lg ${
+                  msg.sender === 'user'
+                    ? 'rounded-br-none bg-orange-500 text-white'
+                    : 'rounded-bl-none border border-slate-800 bg-[#151B28] text-white'
+                }`}
+                aria-live={msg.sender === 'assistant' ? 'polite' : undefined}
+              >
+                <p>{cleanText || msg.text}</p>
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {msg.attachments.map((file) => (
+                      <span
+                        key={`${msg.id}-${file.name}`}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${
+                          msg.sender === 'user'
+                            ? 'border-white/20 bg-white/10 text-orange-50'
+                            : 'border-orange-500/20 bg-orange-500/10 text-orange-300'
+                        }`}
+                      >
+                        <Paperclip size={10} />
+                        {file.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {actionStatus && <ActionStatusBadge actionStatus={actionStatus} />}
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
+
+      {isTyping && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-2">
+          <div className="flex w-fit gap-1 rounded-2xl rounded-bl-none border border-slate-800 bg-[#0B0F19] px-4 py-3">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-orange-500 [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-orange-500 [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-orange-500" />
+          </div>
+          {thinkingTime && (
+            <span className="ml-2 animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Still thinking...</span>
+          )}
+        </motion.div>
+      )}
+
+      {renderToolActions()}
+    </div>
+  );
+
+  const renderInputArea = () => (
+    <div className="relative mx-auto w-full max-w-4xl">
+<AnimatePresence>
+        {showShortcuts && (
+          <motion.div
+            ref={shortcutsRef}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            className="-top-[19rem] md:-top-[16.5rem] absolute left-0 right-0 z-20 rounded-3xl border border-white/10 bg-[#06080f]/95 p-3 shadow-2xl backdrop-blur-xl"
+          >
+            <div className="grid gap-1">
+              {SHORTCUT_ITEMS.map((item) => (
+<button
+                  key={item.command}
+                  type="button"
+                  onClick={() => triggerShortcut(item.command, item.starter)}
+                  className="flex items-center justify-between rounded-xl px-4 py-3 text-left transition-all hover:bg-white/5"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white">
+                    <item.icon size={18} className="text-slate-400 hover:text-white" />
+                    {item.label}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 ml-1">{item.command}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="relative rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,26,38,0.94),rgba(12,16,24,0.96))] px-5 py-5 shadow-[0_24px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl md:px-6 md:py-6">
+        {/* Animated border - appears on left, disappears on right */}
+        <div className="absolute inset-0 rounded-[28px] border-2 border-transparent pointer-events-none [-inset:1px] [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]">
+          <motion.div
+            className="absolute aspect-square bg-gradient-to-r from-transparent via-orange-500 to-transparent pointer-events-none"
+            style={{
+              width: 150,
+              offsetPath: `rect(0 auto auto 0 round 28px)`,
+            }}
+            animate={{
+              offsetDistance: ['0%', '100%'],
+              opacity: [0, 1, 1, 0, 0],
+            }}
+            transition={{
+              repeat: Number.POSITIVE_INFINITY,
+              duration: 6.5,
+              ease: 'linear',
+              times: [0, 0.02, 0.25, 0.45, 1],
+            }}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* Text area fills full width */}
+          <div>
+            {attachments.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {attachments.map((file) => (
+                  <button
+                    key={file.name}
+                    type="button"
+                    onClick={() => removeAttachment(file.name)}
+                    className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-orange-200"
+                  >
+                    <Paperclip size={10} />
+                    {file.name}
+                    <span className="text-orange-300/70">{formatAttachmentSize(file.size)}</span>
+                    <X size={10} />
+                  </button>
+                ))}
+              </div>
+            )}
+            <textarea
+              ref={inputRef}
+              rows={2}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type a command, ask a question, or use your voice"
+              aria-label="Message Input"
+              className="min-h-[104px] w-full resize-none rounded-2xl bg-transparent px-4 py-3 text-base text-white outline-none transition-all placeholder:text-base placeholder:text-slate-500"
+            />
+          </div>
+
+          {/* Bottom row: Attach + Menu on left, Voice pause + mic + send on right */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:border-orange-400/60 hover:bg-orange-500/10 hover:text-white"
+                aria-label="Attach a file"
+              >
+                <Paperclip size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowShortcuts((prev) => !prev)}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all ${
+                  showShortcuts
+                    ? 'border-orange-400/60 bg-orange-500/12 text-orange-200'
+                    : 'border-white/10 bg-white/5 text-slate-300 hover:border-orange-400/60 hover:bg-orange-500/10 hover:text-white'
+                }`}
+                aria-label="Open shortcuts"
+              >
+                <Command size={16} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500 mr-1">Voice pause</span>
+              {VOICE_PAUSE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setVoicePauseMs(option.value)}
+                  className={`rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.15em] transition-all ${
+                    voicePauseMs === option.value
+                      ? 'bg-orange-500/15 text-orange-300'
+                      : 'bg-transparent text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+              <motion.button
+                onClick={toggleRecording}
+                aria-label={isRecording ? 'Stop Recording' : 'Start Voice Input'}
+                animate={hasError ? { x: [0, -4, 4, -4, 4, 0] } : {}}
+                className={`relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl transition-all ${
+                  isRecording
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/40'
+                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-orange-400/60 hover:bg-orange-500/10 hover:text-white'
+                }`}
+                title={isRecording ? 'Stop Recording' : 'Voice Input'}
+              >
+                {isRecording && (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="absolute inset-0 rounded-full bg-white/30"
+                  />
+                )}
+                {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+              </motion.button>
+              <button
+                onClick={() => handleSend(false)}
+                aria-label="Send Message"
+                disabled={!inputText.trim()}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <SendHorizonal size={16} className="rotate-[-60deg]" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf,image/*"
+        multiple
+        className="hidden"
+        onChange={handleAttachmentSelect}
+      />
+    </div>
+  );
+
+  if (isPageMode) {
+    return (
+      <div className="-m-6 min-h-[calc(100vh-4rem)] overflow-hidden bg-[#0B0F19] lg:-m-8">
+        {/* Voice Mode Overlay */}
+        <AnimatePresence>
+          {voiceMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-[#0B0F19] flex flex-col items-center justify-center"
+              onClick={voiceModePaused ? resumeVoiceMode : undefined}
+            >
+              {/* Background glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(249,115,22,0.12),transparent_50%)]" />
+              
+              {/* Orb */}
+              <div className="relative z-10 flex flex-col items-center">
+                <motion.div
+                  animate={
+                    voiceModeStatus === 'listening'
+                      ? { scale: [1, 1.05, 1], boxShadow: ['0 0 30px rgba(249,115,22,0.3)', '0 0 50px rgba(249,115,22,0.5)', '0 0 30px rgba(249,115,22,0.3)'] }
+                      : voiceModeStatus === 'speaking'
+                      ? { scale: [1, 1.08, 1] }
+                      : voiceModeStatus === 'thinking'
+                      ? { scale: [1, 1.03, 1], rotate: [0, 5, -5, 0] }
+                      : { scale: 1, opacity: voiceModePaused ? 0.4 : 0.6 }
+                  }
+                  transition={{ repeat: Infinity, duration: voiceModeStatus === 'thinking' ? 2 : 1.5, ease: 'easeInOut' }}
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-2xl shadow-orange-500/30"
+                >
+                  <Sparkles size={48} className="text-white md:w-14 md:h-14" />
+                </motion.div>
+
+                {/* Status text */}
+                <motion.p
+                  key={voiceModeStatus + (voiceModePaused ? '-paused' : '')}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 text-sm font-black uppercase tracking-[0.25em] text-slate-400"
+                >
+                  {voiceModePaused ? 'Tap anywhere to resume' : voiceModeStatus === 'listening' ? 'Listening...' : voiceModeStatus === 'thinking' ? 'Thinking...' : voiceModeStatus === 'speaking' ? 'Speaking...' : 'Idle'}
+                </motion.p>
+
+                {/* Paused hint */}
+                {voiceModePaused && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600"
+                  >
+                    Paused after 30s of inactivity
+                  </motion.p>
+                )}
+              </div>
+
+              {/* End Voice Mode button */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleVoiceMode();
+                }}
+                className="absolute bottom-12 md:bottom-16 flex items-center gap-3 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/30 px-8 py-4 rounded-2xl transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+              >
+                <MicOff size={18} />
+                End Voice Mode
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden px-6 py-8 md:px-10 md:py-10">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(249,115,22,0.16),transparent_35%),radial-gradient(circle_at_50%_55%,rgba(249,115,22,0.08),transparent_45%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.18),transparent_60%)] blur-3xl" />
+
+          <div className="relative z-10 flex min-h-[calc(100vh-6rem)] flex-col">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              {!showHero ? (
+                <div className="flex items-center gap-4">
+                  {renderOrb('small')}
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-300">Touch Teq AI Assistant</p>
+                    <p className="text-sm text-slate-400">Powered by Gemini with document and voice context</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Touch Teq AI Assistant</div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={toggleVoiceMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${voiceMode ? 'border-orange-400 bg-orange-500/20 text-orange-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Voice Mode</button>
+                <button type="button" onClick={toggleDriveMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${driveMode ? 'border-green-500/30 bg-green-500/12 text-green-300' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Car Mode</button>
+                <button type="button" onClick={toggleAutoListen} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${autoListen ? 'border-sky-500/30 bg-sky-500/12 text-sky-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Hands-Free</button>
+                <button type="button" onClick={() => void loadSessionCache()} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300 transition-all hover:text-white">
+                  {sessionCacheStatus === 'loading' ? 'Refreshing...' : 'Refresh Context'}
+                </button>
+                <button type="button" onClick={() => router.push('/office/settings?tab=assistant')} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300 transition-all hover:text-white">AI Settings</button>
+                <button type="button" onClick={clearChat} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-all hover:border-orange-400/40 hover:bg-orange-500/10">New Conversation</button>
+              </div>
+            </div>
+
+            <div className={`flex flex-1 flex-col ${showHero ? 'justify-center' : 'gap-6'}`}>
+              <AnimatePresence mode="wait">
+                {showHero ? (
+                  <motion.div key="hero" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+                    <AiMorningBriefing />
+                    <div className="mb-8">{renderOrb('large')}</div>
+                    <h2 className={`max-w-3xl font-semibold tracking-tight text-white leading-tight ${currentGreeting.isTwoLine ? 'text-[40px] md:text-[48px]' : 'text-[40px] md:text-[43px]'}`}>
+                      <span dangerouslySetInnerHTML={{ __html: currentGreeting.text }} />
+                    </h2>
+                    <p className="mt-4 text-base text-slate-400 md:text-lg">Type a command, ask a question, or use your voice</p>
+                    <div className="mt-10 w-full">{renderInputArea()}</div>
+<div className="mt-10 grid w-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {QUICK_ACTIONS.map((action) => (
+                        <button key={action.command} type="button" onClick={() => triggerShortcut(action.command, action.starter)} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-orange-400/40 hover:bg-white/[0.05]">
+                          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/12 text-orange-300">
+                            <action.Icon size={20} />
+                          </div>
+                          <h3 className="text-base font-semibold text-white">{action.title}</h3>
+                          <p className="mt-2 text-sm leading-relaxed text-slate-400">{action.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="conversation" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex min-h-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(12,16,24,0.72),rgba(12,16,24,0.46))]">
+                      {renderMessageList('h-full overflow-y-auto space-y-4 p-5 md:p-6')}
+                    </div>
+                    <div className="mt-6">{renderInputArea()}</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+      {/* Voice Mode Overlay */}
+      <AnimatePresence>
+        {voiceMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-[#0B0F19] flex flex-col items-center justify-center"
+            onClick={voiceModePaused ? resumeVoiceMode : undefined}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(249,115,22,0.12),transparent_50%)]" />
+            
+            <div className="relative z-10 flex flex-col items-center">
+              <motion.div
+                animate={
+                  voiceModeStatus === 'listening'
+                    ? { scale: [1, 1.05, 1], boxShadow: ['0 0 30px rgba(249,115,22,0.3)', '0 0 50px rgba(249,115,22,0.5)', '0 0 30px rgba(249,115,22,0.3)'] }
+                    : voiceModeStatus === 'speaking'
+                    ? { scale: [1, 1.08, 1] }
+                    : voiceModeStatus === 'thinking'
+                    ? { scale: [1, 1.03, 1], rotate: [0, 5, -5, 0] }
+                    : { scale: 1, opacity: voiceModePaused ? 0.4 : 0.6 }
+                }
+                transition={{ repeat: Infinity, duration: voiceModeStatus === 'thinking' ? 2 : 1.5, ease: 'easeInOut' }}
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-2xl shadow-orange-500/30"
+              >
+                <Sparkles size={48} className="text-white md:w-14 md:h-14" />
+              </motion.div>
+
+              <motion.p
+                key={voiceModeStatus + (voiceModePaused ? '-paused' : '')}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 text-sm font-black uppercase tracking-[0.25em] text-slate-400"
+              >
+                {voiceModePaused ? 'Tap anywhere to resume' : voiceModeStatus === 'listening' ? 'Listening...' : voiceModeStatus === 'thinking' ? 'Thinking...' : voiceModeStatus === 'speaking' ? 'Speaking...' : 'Idle'}
+              </motion.p>
+
+              {voiceModePaused && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600"
+                >
+                  Paused after 30s of inactivity
+                </motion.p>
+              )}
+            </div>
+
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleVoiceMode();
+              }}
+              className="absolute bottom-12 md:bottom-16 flex items-center gap-3 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-500/30 px-8 py-4 rounded-2xl transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+            >
+              <MicOff size={18} />
+              End Voice Mode
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Chat Panel */}
       <AnimatePresence>
         {isOpen && (
@@ -1628,6 +2826,15 @@ export default function AiAssistant() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* Voice Mode Toggle */}
+                <button 
+                  onClick={toggleVoiceMode}
+                  className={`p-2 rounded-lg transition-all ${voiceMode ? 'text-orange-400 bg-orange-500/10' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+                  aria-label="Toggle Voice Mode"
+                  title={voiceMode ? "Voice Mode ON" : "Pure Voice Mode - Distraction-free"}
+                >
+                  <Radio size={18} />
+                </button>
                 {/* Drive Mode Toggle */}
                 <button 
                   onClick={() => {
@@ -1960,26 +3167,6 @@ export default function AiAssistant() {
 
             {/* Input Area */}
             <div className="p-4 bg-[#0B0F19] border-t border-slate-800 relative safe-bottom">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-500">Voice pause</span>
-                {VOICE_PAUSE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setVoicePauseMs(option.value)}
-                    className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
-                      voicePauseMs === option.value
-                        ? 'border-orange-400 bg-orange-500/15 text-orange-300'
-                        : 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500 hover:text-white'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
-                  Current pause {Math.round(voicePauseMs / 100) / 10}s
-                </span>
-              </div>
-
               <AnimatePresence>
                 {(isRecording || isTranscribing || isTtsActive) && (
                   <motion.div 
@@ -1996,61 +3183,82 @@ export default function AiAssistant() {
                 )}
               </AnimatePresence>
 
-              <div className="flex items-center gap-2">
-                {isSupported ? (
-                  <motion.button 
-                    onClick={toggleRecording}
-                    aria-label={isRecording ? "Stop Recording" : "Start Voice Input"}
-                    animate={hasError ? { x: [0, -4, 4, -4, 4, 0] } : {}}
-                    className={`p-4 md:p-3 rounded-xl transition-all shadow-lg w-16 h-16 md:w-12 md:h-12 flex items-center justify-center overflow-hidden relative ${
-                      isRecording 
-                        ? 'bg-orange-500 text-white shadow-orange-500/40' 
-                        : 'bg-slate-800 text-slate-400 hover:text-white'
-                    }`}
-                    title={isRecording ? "Stop Recording" : "Voice Input"}
-                  >
-                    {isRecording && (
-                      <motion.div 
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1.5, opacity: 0 }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                        className="absolute inset-0 bg-white/30 rounded-full"
-                      />
-                    )}
-                    {isRecording ? <MicOff size={28} className="md:w-5 md:h-5" /> : <Mic size={28} className="md:w-5 md:h-5" />}
-                  </motion.button>
-                ) : (
-                  <div 
-                    className="w-16 h-16 md:w-12 md:h-12 bg-slate-900 border border-slate-800 text-slate-700 rounded-xl cursor-not-allowed group relative flex items-center justify-center"
-                    aria-label="Voice input not supported"
-                  >
-                    <MicOff size={28} className="md:w-5 md:h-5" />
-                    <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black text-[9px] uppercase font-bold tracking-widest text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                      Voice input not supported on this browser. Please use Chrome.
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex-1 relative">
-                  <textarea 
-                    rows={1}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Type a message..."
-                    aria-label="Message Input"
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-orange-500 transition-all rounded-xl px-4 py-3 text-[16px] md:text-sm text-white placeholder:text-slate-600 outline-none resize-none max-h-32"
-                  />
-                </div>
+              <div className="flex flex-col gap-3">
+                {/* Text area fills full width */}
+                <textarea 
+                  rows={1}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type a message..."
+                  aria-label="Message Input"
+                  className="w-full bg-transparent transition-all rounded-xl px-4 py-3 text-[16px] md:text-sm text-white placeholder:text-slate-600 outline-none resize-none max-h-32"
+                />
 
-                <button 
-                  onClick={() => handleSend(false)}
-                  aria-label="Send Message"
-                  disabled={!inputText.trim()}
-                  className="w-14 h-14 md:w-12 md:h-12 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center shrink-0"
-                >
-                  <Send size={24} className="md:w-5 md:h-5 ml-1" />
-                </button>
+                {/* Bottom row: Voice pause + buttons + mic + send */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500 mr-1">Voice pause</span>
+                    {VOICE_PAUSE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setVoicePauseMs(option.value)}
+                        className={`rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.15em] transition-all ${
+                          voicePauseMs === option.value
+                            ? 'bg-orange-500/15 text-orange-300'
+                            : 'bg-transparent text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isSupported ? (
+                      <motion.button 
+                        onClick={toggleRecording}
+                        aria-label={isRecording ? "Stop Recording" : "Start Voice Input"}
+                        animate={hasError ? { x: [0, -4, 4, -4, 4, 0] } : {}}
+                        className={`p-4 md:p-3 rounded-xl transition-all shadow-lg w-16 h-16 md:w-12 md:h-12 flex items-center justify-center overflow-hidden relative ${
+                          isRecording 
+                            ? 'bg-orange-500 text-white shadow-orange-500/40' 
+                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                        title={isRecording ? "Stop Recording" : "Voice Input"}
+                      >
+                        {isRecording && (
+                          <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1.5, opacity: 0 }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            className="absolute inset-0 bg-white/30 rounded-full"
+                          />
+                        )}
+                        {isRecording ? <MicOff size={28} className="md:w-5 md:h-5" /> : <Mic size={28} className="md:w-5 md:h-5" />}
+                      </motion.button>
+                    ) : (
+                      <div 
+                        className="w-16 h-16 md:w-12 md:h-12 bg-slate-900 border border-slate-800 text-slate-700 rounded-xl cursor-not-allowed group relative flex items-center justify-center"
+                        aria-label="Voice input not supported"
+                      >
+                        <MicOff size={28} className="md:w-5 md:h-5" />
+                        <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-black text-[9px] uppercase font-bold tracking-widest text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Voice input not supported on this browser. Please use Chrome.
+                        </div>
+                      </div>
+                    )}
+
+                     <button 
+                       onClick={() => handleSend(false)}
+                       aria-label="Send Message"
+                       disabled={!inputText.trim()}
+                       className="w-14 h-14 md:w-12 md:h-12 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center shrink-0"
+                     >
+                       <Send size={28} className="md:w-5 md:h-5 ml-1 rotate-[-60deg]" />
+                     </button>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

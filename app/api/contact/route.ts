@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendTransactionalEmail } from '@/lib/brevo/client';
 import { escapeHtml } from '@/lib/office/outbound-email';
+import { createClient } from '@/lib/supabase/server';
 
 function renderLine(label: string, value: string) {
   return `<tr><td style="padding: 6px 0; color: #64748b; font-weight: bold;">${escapeHtml(label)}</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(value)}</td></tr>`;
@@ -49,7 +50,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const recipientEmail = process.env.SALES_EMAIL || 'sales@touchteq.co.za';
+    const supabase = await createClient();
+    const { data: profile } = await supabase.from('business_profile').select('email, accounts_email').single();
+    const recipientEmail = profile?.email || profile?.accounts_email || process.env.SALES_EMAIL || 'sales@touchteq.co.za';
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; color: #334155; max-width: 680px; margin: 0 auto;">
         <p style="font-size: 12px; font-weight: bold; color: #f97316; text-transform: uppercase; letter-spacing: 1px;">Website Contact Submission</p>

@@ -1,11 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bot, Save, Loader2, CheckCircle2, Languages, Bell, FileText } from 'lucide-react';
+import { Bot, Save, Loader2, CheckCircle2, Languages, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
 import { updateBusinessProfile } from '@/lib/settings/actions';
-
-const DEFAULT_SIGNATURE = 'Kind regards, [owner name] | Touch Teqniques Engineering Services | +27 72 552 2110 | info@touchteq.co.za';
 
 type Props = {
   profile: any;
@@ -19,16 +17,11 @@ export default function AiAssistantSettingsTab({ profile, setProfile }: Props) {
   const initialDocumentSettings = useMemo(() => profile.document_settings || {}, [profile.document_settings]);
   const initialAi = useMemo(() => initialDocumentSettings.ai_preferences || {}, [initialDocumentSettings.ai_preferences]);
   const initialNotifications = useMemo(() => initialDocumentSettings.notification_preferences || {}, [initialDocumentSettings.notification_preferences]);
-  const initialEmailSettings = useMemo(() => profile.email_settings || {}, [profile.email_settings]);
 
   const [requireConfirmation, setRequireConfirmation] = useState(initialAi.require_confirmation_before_send !== false);
   const [conciseResponses, setConciseResponses] = useState(initialAi.concise_responses !== false);
   const [languagePreference, setLanguagePreference] = useState(initialAi.language_preference === 'british_english' ? 'british_english' : 'south_african_english');
   const [handsFreeMode, setHandsFreeMode] = useState(initialAi.hands_free_mode !== false);
-
-  const [defaultPaymentTerms, setDefaultPaymentTerms] = useState(Number(initialDocumentSettings.default_payment_terms_days ?? initialDocumentSettings.invoice_payment_terms_days ?? 30));
-  const [alwaysIncludeVat, setAlwaysIncludeVat] = useState(initialDocumentSettings.always_include_vat !== false);
-  const [defaultEmailSignature, setDefaultEmailSignature] = useState(initialEmailSettings.default_email_signature || DEFAULT_SIGNATURE);
 
   const [cronJobSummaryNotification, setCronJobSummaryNotification] = useState(initialNotifications.cron_job_summary_notification !== false);
   const [dailyActionSummary, setDailyActionSummary] = useState(initialNotifications.daily_action_summary !== false);
@@ -46,9 +39,6 @@ export default function AiAssistantSettingsTab({ profile, setProfile }: Props) {
       ...profile,
       document_settings: {
         ...(profile.document_settings || {}),
-        invoice_payment_terms_days: defaultPaymentTerms,
-        default_payment_terms_days: defaultPaymentTerms,
-        always_include_vat: alwaysIncludeVat,
         ai_preferences: {
           ...(profile.document_settings?.ai_preferences || {}),
           require_confirmation_before_send: requireConfirmation,
@@ -61,10 +51,6 @@ export default function AiAssistantSettingsTab({ profile, setProfile }: Props) {
           cron_job_summary_notification: cronJobSummaryNotification,
           daily_action_summary: dailyActionSummary,
         },
-      },
-      email_settings: {
-        ...(profile.email_settings || {}),
-        default_email_signature: defaultEmailSignature || DEFAULT_SIGNATURE,
       },
     };
 
@@ -131,44 +117,6 @@ export default function AiAssistantSettingsTab({ profile, setProfile }: Props) {
             <option value="south_african_english">South African English</option>
             <option value="british_english">British English</option>
           </select>
-        </div>
-      </section>
-
-      <section className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 p-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <FileText size={18} className="text-orange-500" />
-          <h3 className="text-white font-black uppercase tracking-[0.15em] text-sm">Document Defaults</h3>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Default Payment Terms (Days)</label>
-          <input
-            type="number"
-            min={1}
-            max={365}
-            value={defaultPaymentTerms}
-            onChange={(e) => setDefaultPaymentTerms(Math.max(1, Math.min(365, Number(e.target.value) || 30)))}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:border-orange-500 outline-none"
-          />
-        </div>
-
-        <ToggleRow
-          label="Always include VAT (15%)"
-          description="When disabled, the AI asks whether VAT should be added."
-          enabled={alwaysIncludeVat}
-          onToggle={() => setAlwaysIncludeVat((prev) => !prev)}
-          toggleClass={toggleClass}
-          knobClass={knobClass}
-        />
-
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Default Email Signature</label>
-          <textarea
-            rows={4}
-            value={defaultEmailSignature}
-            onChange={(e) => setDefaultEmailSignature(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-orange-500 outline-none resize-none"
-          />
         </div>
       </section>
 

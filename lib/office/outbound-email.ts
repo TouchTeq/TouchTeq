@@ -167,12 +167,12 @@ function replaceMergeTags(value: string, replacements: Record<string, string>) {
 }
 
 function getSender(profile: BusinessProfile, useSalesEmail?: boolean) {
-  const defaultEmail = useSalesEmail
-    ? (process.env.SALES_EMAIL || 'sales@touchteq.co.za')
-    : (process.env.ACCOUNTS_EMAIL || 'accounts@touchteq.co.za');
+  const accountsEmail = profile?.accounts_email || profile?.email || (process.env.ACCOUNTS_EMAIL || 'accounts@touchteq.co.za');
+  const supportEmail = profile?.email || profile?.accounts_email || (process.env.SALES_EMAIL || 'sales@touchteq.co.za');
+  const defaultEmail = useSalesEmail ? supportEmail : accountsEmail;
   return {
     name: profile?.email_settings?.sender_name || profile?.trading_name || 'Touch Teqniques',
-    email: profile?.email_settings?.reply_to || profile?.email || defaultEmail,
+    email: profile?.email_settings?.reply_to || defaultEmail,
   };
 }
 

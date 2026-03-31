@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -20,15 +20,17 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { pdf } from '@react-pdf/renderer';
-import { QuotePDF } from '@/lib/quotes/QuotePDF';
 import { createClient } from '@/lib/supabase/client';
 import confetti from 'canvas-confetti';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { pickPreferredRecipient } from '@/lib/clients/contactPreference';
+import QuoteRenderer from '@/components/office/QuoteRenderer';
+import { generateQuotePdfBlob } from '@/lib/quotes/quote-pdf';
+import { blobToBase64 } from '@/lib/invoices/invoice-pdf';
 
 export default function QuoteDetailClient({ quote, lineItems, businessProfile }: any) {
   const router = useRouter();
+  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -109,10 +111,15 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
     }
   };
 
+  const generateQuoteBlob = async () => {
+    if (!pdfContainerRef.current) throw new Error('Quote renderer is not ready yet.');
+    return generateQuotePdfBlob(pdfContainerRef.current);
+  };
+
   const handleDownloadPDF = async () => {
     setLoading('pdf');
     try {
-      const blob = await pdf(<QuotePDF quote={quote} lineItems={lineItems} businessProfile={businessProfile} />).toBlob();
+      const blob = await generateQuoteBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -130,15 +137,8 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
     setLoading('email');
     setError(null);
     try {
-      const blob = await pdf(<QuotePDF quote={quote} lineItems={lineItems} businessProfile={businessProfile} />).toBlob();
-
-      // Convert blob to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise((resolve) => {
-        reader.onloadend = () => resolve(reader.result?.toString().split(',')[1]);
-        reader.readAsDataURL(blob);
-      });
-      const base64Content = await base64Promise;
+      const blob = await generateQuoteBlob();
+      const base64Content = await blobToBase64(blob);
 
       const response = await fetch('/api/quotes/send', {
         method: 'POST',
@@ -218,6 +218,13 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
 
   return (
     <div className="space-y-10">
+      {/* Hidden PDF render target */}
+      <div className="fixed left-[-200vw] top-0 z-[-1] bg-white">
+        <div ref={pdfContainerRef}>
+          <QuoteRenderer quote={quote} lineItems={lineItems} businessProfile={businessProfile} />
+        </div>
+      </div>
+
       {/* Management Toolbar */}
       <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl flex flex-wrap items-center justify-between gap-6 shadow-2xl">
         <div className="flex items-center gap-4">
@@ -448,80 +455,10 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full h-full max-w-6xl max-h-[90vh] overflow-auto rounded-sm shadow-2xl bg-white text-slate-900 p-12"
+              className="w-full h-full max-w-6xl max-h-[90vh] overflow-auto rounded-2xl shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              {/* Full document content mirrored from preview */}
-              <div className="flex justify-between items-start mb-12">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center font-black text-white italic text-xl">T</div>
-                  <div>
-                    <span className="font-black text-xl uppercase tracking-tighter">Touch<span className="text-orange-500">Teq</span></span>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Engineering Services</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-1">Quotation</h2>
-                  <p className="text-xs font-bold text-slate-500">#{quote.quote_number}</p>
-                  <p className="text-[10px] font-medium text-slate-400 mt-1">{new Date(quote.issue_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-12 mb-12">
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-orange-500 border-b border-slate-100 pb-2">From:</h3>
-                  <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                    <div className="pt-2 text-[10px] font-bold text-slate-400 space-y-0.5">
-                      <p>VAT Reg: {businessProfile.vat_number}</p>
-                      <p>Reg No: {businessProfile.registration_number}</p>
-                      <p>Email: {businessProfile.email}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2">For:</h3>
-                  <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{quote.clients?.company_name || 'N/A'}</p>
-                    <p className="text-xs font-bold text-slate-700">Attn: {quote.clients?.contact_person || 'N/A'}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients?.physical_address || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-              <table className="w-full mb-8">
-                <thead>
-                  <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest">
-                    <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
-                    <th className="px-4 py-3 text-center">Qty</th>
-                    <th className="px-4 py-3 text-right">Unit Price</th>
-                    <th className="px-6 py-3 text-right rounded-r-sm">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lineItems.map((item: any, i: number) => (
-                    <tr key={i} className="text-slate-800">
-                      <td className="px-6 py-4 text-xs font-bold leading-relaxed">{item.description}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.quantity}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-right text-slate-500">{new Intl.NumberFormat('en-ZA').format(item.unit_price)}</td>
-                      <td className="px-6 py-4 text-xs font-black text-right">{new Intl.NumberFormat('en-ZA').format(item.line_total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="flex justify-end border-t-2 border-slate-900 pt-6">
-                <div className="w-64 space-y-3">
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>Subtotal</span><span>R {new Intl.NumberFormat('en-ZA').format(quote.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>VAT (15%)</span><span>R {new Intl.NumberFormat('en-ZA').format(quote.vat_amount)}</span>
-                  </div>
-                  <div className="flex items-baseline justify-between py-3 border-t border-slate-100 gap-4">
-                    <span className="text-xs font-black text-slate-900 uppercase tracking-widest whitespace-nowrap">Total Amount</span>
-                    <span className="text-xl font-black text-orange-500 tabular-nums">R {new Intl.NumberFormat('en-ZA').format(quote.total)}</span>
-                  </div>
-                </div>
-              </div>
+              <QuoteRenderer quote={quote} lineItems={lineItems} businessProfile={businessProfile} />
             </motion.div>
           </div>
         )}

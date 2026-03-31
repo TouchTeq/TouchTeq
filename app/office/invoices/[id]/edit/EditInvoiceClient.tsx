@@ -71,6 +71,8 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
       documentType: 'invoice',
       documentId: initialInvoice.id,
       documentData: {
+        invoiceNumber: initialInvoice.invoice_number,
+        documentNumber: initialInvoice.invoice_number,
         clientName: initialInvoice.clients?.company_name ?? null,
         clientId: initialInvoice.clients?.id ?? null,
         issue_date: initialInvoice.issue_date,

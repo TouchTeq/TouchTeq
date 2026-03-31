@@ -176,7 +176,7 @@ export const QuotePDF = ({ quote, lineItems, businessProfile }: any) => {
           <Text>VAT No: {businessProfile.vat_number}</Text>
           <Text>Reg No: {businessProfile.registration_number}</Text>
           {settings.show_csd && businessProfile.csd_number && <Text>CSD: {businessProfile.csd_number}</Text>}
-          <Text>Email: {businessProfile.email}</Text>
+          <Text>Email: {businessProfile.accounts_email || businessProfile.email}</Text>
         </View>
 
         <View style={styles.clientSection}>

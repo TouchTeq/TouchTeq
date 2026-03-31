@@ -142,24 +142,13 @@ function NewInvoiceContent() {
         due_date: format(addDays(new Date(`${prev.issue_date}T00:00:00`), nextTerms), 'yyyy-MM-dd'),
       }));
 
-      // Sequential Numbering - use profile settings
-      const invoicePrefix = documentSettings.invoice_prefix || 'INV';
-      const invoiceStartingNumber = documentSettings.invoice_starting_number || 1;
-      const invoiceIncludeYear = documentSettings.invoice_include_year || false;
-      
-      const { count } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true });
-      
-      const year = new Date().getFullYear();
-      const nextNum = (count || 0) + 1;
-      const displayNum = nextNum >= invoiceStartingNumber ? nextNum : invoiceStartingNumber;
-      
-      if (invoiceIncludeYear) {
-        setInvoiceNumber(`${invoicePrefix}-${year}-${String(displayNum).padStart(4, '0')}`);
-      } else {
-        setInvoiceNumber(`${invoicePrefix}-${String(displayNum).padStart(4, '0')}`);
+      // Get invoice number from DB sequence (concurrency-safe)
+      const { data: invoiceNumber, error: numError } = await supabase.rpc('generate_invoice_number');
+      if (numError) {
+        console.error('Failed to generate invoice number:', numError);
       }
+      const generatedNumber = invoiceNumber || 'INV-0001';
+      setInvoiceNumber(generatedNumber);
     }
     init();
   }, [supabase]);
@@ -222,6 +211,8 @@ function NewInvoiceContent() {
         documentType: 'invoice',
         documentId: null,
         documentData: {
+          invoiceNumber,
+          documentNumber: invoiceNumber,
           clientName: clientName ? sanitizeClientNameAi(clientName) : null,
           issue_date: invoiceDate || formData.issue_date,
           due_date: dueDate || formData.due_date,
@@ -239,7 +230,6 @@ function NewInvoiceContent() {
           subtotal: nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0),
           vatAmount: includeVat ? nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0) * 0.15 : 0,
           total: includeVat ? nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0) * 1.15 : nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0),
-          invoiceNumber,
         },
         isOpen: true,
       });
@@ -337,9 +327,10 @@ function NewInvoiceContent() {
     updateField(field, value);
   }, [updateField]);
 
-  const filteredClients = clients.filter(c => 
-    c.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.contact_person.toLowerCase().includes(searchTerm.toLowerCase())
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  const filteredClients = clients.filter((c) =>
+    (c.company_name || '').toLowerCase().includes(normalizedSearchTerm) ||
+    (c.contact_person || '').toLowerCase().includes(normalizedSearchTerm)
   );
 
   const handleSubmit = async (e: React.FormEvent) => {

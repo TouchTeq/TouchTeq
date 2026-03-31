@@ -298,9 +298,45 @@ export const CertificatePDF = ({ certificate, businessProfile }: any) => {
           </View>
           <View style={styles.signatureBox}>
             <Text style={styles.label}>Client Acknowledgement</Text>
-            <Text style={[styles.value, { marginTop: 10, color: '#CBD5E1' }]}>[ SIGNATURE ON DOCUMENT ]</Text>
+            {certificate.require_client_sign_off ? (
+              <Text style={[styles.value, { marginTop: 10, color: '#CBD5E1' }]}>[ SIGNATURE ON DOCUMENT ]</Text>
+            ) : (
+              <Text style={[styles.value, { marginTop: 10, color: '#64748B' }]}>[ CLIENT ACCEPTANCE REQUIRED ]</Text>
+            )}
           </View>
         </View>
+
+        {/* Client Acceptance Block - Only when required */}
+        {certificate.require_client_sign_off && (
+          <View style={[styles.section, { marginTop: 30 }]}>
+            <View style={{ borderTopWidth: 2, borderTopColor: '#F97316', paddingTop: 15 }}>
+              <Text style={[styles.sectionTitle, { fontSize: 12, color: '#F97316' }]}>CERTIFICATE OF COMPLETION — CLIENT ACCEPTANCE</Text>
+              <Text style={[styles.remarksText, { marginTop: 10, fontSize: 9 }]}>
+                I/We the undersigned confirm that the works described in this certificate have been completed to our satisfaction and we hereby accept the system as commissioned and operational.
+              </Text>
+              <View style={{ flexDirection: 'row', marginTop: 20, justifyContent: 'space-between' }}>
+                <View style={{ width: '45%' }}>
+                  <Text style={[styles.label, { fontSize: 8 }]}>Client Name (Print)</Text>
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: '#64748B', height: 20, marginTop: 5 }} />
+                </View>
+                <View style={{ width: '45%' }}>
+                  <Text style={[styles.label, { fontSize: 8 }]}>Designation</Text>
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: '#64748B', height: 20, marginTop: 5 }} />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', marginTop: 15, justifyContent: 'space-between' }}>
+                <View style={{ width: '45%' }}>
+                  <Text style={[styles.label, { fontSize: 8 }]}>Signature</Text>
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: '#64748B', height: 20, marginTop: 5 }} />
+                </View>
+                <View style={{ width: '45%' }}>
+                  <Text style={[styles.label, { fontSize: 8 }]}>Date</Text>
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: '#64748B', height: 20, marginTop: 5 }} />
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Footer */}
         <View style={styles.footer}>

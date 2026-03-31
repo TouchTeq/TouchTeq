@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Mail, 
   Save, 
@@ -14,6 +14,22 @@ import {
 } from 'lucide-react';
 import { updateBusinessProfile, sendTestEmail } from '@/lib/settings/actions';
 import { motion, AnimatePresence } from 'motion/react';
+
+const DEFAULT_PERSONAL_SIGNATURE = `Kind regards,
+Thabo Matona | Pr Tech Eng (Elec)
+Founder & Principal Engineer
+Touch Teqniques Engineering Services
+T: +27 72 552 2110
+E: sales@touchteq.co.za
+W: www.touchteq.co.za
+SAQCC Fire Reg: DGS15/0130 | B-BBEE Level 1`;
+
+const DEFAULT_ACCOUNTS_SIGNATURE = `Kind regards,
+Touch Teq Accounts
+Touch Teqniques Engineering Services
+T: +27 72 552 2110
+E: accounts@touchteq.co.za
+W: www.touchteq.co.za`;
 
 const EMAIL_TYPES = [
   { id: 'quote', label: 'Quotation Email', icon: Zap },
@@ -31,7 +47,7 @@ const MERGE_TAGS = [
   '[Due Date]',
 ];
 
-export default function EmailSettingsTab({ profile }: { profile: any }) {
+export default function EmailSettingsTab({ profile, setProfile }: { profile: any, setProfile?: (p: any) => void }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activeType, setActiveType] = useState('quote');
@@ -40,6 +56,12 @@ export default function EmailSettingsTab({ profile }: { profile: any }) {
   const [sendingTest, setSendingTest] = useState(false);
   const [testSuccess, setTestSuccess] = useState(false);
   const [testError, setTestError] = useState('');
+
+  const initialEmailSettings = useMemo(() => profile.email_settings || {}, [profile.email_settings]);
+  const [personalSignature, setPersonalSignature] = useState(initialEmailSettings.personal_email_signature || DEFAULT_PERSONAL_SIGNATURE);
+  const [accountsSignature, setAccountsSignature] = useState(initialEmailSettings.accounts_email_signature || DEFAULT_ACCOUNTS_SIGNATURE);
+  const [savingSignatures, setSavingSignatures] = useState(false);
+  const [signaturesSaved, setSignaturesSaved] = useState(false);
 
   const currentTemplate = templates[activeType] || {
     subject: '',
@@ -77,12 +99,81 @@ export default function EmailSettingsTab({ profile }: { profile: any }) {
     setSendingTest(false);
   };
 
+  const handleSaveSignatures = async () => {
+    setSavingSignatures(true);
+    const nextProfile = {
+      ...profile,
+      email_settings: {
+        ...(profile.email_settings || {}),
+        personal_email_signature: personalSignature || DEFAULT_PERSONAL_SIGNATURE,
+        accounts_email_signature: accountsSignature || DEFAULT_ACCOUNTS_SIGNATURE,
+      },
+    };
+    const res = await updateBusinessProfile(nextProfile);
+    if (res.success) {
+      if (setProfile) setProfile(nextProfile);
+      window.localStorage.setItem(
+        'touchteq_assistant_settings',
+        JSON.stringify({
+          document_settings: nextProfile.document_settings,
+          email_settings: nextProfile.email_settings,
+        })
+      );
+      window.dispatchEvent(new Event('touchteq-settings-change'));
+      setSignaturesSaved(true);
+      setTimeout(() => setSignaturesSaved(false), 2500);
+    }
+    setSavingSignatures(false);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-10"
     >
+      {/* Email Signatures Section */}
+      <section className="bg-[#0B0F19] rounded-2xl border border-slate-800/50 p-8 space-y-6">
+        <div className="flex items-center gap-3">
+          <Mail size={18} className="text-orange-500" />
+          <h3 className="text-white font-black uppercase tracking-[0.15em] text-sm">Email Signatures</h3>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Personal Signature (sales@)</label>
+          <textarea
+            rows={6}
+            value={personalSignature}
+            onChange={(e) => setPersonalSignature(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-orange-500 outline-none resize-none"
+          />
+          <p className="text-[10px] text-slate-500">Used for emails sent from sales@touchteq.co.za</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Accounts Signature (accounts@)</label>
+          <textarea
+            rows={6}
+            value={accountsSignature}
+            onChange={(e) => setAccountsSignature(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm font-medium focus:border-orange-500 outline-none resize-none"
+          />
+          <p className="text-[10px] text-slate-500">Used for emails sent from accounts@touchteq.co.za</p>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleSaveSignatures}
+            disabled={savingSignatures}
+            className="flex items-center gap-3 bg-orange-500 hover:bg-orange-600 px-8 py-4 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+          >
+            {savingSignatures ? <Loader2 size={14} className="animate-spin" /> : signaturesSaved ? <CheckCircle2 size={14} /> : <Save size={14} />}
+            {savingSignatures ? 'Saving...' : signaturesSaved ? 'Saved' : 'Save Signatures'}
+          </button>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
          {/* Sidebar: Email Types */}
          <div className="space-y-4">

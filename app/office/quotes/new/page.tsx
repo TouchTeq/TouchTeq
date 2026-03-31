@@ -134,24 +134,13 @@ function NewQuoteContent() {
         expiry_date: format(addDays(new Date(`${prev.issue_date}T00:00:00`), nextValidity), 'yyyy-MM-dd'),
       }));
 
-      // Sequential Numbering - use profile settings
-      const quotePrefix = documentSettings.quote_prefix || 'QT';
-      const quoteStartingNumber = documentSettings.quote_starting_number || 1;
-      const quoteIncludeYear = documentSettings.quote_include_year || false;
-      
-      const { count } = await supabase
-        .from('quotes')
-        .select('*', { count: 'exact', head: true });
-      
-      const year = new Date().getFullYear();
-      const nextNum = (count || 0) + 1;
-      const displayNum = nextNum >= quoteStartingNumber ? nextNum : quoteStartingNumber;
-      
-      if (quoteIncludeYear) {
-        setQuoteNumber(`${quotePrefix}-${year}-${String(displayNum).padStart(4, '0')}`);
-      } else {
-        setQuoteNumber(`${quotePrefix}-${String(displayNum).padStart(4, '0')}`);
+      // Get quote number from DB sequence (concurrency-safe)
+      const { data: quoteNumber, error: numError } = await supabase.rpc('generate_quote_number');
+      if (numError) {
+        console.error('Failed to generate quote number:', numError);
       }
+      const generatedNumber = quoteNumber || 'QT-0001';
+      setQuoteNumber(generatedNumber);
     }
     init();
   }, [supabase]);
@@ -209,6 +198,8 @@ function NewQuoteContent() {
         documentType: 'quote',
         documentId: null,
         documentData: {
+          quoteNumber,
+          documentNumber: quoteNumber,
           clientName: clientName ? sanitizeClientNameAi(clientName) : null,
           issue_date: formData.issue_date,
           expiry_date: formData.expiry_date,
@@ -314,9 +305,10 @@ function NewQuoteContent() {
     updateField(field, value);
   }, [updateField]);
 
-  const filteredClients = clients.filter(c => 
-    c.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.contact_person.toLowerCase().includes(searchTerm.toLowerCase())
+  const normalizedSearchTerm = searchTerm.toLowerCase();
+  const filteredClients = clients.filter((c) =>
+    (c.company_name || '').toLowerCase().includes(normalizedSearchTerm) ||
+    (c.contact_person || '').toLowerCase().includes(normalizedSearchTerm)
   );
 
   const handleSubmit = async (e: React.FormEvent) => {

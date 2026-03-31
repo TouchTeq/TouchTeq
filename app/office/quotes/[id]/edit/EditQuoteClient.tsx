@@ -51,6 +51,8 @@ export default function EditQuoteClient({ quote, initialLineItems, clients }: an
       documentType: 'quote',
       documentId: quote.id,
       documentData: {
+        quoteNumber: quote.quote_number,
+        documentNumber: quote.quote_number,
         clientName: quote.clients?.company_name ?? null,
         clientId: quote.clients?.id ?? null,
         issue_date: quote.issue_date,

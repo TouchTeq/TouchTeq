@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import WelcomeBanner from '@/components/office/WelcomeBanner';
 import DashboardSummaryCards from '@/components/office/DashboardSummaryCards';
+import RecentActivitySection from '@/components/office/RecentActivitySection';
 
 // Helper for Rand formatting
 const formatRand = (amount: number) => {
@@ -119,10 +120,14 @@ export default async function DashboardPage() {
   const netProfit = netRevenue - totalExpenses;
 
   // 7. Recent Activity
-  const [quotesRes, invoicesRes, paymentsRes] = await Promise.all([
+  const [quotesRes, invoicesRes, paymentsRes, expensesRes, certificatesRes, posRes, creditNotesRes] = await Promise.all([
     supabase.from('quotes').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
     supabase.from('invoices').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
     supabase.from('payments').select('*, invoices(invoice_number, clients(company_name))').order('created_at', { ascending: false }).limit(5),
+    supabase.from('expenses').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
+    supabase.from('certificates').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
+    supabase.from('purchase_orders').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
+    supabase.from('credit_notes').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(5),
   ]);
 
   const activities = [
@@ -134,6 +139,18 @@ export default async function DashboardPage() {
     })) || []),
     ...(paymentsRes.data?.filter(p => p.invoices?.clients !== null).map(p => ({
       id: p.id, type: 'Payment', ref: p.invoices?.invoice_number, client: p.invoices?.clients?.company_name, amount: p.amount, status: 'Success', date: p.created_at
+    })) || []),
+    ...(expensesRes.data?.filter(e => e.clients !== null).map(e => ({
+      id: e.id, type: 'Expense', ref: e.reference || `EXP-${e.id.slice(0, 8)}`, client: e.clients?.company_name, amount: e.amount_inclusive, status: e.status || 'Completed', date: e.created_at
+    })) || []),
+    ...(certificatesRes.data?.filter(c => c.clients !== null).map(c => ({
+      id: c.id, type: 'Certificate', ref: c.certificate_number || `CERT-${c.id.slice(0, 8)}`, client: c.clients?.company_name, amount: c.amount || 0, status: c.status || 'Issued', date: c.created_at
+    })) || []),
+    ...(posRes.data?.filter(p => p.clients !== null).map(p => ({
+      id: p.id, type: 'Purchase Order', ref: p.po_number || `PO-${p.id.slice(0, 8)}`, client: p.clients?.company_name, amount: p.total || 0, status: p.status || 'Draft', date: p.created_at
+    })) || []),
+    ...(creditNotesRes.data?.filter(cn => cn.clients !== null).map(cn => ({
+      id: cn.id, type: 'Credit Note', ref: cn.credit_note_number || `CN-${cn.id.slice(0, 8)}`, client: cn.clients?.company_name, amount: cn.total || 0, status: cn.status || 'Draft', date: cn.created_at
     })) || []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
@@ -263,69 +280,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl">
-        <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Clock size={20} className="text-orange-500" />
-            <h2 className="text-lg font-black uppercase tracking-tight text-white">Recent Activity</h2>
-          </div>
-          <Link href="/office/reports" className="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-orange-500 transition-colors flex items-center gap-2">
-            View All Activity <ExternalLink size={14} />
-          </Link>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em] bg-[#0B0F19]/50">
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Reference</th>
-                <th className="px-6 py-4">Client</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/30">
-              {activities.length > 0 ? (
-                activities.map((act, i) => (
-                  <tr key={i} className="group hover:bg-slate-800/20 transition-colors">
-                    <td className="px-6 py-5">
-                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${act.type === 'Quote' ? 'bg-blue-500/10 text-blue-500' :
-                        act.type === 'Invoice' ? 'bg-orange-500/10 text-orange-500' :
-                          'bg-green-500/10 text-green-500'
-                        }`}>
-                        {act.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 font-bold text-white text-sm">{act.ref}</td>
-                    <td className="px-6 py-5 text-slate-400 text-sm font-medium">{act.client || 'Internal'}</td>
-                    <td className="px-6 py-5 font-black text-white text-sm">{formatRand(act.amount)}</td>
-                    <td className="px-6 py-5">
-                      <span className={`text-xs font-bold ${act.status === 'Draft' ? 'text-slate-500' :
-                        ['Sent', 'Partially Paid'].includes(act.status) ? 'text-amber-500' :
-                          ['Accepted', 'Paid', 'Success'].includes(act.status) ? 'text-green-500' :
-                            'text-red-500'
-                        }`}>
-                        {act.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right text-slate-500 text-xs font-medium">
-                      {format(new Date(act.date), 'dd MMM, HH:mm')}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">
-                    No recent activity found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <RecentActivitySection activities={activities} />
 
       {/* Quick Actions */}
       <div className="space-y-4">
@@ -368,6 +323,7 @@ export default async function DashboardPage() {
 
 // Minimal icons to avoid missing imports in the server component if not using the main layout's ones
 function PieChartIcon(props: any) {
+
   return (
     <svg
       {...props}

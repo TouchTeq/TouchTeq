@@ -53,6 +53,9 @@ create table if not exists public.business_profile (
   cert_prefix text not null default 'CERT',
   cert_starting_number integer not null default 1,
   cert_include_year boolean not null default false,
+  delivery_note_prefix text not null default 'DN',
+  delivery_note_starting_number integer not null default 1,
+  delivery_note_include_year boolean not null default false,
   
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -117,6 +120,13 @@ create table if not exists public.quotes (
   notes text,
   internal_notes text,
   last_sent_at timestamptz,
+  -- Quote Acceptance Feature
+  acceptance_requested boolean not null default false,
+  acceptance_status text check (acceptance_status in ('Pending', 'Accepted', 'Declined')) default 'Pending',
+  accepted_at timestamptz,
+  accepted_ip_address text,
+  acceptance_record jsonb default '{}'::jsonb,
+  decline_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -193,6 +203,40 @@ create table if not exists public.invoice_line_items (
 );
 
 create index if not exists invoice_line_items_invoice_id_idx on public.invoice_line_items (invoice_id);
+
+-- Delivery Notes Table
+create table if not exists public.delivery_notes (
+  id uuid primary key default gen_random_uuid(),
+  delivery_note_number text not null unique,
+  client_id uuid references public.clients (id) on delete set null,
+  linked_invoice_id uuid references public.invoices (id) on delete set null,
+  date_of_delivery date not null default current_date,
+  delivery_address text,
+  status text not null default 'Delivered' check (status in ('Delivered', 'Signed', 'Disputed')),
+  delivered_by text default 'Thabo Matona',
+  notes text,
+  client_signed_document_url text,
+  signed_date timestamptz,
+  last_sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists delivery_notes_client_id_idx on public.delivery_notes (client_id);
+create index if not exists delivery_notes_invoice_id_idx on public.delivery_notes (linked_invoice_id);
+create index if not exists delivery_notes_status_idx on public.delivery_notes (status);
+
+create table if not exists public.delivery_note_items (
+  id uuid primary key default gen_random_uuid(),
+  delivery_note_id uuid not null references public.delivery_notes (id) on delete cascade,
+  description text not null,
+  quantity numeric(10,2) not null default 1,
+  condition text check (condition in ('New', 'Used', 'Repaired')) default 'New',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists delivery_note_items_delivery_note_id_idx on public.delivery_note_items (delivery_note_id);
 
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
@@ -340,6 +384,11 @@ create table if not exists public.certificates (
   document_data jsonb not null default '{}'::jsonb,
   supersedes_certificate_id uuid references public.certificates (id) on delete set null,
   last_sent_at timestamptz,
+  -- Client Sign-off Feature
+  require_client_sign_off boolean not null default false,
+  client_signature_status text not null default 'Unsigned' check (client_signature_status in ('Unsigned', 'Signed')),
+  client_signed_date timestamptz,
+  client_signed_document_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -694,51 +743,56 @@ begin
 end;
 $$;
 
+-- Document number generation — concurrency-safe via document_sequences table
+-- See supabase/migrations/20260331_concurrency_safe_document_sequences.sql for the migration
+-- that creates the table and seeds it. These functions are the canonical definitions.
+--
+-- Table schema:
+--   document_sequences (doc_type, subtype, next_number, last_year, updated_at)
+--   PK: (doc_type, subtype)
+--
+-- Design decisions:
+--   - prefix and include_year are read from business_profile on EVERY call
+--     so settings changes take effect immediately (no stale cached prefix)
+--   - next_number resets to 1 when the calendar year changes (year rollover)
+--   - certificates use subtype for per-type sequences (COC, COCW, etc.)
+
 create or replace function public.generate_quote_number()
 returns text
 language plpgsql
 as $$
 declare
   next_num integer;
-  year_str text;
   prefix_val text;
-  start_num integer;
   include_year_val boolean;
-  settings record;
-  existing_count integer;
+  year_str text;
+  current_year integer;
+  row_exists boolean;
 begin
-  -- Get settings from business_profile
-  select invoice_prefix, quote_starting_number, quote_include_year
-  into prefix_val, start_num, include_year_val
-  from public.business_profile limit 1;
-  
-  -- Use defaults if not set
-  prefix_val := coalesce(prefix_val, 'QT');
-  start_num := coalesce(start_num, 1);
-  include_year_val := coalesce(include_year_val, false);
-  
-  -- Check if quotes already exist
-  select count(*) into existing_count from public.quotes;
-  
-  if existing_count > 0 then
-    -- Get highest existing number and increment
-    select coalesce(max(
-      case
-        when include_year_val and quote_number ~ prefix_val || '-\d{4}-\d+$' 
-        then (regexp_match(quote_number, prefix_val || '-\d{4}-(\d+)$'))[1]::int
-        when quote_number ~ prefix_val || '-\d+$'
-        then (regexp_match(quote_number, prefix_val || '-(\d+)$'))[1]::int
-        else 0
-      end
-    ), 0) + 1 into next_num
-    from public.quotes;
-  else
-    -- Use starting number setting for new installations
-    next_num := start_num;
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'quote' and subtype = ''
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('quote', '', 1, current_year)
+    returning next_number into next_num;
   end if;
-  
-  year_str := extract(year from current_date)::text;
-  
+
+  select coalesce(invoice_prefix, 'QT'), coalesce(quote_include_year, false)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'QT');
+  include_year_val := coalesce(include_year_val, false);
+
   if include_year_val then
     return prefix_val || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
   else
@@ -753,44 +807,36 @@ language plpgsql
 as $$
 declare
   next_num integer;
-  year_str text;
   prefix_val text;
-  start_num integer;
   include_year_val boolean;
-  existing_count integer;
+  year_str text;
+  current_year integer;
+  row_exists boolean;
 begin
-  -- Get settings from business_profile
-  select invoice_prefix, invoice_starting_number, invoice_include_year
-  into prefix_val, start_num, include_year_val
-  from public.business_profile limit 1;
-  
-  -- Use defaults if not set
-  prefix_val := coalesce(prefix_val, 'INV');
-  start_num := coalesce(start_num, 1);
-  include_year_val := coalesce(include_year_val, false);
-  
-  -- Check if invoices already exist
-  select count(*) into existing_count from public.invoices;
-  
-  if existing_count > 0 then
-    -- Get highest existing number and increment
-    select coalesce(max(
-      case
-        when include_year_val and invoice_number ~ prefix_val || '-\d{4}-\d+$' 
-        then (regexp_match(invoice_number, prefix_val || '-\d{4}-(\d+)$'))[1]::int
-        when invoice_number ~ prefix_val || '-\d+$'
-        then (regexp_match(invoice_number, prefix_val || '-(\d+)$'))[1]::int
-        else 0
-      end
-    ), 0) + 1 into next_num
-    from public.invoices;
-  else
-    -- Use starting number setting for new installations
-    next_num := start_num;
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'invoice' and subtype = ''
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('invoice', '', 1, current_year)
+    returning next_number into next_num;
   end if;
-  
-  year_str := extract(year from current_date)::text;
-  
+
+  select coalesce(invoice_prefix, 'INV'), coalesce(invoice_include_year, false)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'INV');
+  include_year_val := coalesce(include_year_val, false);
+
   if include_year_val then
     return prefix_val || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
   else
@@ -804,45 +850,37 @@ returns text
 language plpgsql
 as $$
 declare
-  year_str text;
   next_num integer;
   prefix_val text;
-  start_num integer;
   include_year_val boolean;
-  existing_count integer;
+  year_str text;
+  current_year integer;
+  row_exists boolean;
 begin
-  -- Get settings from business_profile
-  select credit_note_prefix, credit_note_starting_number, credit_note_include_year
-  into prefix_val, start_num, include_year_val
-  from public.business_profile limit 1;
-  
-  -- Use defaults if not set
-  prefix_val := coalesce(prefix_val, 'CN');
-  start_num := coalesce(start_num, 1);
-  include_year_val := coalesce(include_year_val, true);
-  
-  year_str := extract(year from current_date)::text;
-  
-  -- Check if credit notes already exist
-  select count(*) into existing_count from public.credit_notes;
-  
-  if existing_count > 0 then
-    -- Get highest existing number and increment
-    select coalesce(max(
-      case
-        when include_year_val and credit_note_number ~ prefix_val || '-\d{4}-\d+$' 
-        then (regexp_match(credit_note_number, prefix_val || '-\d{4}-(\d+)$'))[1]::int
-        when credit_note_number ~ prefix_val || '-\d+$'
-        then (regexp_match(credit_note_number, prefix_val || '-(\d+)$'))[1]::int
-        else 0
-      end
-    ), 0) + 1 into next_num
-    from public.credit_notes;
-  else
-    -- Use starting number setting for new installations
-    next_num := start_num;
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'credit_note' and subtype = ''
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('credit_note', '', 1, current_year)
+    returning next_number into next_num;
   end if;
-  
+
+  select coalesce(credit_note_prefix, 'CN'), coalesce(credit_note_include_year, true)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'CN');
+  include_year_val := coalesce(include_year_val, true);
+
   if include_year_val then
     return prefix_val || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
   else
@@ -856,45 +894,81 @@ returns text
 language plpgsql
 as $$
 declare
-  year_str text;
   next_num integer;
   prefix_val text;
-  start_num integer;
   include_year_val boolean;
-  existing_count integer;
+  year_str text;
+  current_year integer;
+  row_exists boolean;
 begin
-  -- Get settings from business_profile
-  select po_prefix, po_starting_number, po_include_year
-  into prefix_val, start_num, include_year_val
-  from public.business_profile limit 1;
-  
-  -- Use defaults if not set
-  prefix_val := coalesce(prefix_val, 'PO');
-  start_num := coalesce(start_num, 1);
-  include_year_val := coalesce(include_year_val, true);
-  
-  year_str := extract(year from current_date)::text;
-  
-  -- Check if purchase orders already exist
-  select count(*) into existing_count from public.purchase_orders;
-  
-  if existing_count > 0 then
-    -- Get highest existing number and increment
-    select coalesce(max(
-      case
-        when include_year_val and po_number ~ prefix_val || '-\d{4}-\d+$' 
-        then (regexp_match(po_number, prefix_val || '-\d{4}-(\d+)$'))[1]::int
-        when po_number ~ prefix_val || '-\d+$'
-        then (regexp_match(po_number, prefix_val || '-(\d+)$'))[1]::int
-        else 0
-      end
-    ), 0) + 1 into next_num
-    from public.purchase_orders;
-  else
-    -- Use starting number setting for new installations
-    next_num := start_num;
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'purchase_order' and subtype = ''
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('purchase_order', '', 1, current_year)
+    returning next_number into next_num;
   end if;
-  
+
+  select coalesce(po_prefix, 'PO'), coalesce(po_include_year, true)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'PO');
+  include_year_val := coalesce(include_year_val, true);
+
+  if include_year_val then
+    return prefix_val || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
+  else
+    return prefix_val || '-' || lpad(next_num::text, 4, '0');
+  end if;
+end;
+$$;
+
+create or replace function public.generate_delivery_note_number()
+returns text
+language plpgsql
+as $$
+declare
+  next_num integer;
+  prefix_val text;
+  include_year_val boolean;
+  year_str text;
+  current_year integer;
+  row_exists boolean;
+begin
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'delivery_note' and subtype = ''
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('delivery_note', '', 1, current_year)
+    returning next_number into next_num;
+  end if;
+
+  select coalesce(delivery_note_prefix, 'DN'), coalesce(delivery_note_include_year, false)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'DN');
+  include_year_val := coalesce(include_year_val, false);
+
   if include_year_val then
     return prefix_val || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
   else
@@ -908,47 +982,40 @@ returns text
 language plpgsql
 as $$
 declare
-  type_code text;
-  year_str text;
   next_num integer;
   prefix_val text;
-  start_num integer;
   include_year_val boolean;
-  existing_count integer;
+  year_str text;
+  current_year integer;
+  type_code text;
+  row_exists boolean;
 begin
-  -- Get settings from business_profile
-  select cert_prefix, cert_starting_number, cert_include_year
-  into prefix_val, start_num, include_year_val
-  from public.business_profile limit 1;
-  
-  -- Use defaults if not set
-  prefix_val := coalesce(prefix_val, 'CERT');
-  start_num := coalesce(start_num, 1);
-  include_year_val := coalesce(include_year_val, true);
-  
-  type_code := upper(coalesce(nullif(left(regexp_replace(cert_type, '[^a-zA-Z]', '', 'g'), 3), ''), 'GEN'));
-  year_str := extract(year from current_date)::text;
-  
-  -- Check if certificates already exist
-  select count(*) into existing_count from public.certificates;
-  
-  if existing_count > 0 then
-    -- Get highest existing number and increment
-    select coalesce(max(
-      case
-        when include_year_val and certificate_number ~ prefix_val || '-' || type_code || '-\d{4}-\d+$' 
-        then (regexp_match(certificate_number, prefix_val || '-' || type_code || '-\d{4}-(\d+)$'))[1]::int
-        when certificate_number ~ prefix_val || '-' || type_code || '-\d+$'
-        then (regexp_match(certificate_number, prefix_val || '-' || type_code || '-(\d+)$'))[1]::int
-        else 0
-      end
-    ), 0) + 1 into next_num
-    from public.certificates;
-  else
-    -- Use starting number setting for new installations
-    next_num := start_num;
+  current_year := extract(year from current_date)::int;
+  year_str := current_year::text;
+
+  type_code := upper(coalesce(nullif(left(regexp_replace(coalesce(cert_type, 'general'), '[^a-zA-Z]', '', 'g'), 3), ''), 'GEN'));
+
+  update public.document_sequences
+  set next_number = case when last_year = current_year then next_number + 1 else 1 end,
+      last_year = current_year,
+      updated_at = now()
+  where doc_type = 'certificate' and subtype = type_code
+  returning next_number into next_num;
+
+  row_exists := found;
+
+  if not row_exists then
+    insert into public.document_sequences (doc_type, subtype, next_number, last_year)
+    values ('certificate', type_code, 1, current_year)
+    returning next_number into next_num;
   end if;
-  
+
+  select coalesce(cert_prefix, 'CERT'), coalesce(cert_include_year, true)
+  into prefix_val, include_year_val from public.business_profile limit 1;
+
+  prefix_val := coalesce(prefix_val, 'CERT');
+  include_year_val := coalesce(include_year_val, true);
+
   if include_year_val then
     return prefix_val || '-' || type_code || '-' || year_str || '-' || lpad(next_num::text, 4, '0');
   else

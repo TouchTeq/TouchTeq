@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { 
-  Building2, 
-  CreditCard, 
-  FileText, 
-  Mail, 
+import {
+  Building2,
+  CreditCard,
+  FileText,
+  Mail,
   Settings as SettingsIcon,
   Car,
   Bot,
   KeyRound,
-  Hash
+  Hash,
+  Brain
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,6 +22,7 @@ import EmailSettingsTab from './EmailSettingsTab';
 import SystemPreferencesTab from './SystemPreferencesTab';
 import TravelSettingsTab from './TravelSettingsTab';
 import AiAssistantSettingsTab from './AiAssistantSettingsTab';
+import AiMemoryTab from './AiMemoryTab';
 import ApiKeysTab from './ApiKeysTab';
 import DocumentNumberingTab from './DocumentNumberingTab';
 
@@ -37,19 +39,33 @@ export default function SettingsClient({
   const searchParams = useSearchParams();
   const [profile, setProfile] = useState(initialProfile || propProfile);
 
-const TABS = useMemo(() => [
-  { id: 'profile', label: 'Business Profile', icon: Building2 },
-  { id: 'banking', label: 'Banking Details', icon: CreditCard },
-  { id: 'numbering', label: 'Document Numbering', icon: Hash },
-  { id: 'documents', label: 'Document Templates', icon: FileText },
-  { id: 'emails', label: 'Email Settings', icon: Mail },
-  { id: 'assistant', label: 'AI Assistant Settings', icon: Bot },
-  { id: 'travel', label: 'Travel Logbook Settings', icon: Car },
-  { id: 'system', label: 'System Preferences', icon: SettingsIcon },
-  { id: 'api-keys', label: 'API Keys', icon: KeyRound },
-] as const, []);
+  const TABS = useMemo(() => [
+    { id: 'profile', label: 'Business Profile', icon: Building2, group: 'BUSINESS' },
+    { id: 'banking', label: 'Banking Details', icon: CreditCard, group: 'BUSINESS' },
+    { id: 'numbering', label: 'Document Numbering', icon: Hash, group: 'DOCUMENTS' },
+    { id: 'documents', label: 'Document Templates', icon: FileText, group: 'DOCUMENTS' },
+    { id: 'emails', label: 'Email Settings', icon: Mail, group: 'COMMUNICATION' },
+    { id: 'assistant', label: 'AI Assistant Settings', icon: Bot, group: 'AI' },
+    { id: 'memory', label: 'AI Memory', icon: Brain, group: 'AI' },
+    { id: 'travel', label: 'Travel Logbook Settings', icon: Car, group: 'OPERATIONS' },
+    { id: 'system', label: 'System Preferences', icon: SettingsIcon, group: 'OPERATIONS' },
+    { id: 'api-keys', label: 'API Keys', icon: KeyRound, group: 'SECURITY' },
+  ] as const, []);
 
   type TabId = (typeof TABS)[number]['id'];
+  
+  const tabsByGroup = useMemo(() => {
+    const groups: Record<string, typeof TABS[number][]> = {};
+    TABS.forEach((tab) => {
+      if (!groups[tab.group]) {
+        groups[tab.group] = [];
+      }
+      groups[tab.group].push(tab);
+    });
+    return groups;
+  }, []);
+  
+  const orderedGroups = ['BUSINESS', 'DOCUMENTS', 'COMMUNICATION', 'AI', 'OPERATIONS', 'SECURITY'];
   
   const requestedTab = searchParams.get('tab') as TabId | null;
   const resolvedTab = TABS.some((tab) => tab.id === requestedTab) ? (requestedTab as TabId) : 'profile';
@@ -77,9 +93,11 @@ const TABS = useMemo(() => [
         case 'documents':
           return <DocumentTemplatesTab profile={profile} setProfile={setProfile} />;
         case 'emails':
-          return <EmailSettingsTab profile={profile} />;
+          return <EmailSettingsTab profile={profile} setProfile={setProfile} />;
         case 'assistant':
           return <AiAssistantSettingsTab profile={profile} setProfile={setProfile} />;
+        case 'memory':
+          return <AiMemoryTab />;
         case 'travel':
           return <TravelSettingsTab profile={profile} />;
         case 'system':
@@ -96,29 +114,39 @@ const TABS = useMemo(() => [
     <div className="w-full z-20 relative">
       <div className="flex flex-col lg:flex-row gap-10 w-full">
         <div className="flex flex-row lg:flex-col gap-2 bg-[#0B0F19] p-2 rounded-2xl border border-slate-800/50 h-fit lg:w-72 sticky top-24 overflow-x-auto lg:overflow-x-visible no-scrollbar z-50">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleTabChange(tab.id)}
-                aria-pressed={isActive}
-                className={`group flex items-center gap-3 px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap lg:whitespace-normal cursor-pointer ${
-                  isActive
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                    : 'text-slate-500 hover:text-white hover:bg-slate-800/50'
-                }`}
-              >
-                <Icon
-                  size={18}
-                  className={`transition-colors ${isActive ? 'text-[#FF6900]' : 'text-slate-500 group-hover:text-[#FF6900]'}`}
-                />
-                {tab.label}
-              </button>
-            );
-          })}
+          {orderedGroups.map((group, index) => (
+            <div key={group} className="flex flex-col">
+              <div className={`px-4 ${index === 0 ? 'pt-2' : 'pt-4'} pb-2`}>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">{group}</span>
+              </div>
+              <div className="flex flex-row lg:flex-col gap-1">
+                {tabsByGroup[group].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleTabChange(tab.id)}
+                      aria-pressed={isActive}
+                      className={`group flex items-center gap-3 px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap lg:whitespace-normal cursor-pointer ${
+                        isActive
+                          ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                          : 'text-slate-500 hover:text-white hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <Icon
+                        size={18}
+                        className={`transition-colors ${isActive ? 'text-[#FF6900]' : 'text-slate-500 group-hover:text-[#FF6900]'}`}
+                      />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {index === orderedGroups.length - 1 && <div className="pb-2" />}
+            </div>
+          ))}
         </div>
 
         <div className="flex-1">

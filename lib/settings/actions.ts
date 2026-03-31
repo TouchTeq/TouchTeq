@@ -94,7 +94,10 @@ function sanitizeDocumentSettings(value: unknown) {
     invoice_payment_terms_days: invoicePaymentTerms,
     default_payment_terms_days: invoicePaymentTerms,
     always_include_vat: entry.always_include_vat !== false,
+    invoice_always_include_vat: entry.invoice_always_include_vat !== false,
+    quote_always_include_vat: entry.quote_always_include_vat !== false,
     invoice_default_notes: normalizeString(entry.invoice_default_notes, 2000),
+    invoice_thank_you_message: normalizeString(entry.invoice_thank_you_message, 500),
     invoice_late_notice: normalizeString(entry.invoice_late_notice, 2000),
     invoice_terms_conditions: normalizeString(entry.invoice_terms_conditions, 4000),
     primary_color: /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primaryColor) ? primaryColor : '#E8500A',
@@ -139,6 +142,13 @@ function sanitizeDocumentSettings(value: unknown) {
     cert_prefix: normalizeString(entry.cert_prefix ?? 'CERT', 20),
     cert_starting_number: Number.isFinite(Number(entry.cert_starting_number)) ? Math.max(1, Number(entry.cert_starting_number)) : 1,
     cert_include_year: entry.cert_include_year !== undefined ? Boolean(entry.cert_include_year) : true,
+
+    invoice_template_url: normalizeOptionalUrl(entry.invoice_template_url),
+    invoice_template_name: normalizeString(entry.invoice_template_name, 260),
+    invoice_template_updated_at: normalizeString(entry.invoice_template_updated_at, 80),
+    quote_template_url: normalizeOptionalUrl(entry.quote_template_url),
+    quote_template_name: normalizeString(entry.quote_template_name, 260),
+    quote_template_updated_at: normalizeString(entry.quote_template_updated_at, 80),
   };
 }
 
@@ -148,7 +158,8 @@ function sanitizeEmailSettings(value: unknown) {
   return {
     sender_name: normalizeString(entry.sender_name, 160),
     reply_to: normalizeOptionalEmail(entry.reply_to),
-    default_email_signature: normalizeString(entry.default_email_signature, 1000),
+    personal_email_signature: normalizeString(entry.personal_email_signature, 2000),
+    accounts_email_signature: normalizeString(entry.accounts_email_signature, 2000),
   };
 }
 
@@ -181,6 +192,7 @@ function sanitizeBusinessProfileUpdates(updates: any) {
   if ('physical_address' in updates) sanitized.physical_address = normalizeString(updates.physical_address, 1000);
   if ('postal_address' in updates) sanitized.postal_address = normalizeString(updates.postal_address, 1000);
   if ('email' in updates) sanitized.email = normalizeOptionalEmail(updates.email);
+  if ('accounts_email' in updates) sanitized.accounts_email = normalizeOptionalEmail(updates.accounts_email) || 'accounts@touchteq.co.za';
   if ('phone' in updates) sanitized.phone = normalizeString(updates.phone, 50);
   if ('website' in updates) sanitized.website = normalizeOptionalUrl(updates.website);
   if ('logo_url' in updates) sanitized.logo_url = normalizeOptionalUrl(updates.logo_url);
@@ -340,6 +352,61 @@ export async function sendTestEmail(to: string, template: any) {
   }
 
   return { success: true, message: 'Test email sent successfully.' };
+}
+
+export async function uploadDocumentTemplate(formData: FormData, templateType: 'invoice' | 'quote') {
+  const { supabase } = await requireAuthenticatedUser();
+  const fileObj = formData.get('file');
+
+  if (!(fileObj instanceof File)) {
+    return { success: false, error: 'No file was provided.' };
+  }
+
+  const allowedTypes = new Set([
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+  ]);
+  if (!allowedTypes.has(fileObj.type) && !fileObj.name.toLowerCase().endsWith('.docx')) {
+    return { success: false, error: 'Only .docx files are allowed.' };
+  }
+
+  if (fileObj.size > 10 * 1024 * 1024) {
+    return { success: false, error: 'File too large. Maximum size is 10MB.' };
+  }
+
+  const storagePath = `${templateType}-template.docx`;
+  const { error: uploadError } = await supabase.storage
+    .from('templates')
+    .upload(storagePath, fileObj, {
+      upsert: true,
+      contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+
+  if (uploadError) {
+    return { success: false, error: uploadError.message };
+  }
+
+  const { data: { publicUrl } } = supabase.storage.from('templates').getPublicUrl(storagePath);
+
+  // Persist template metadata in document_settings
+  const profile = await loadBusinessProfile(supabase);
+  if (profile?.id) {
+    const existing = typeof profile.document_settings === 'object' ? profile.document_settings : {};
+    await supabase
+      .from('business_profile')
+      .update({
+        document_settings: {
+          ...existing,
+          [`${templateType}_template_url`]: publicUrl,
+          [`${templateType}_template_name`]: fileObj.name,
+          [`${templateType}_template_updated_at`]: new Date().toISOString(),
+        },
+      })
+      .eq('id', profile.id);
+  }
+
+  revalidatePath('/office/settings');
+  return { success: true, url: publicUrl, filename: fileObj.name };
 }
 
 export async function exportAllData(confirmationText?: string) {

@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin and office routes (these are app/dashboard areas, not for public SEO)
+Disallow: /office/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://touchteq.co.za/sitemap.xml

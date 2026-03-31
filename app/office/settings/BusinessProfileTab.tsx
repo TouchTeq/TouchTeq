@@ -182,6 +182,19 @@ export default function BusinessProfileTab({ profile, setProfile }: { profile: a
             </div>
 
             <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Accounts Email</label>
+              <div className="relative">
+                <input 
+                  type="email" 
+                  value={profile.accounts_email || 'accounts@touchteq.co.za'}
+                  onChange={e => setProfile({ ...profile, accounts_email: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-12 pr-5 py-4 text-white focus:border-orange-500 transition-all outline-none"
+                />
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Phone Number</label>
               <div className="relative">
                 <input 

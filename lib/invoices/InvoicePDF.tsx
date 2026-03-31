@@ -349,7 +349,7 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
             {settings.show_csd && businessProfile.csd_number && (
               <Text style={styles.supplierDetail}>CSD: {businessProfile.csd_number}</Text>
             )}
-            <Text style={styles.supplierDetail}>Email: {businessProfile.email}</Text>
+            <Text style={styles.supplierDetail}>Email: {businessProfile.accounts_email || businessProfile.email}</Text>
           </View>
         </View>
 

@@ -12,6 +12,7 @@ import {
   CreditCard,
   PieChart,
   BarChart3,
+  Clock,
   Settings,
   LogOut,
   Bell,
@@ -57,7 +58,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: 'Dashboard', href: '/office/dashboard', icon: LayoutDashboard },
       { name: 'Clients', href: '/office/clients', icon: Users },
-      { name: 'AI Assistant', href: '/office/settings?tab=assistant', icon: Sparkles },
+      { name: 'AI Assistant', href: '/office/ai-assistant', icon: Sparkles },
     ],
   },
   {
@@ -76,6 +77,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: 'Timeline', href: '/office/timeline', icon: Activity },
       { name: 'Reminders', href: '/office/reminders', icon: Bell },
+      { name: 'Activity', href: '/office/activity', icon: Clock },
       { name: 'Reports', href: '/office/reports', icon: BarChart3 },
       { name: 'Cash Flow', href: '/office/cash-flow', icon: Wallet },
     ],
@@ -583,7 +585,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                     {children}
                   </main>
                 </div>
-                <AiAssistant />
+                {pathname !== '/office/ai-assistant' && <AiAssistant />}
               </div>
             </OfficeBrandingProvider>
           </ActiveDocumentProvider>

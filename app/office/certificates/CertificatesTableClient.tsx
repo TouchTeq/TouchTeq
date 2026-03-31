@@ -71,6 +71,7 @@ export default function CertificatesTableClient({ certificates }: Props) {
               <th className="px-6 py-4">Client & Project</th>
               <th className="px-6 py-4">Date</th>
               <th className="px-6 py-4 text-center">Status</th>
+              <th className="px-6 py-4 text-center">Signature</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -120,6 +121,21 @@ export default function CertificatesTableClient({ certificates }: Props) {
                   >
                     {cert.status}
                   </span>
+                </td>
+                <td className="px-6 py-5 text-center">
+                  {cert.require_client_sign_off ? (
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-1 rounded border ${
+                        cert.client_signature_status === 'Signed'
+                          ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                          : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                      }`}
+                    >
+                      {cert.client_signature_status === 'Signed' ? 'Signed' : 'Unsigned'}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-600 uppercase">N/A</span>
+                  )}
                 </td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

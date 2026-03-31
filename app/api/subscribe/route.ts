@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendTransactionalEmail } from '@/lib/brevo/client';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
@@ -71,7 +72,9 @@ export async function POST(request: Request) {
     });
 
     if (response.ok || response.status === 201 || response.status === 204) {
-      const recipientEmail = process.env.SALES_EMAIL || 'sales@touchteq.co.za';
+      const supabase = await createClient();
+      const { data: profile } = await supabase.from('business_profile').select('email, accounts_email').single();
+      const recipientEmail = profile?.email || profile?.accounts_email || process.env.SALES_EMAIL || 'sales@touchteq.co.za';
       const sourceLabel = source || 'Website';
 
       await sendTransactionalEmail({
