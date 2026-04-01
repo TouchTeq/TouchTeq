@@ -11,6 +11,7 @@ import { validateTransition } from "@/lib/office/status-actions";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
 import { logAIAction, parseActionResult, extractTargetInfo } from "@/lib/ai/action-logger";
 import { recordToolExecution } from "@/lib/ai/tool-telemetry";
+import { saveConversationToSupabase } from "@/lib/ai/conversations";
 
 // Server-side Supabase client for data queries
 function getSupabase() {
@@ -1544,204 +1545,6 @@ const tools = [
             invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
           },
           required: ["invoiceReference"],
-        },
-      },
-      {
-        name: "voidInvoice",
-        description: "Cancels/voids an invoice by setting its status to Cancelled. Use when the user asks to cancel, void, delete, or remove an invoice. This does not delete the record — it marks it as Cancelled. An invoice that has been paid or partially paid cannot be voided — a credit note should be issued instead.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
-          },
-          required: ["invoiceReference"],
-        },
-      },
-      {
-        name: "markInvoiceSent",
-        description: "Marks an invoice as Sent. Use when the user says the invoice has been sent to the client, emailed, or dispatched.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
-          },
-          required: ["invoiceReference"],
-        },
-      },
-      {
-        name: "reopenInvoice",
-        description: "Reopens a cancelled invoice back to Draft. Only allowed if the invoice has no payments recorded.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
-          },
-          required: ["invoiceReference"],
-        },
-      },
-      {
-        name: "markQuoteSent",
-        description: "Marks a quote as Sent. Use when the user says the quote has been sent to the client.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "acceptQuote",
-        description: "Marks a quote as Accepted. Use when the client has accepted the quotation.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "declineQuote",
-        description: "Marks a quote as Declined. Use when the client has declined the quotation.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "expireQuote",
-        description: "Marks a quote as Expired. Use when the quote validity period has passed.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "reopenQuote",
-        description: "Reopens a declined, rejected, or expired quote back to Draft for revision.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "rejectQuote",
-        description: "Marks a quote as Rejected. Use when the quote has been formally rejected by the client or internally.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "issueQuote",
-        description: "Marks a quote as Issued. Use when the quote has been formally issued to the client.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
-          },
-          required: ["quoteReference"],
-        },
-      },
-      {
-        name: "markPOSent",
-        description: "Marks a purchase order as Sent to the supplier.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
-          },
-          required: ["poReference"],
-        },
-      },
-      {
-        name: "acknowledgePO",
-        description: "Marks a purchase order as Acknowledged by the supplier.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
-          },
-          required: ["poReference"],
-        },
-      },
-      {
-        name: "markPODelivered",
-        description: "Marks a purchase order as Delivered.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
-          },
-          required: ["poReference"],
-        },
-      },
-      {
-        name: "cancelPO",
-        description: "Cancels a purchase order. Allowed from any status except Cancelled.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
-          },
-          required: ["poReference"],
-        },
-      },
-      {
-        name: "issueCreditNote",
-        description: "Issues a credit note (changes status from Draft/Sent to Issued).",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
-          },
-          required: ["cnReference"],
-        },
-      },
-      {
-        name: "sendCreditNote",
-        description: "Marks a credit note as Sent to the client.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
-          },
-          required: ["cnReference"],
-        },
-      },
-      {
-        name: "applyCreditNote",
-        description: "Applies a credit note against its linked invoice (changes status to Applied).",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
-          },
-          required: ["cnReference"],
-        },
-      },
-      {
-        name: "cancelCreditNote",
-        description: "Cancels a credit note. Not allowed if the credit note has already been applied.",
-        parametersJsonSchema: {
-          type: "object",
-          properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
-          },
-          required: ["cnReference"],
         },
       },
       {
@@ -4489,7 +4292,17 @@ function normalizeHistory(history: any[] | undefined, message: string, attachmen
   }));
 
   const firstUserIndex = geminiHistory.findIndex((m: any) => m.role === "user");
-  const normalizedHistory = firstUserIndex !== -1 ? geminiHistory.slice(firstUserIndex) : [];
+  let normalizedHistory = firstUserIndex !== -1 ? geminiHistory.slice(firstUserIndex) : [];
+
+  // Truncate history to last 20 messages to manage token costs and context window.
+  // Keep first 2 (for initial context) and last 18 when over limit.
+  const MAX_HISTORY = 20;
+  if (normalizedHistory.length > MAX_HISTORY) {
+    normalizedHistory = [
+      ...normalizedHistory.slice(0, 2),
+      ...normalizedHistory.slice(normalizedHistory.length - (MAX_HISTORY - 2)),
+    ];
+  }
 
   const attachmentParts = buildAttachmentParts(attachments);
   return [
@@ -4919,6 +4732,15 @@ export async function POST(req: NextRequest) {
   let conversationId: string | null = null;
 
   try {
+    // Reject requests larger than 1MB to prevent memory abuse
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 1_000_000) {
+      return new Response(
+        JSON.stringify({ error: 'Request too large. Maximum size is 1MB.' }),
+        { status: 413, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const authResult = await requireAuthenticatedUser();
     user = authResult.user;
 
@@ -5069,7 +4891,29 @@ export async function POST(req: NextRequest) {
               modelName: CHAT_MODEL,
               latencyMs: toolEndTime - startTime,
               requestSource: "chat",
-            }).catch(() => {}); // Never let logging fail the request
+            }).catch((e: any) => console.error('[AI Action Log Failed]', e?.message || e));
+
+            const isSuccess = actionStatus?.status === "confirmed" || actionStatus?.status === "could_not_verify";
+            recordToolExecution(
+              `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+              CHAT_MODEL,
+              toolName,
+              isSuccess,
+              {
+                latencyMs: toolEndTime - startTime,
+                errorType: isSuccess ? undefined : "unknown_error",
+                errorMessage: actionStatus?.error || undefined,
+                verificationStatus: isSuccess ? "confirmed" : "failed",
+              }
+            );
+
+            let parsedToolResult: Record<string, unknown>;
+            try {
+              parsedToolResult = JSON.parse(toolResult);
+            } catch (e: any) {
+              console.error(`[Tool Parse] Failed to parse ${toolName} result:`, e.message);
+              parsedToolResult = { error: "Tool returned invalid response", raw: toolResult };
+            }
 
             const followUpContents = [
               ...contents,
@@ -5080,7 +4924,7 @@ export async function POST(req: NextRequest) {
                     ? payload.functionCallParts
                     : [{ functionCall: { name: toolName, args: toolArgs } }],
               },
-              { role: "user", parts: [{ functionResponse: { name: toolName, response: JSON.parse(toolResult) } }] },
+              { role: "user", parts: [{ functionResponse: { name: toolName, response: parsedToolResult } }] },
             ];
 
             const followUpRequest = {
@@ -5153,6 +4997,28 @@ export async function POST(req: NextRequest) {
     hasError = true;
     errorMessage = error.message || "Internal Server Error";
     console.error("Gemini API Error:", error);
+
+    // Detect Gemini API failures and return user-friendly messages
+    const msg = error.message || "";
+    if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('ECONNREFUSED')) {
+      return NextResponse.json(
+        { error: 'The AI assistant is temporarily unavailable. Please try again in a moment.' },
+        { status: 503 }
+      );
+    }
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate limit')) {
+      return NextResponse.json(
+        { error: 'Too many requests to the AI service. Please wait a moment before trying again.' },
+        { status: 429 }
+      );
+    }
+    if (msg.includes('500') || msg.includes('502') || msg.includes('504')) {
+      return NextResponse.json(
+        { error: 'The AI service encountered an unexpected error. Please try again.' },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   } finally {
     if (user?.id) {
@@ -5165,7 +5031,7 @@ export async function POST(req: NextRequest) {
           model_used: CHAT_MODEL,
           tool_calls: toolCallsExecuted,
           input_message_length: userMessage.length,
-          output_message_length: responseText?.length || 0,
+          output_message_length: (responseText || "").length,
           conversation_id: conversationId || null,
           success: !hasError,
           error_message: errorMessage || null,
@@ -5174,6 +5040,60 @@ export async function POST(req: NextRequest) {
         .then(({ error }) => {
           if (error) console.error("Usage log insert failed:", error);
         });
+
+      if (conversationId || (Array.isArray(history) && history.length > 0)) {
+        const messages = buildPersistedMessages(history, userMessage, responseText);
+        if (messages.length > 0) {
+          saveConversationToSupabase(conversationId, messages, undefined).then((newId) => {
+            if (newId && !conversationId) {
+              console.log("[Conversation] Created new conversation:", newId);
+            }
+          }).catch((err) => console.error("[Conversation] Save failed:", err));
+        }
+      }
     }
   }
+}
+
+function buildPersistedMessages(history: any, lastUserMessage: string, lastAssistantResponse: string | null): Array<{ id: string; text: string; sender: "user" | "assistant"; timestamp: string }> {
+  const messages: Array<{ id: string; text: string; sender: "user" | "assistant"; timestamp: string }> = [];
+  const now = new Date().toISOString();
+  const historyArray = Array.isArray(history) ? history : [];
+  
+  if (historyArray.length > 0) {
+    for (const msg of historyArray) {
+      if (msg.role === "user" || msg.role === "assistant") {
+        messages.push({
+          id: generateMessageId(),
+          text: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
+          sender: msg.role === "user" ? "user" : "assistant",
+          timestamp: now,
+        });
+      }
+    }
+  }
+  
+  if (lastUserMessage) {
+    messages.push({
+      id: generateMessageId(),
+      text: lastUserMessage,
+      sender: "user",
+      timestamp: now,
+    });
+  }
+  
+  if (lastAssistantResponse) {
+    messages.push({
+      id: generateMessageId(),
+      text: lastAssistantResponse,
+      sender: "assistant",
+      timestamp: now,
+    });
+  }
+  
+  return messages;
+}
+
+function generateMessageId(): string {
+  return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }

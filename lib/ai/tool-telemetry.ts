@@ -215,9 +215,10 @@ export function logToolTelemetry(record: ToolTelemetryRecord): void {
     }
 
     // Persist to DB (fire-and-forget)
-    persistTelemetryToDb(record).catch(() => {});
-  } catch {
+    persistTelemetryToDb(record).catch((e) => console.error('[Telemetry Persist Failed]', e?.message || e));
+  } catch (e: any) {
     // Never let telemetry logging break the chat
+    console.error('[Telemetry Log Failed]', e?.message || e);
   }
 }
 
@@ -246,8 +247,9 @@ async function persistTelemetryToDb(record: ToolTelemetryRecord): Promise<void> 
       client_ack_status: record.client_ack_status,
       summary: record.summary?.slice(0, 500) || null,
     });
-  } catch {
+  } catch (e: any) {
     // Silently fail - telemetry should never break the app
+    console.error('[Telemetry DB Insert Failed]', e?.message || e);
   }
 }
 

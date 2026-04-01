@@ -17,6 +17,7 @@ import Link from 'next/link';
 import WelcomeBanner from '@/components/office/WelcomeBanner';
 import DashboardSummaryCards from '@/components/office/DashboardSummaryCards';
 import RecentActivitySection from '@/components/office/RecentActivitySection';
+import DashboardGreeting from '@/components/office/DashboardGreeting';
 
 // Helper for Rand formatting
 const formatRand = (amount: number) => {
@@ -157,8 +158,16 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase.from('business_profile').select('*').single();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const firstName =
+    (user?.user_metadata?.full_name as string | undefined)?.split(' ')[0] ||
+    (user?.user_metadata?.name as string | undefined)?.split(' ')[0] ||
+    user?.email?.split('@')[0] ||
+    'there';
+
   return (
     <div className="space-y-10">
+      <DashboardGreeting name={firstName} />
       <WelcomeBanner profile={profile} />
       <DashboardSummaryCards
         initialPreferences={profile?.document_settings?.notification_preferences || null}

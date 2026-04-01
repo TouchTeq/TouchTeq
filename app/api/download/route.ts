@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Only verify Turnstile if both secret key and token are present
     const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    let turnstileValid = true;
     if (turnstileSecret && turnstileToken && turnstileToken !== '') {
       try {
         const turnstileResponse = await fetch(
@@ -36,10 +37,16 @@ export async function POST(request: NextRequest) {
         );
         const turnstileData = await turnstileResponse.json();
         if (!turnstileData.success) {
-          console.warn('Turnstile verification failed, proceeding anyway:', turnstileData);
+          return NextResponse.json(
+            { error: 'Security verification failed' },
+            { status: 403 }
+          );
         }
-      } catch (turnstileError) {
-        console.warn('Turnstile verification error, proceeding anyway:', turnstileError);
+      } catch {
+        return NextResponse.json(
+          { error: 'Security verification failed' },
+          { status: 403 }
+        );
       }
     }
 

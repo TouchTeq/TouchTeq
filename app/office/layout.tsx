@@ -30,7 +30,8 @@ import {
   Sparkles,
   Wallet,
   ShoppingBag,
-  Bot
+  Bot,
+  ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@/lib/supabase/client';
@@ -50,12 +51,16 @@ const AiAssistant = dynamic(() => import('@/components/office/AiAssistant'), {
 
 type NavGroup = {
   title: string;
+  collapsible: boolean;
+  defaultExpanded: boolean;
   items: { name: string; href: string; icon: any }[];
 };
 
 const navGroups: NavGroup[] = [
   {
     title: 'CORE',
+    collapsible: false,
+    defaultExpanded: true,
     items: [
       { name: 'Dashboard', href: '/office/dashboard', icon: LayoutDashboard },
       { name: 'Clients', href: '/office/clients', icon: Users },
@@ -64,6 +69,8 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'REVENUE',
+    collapsible: true,
+    defaultExpanded: true,
     items: [
       { name: 'Quotes', href: '/office/quotes', icon: FileText },
       { name: 'Invoices', href: '/office/invoices', icon: Receipt },
@@ -75,17 +82,20 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'OPERATIONS',
+    collapsible: true,
+    defaultExpanded: true,
     items: [
       { name: 'Timeline', href: '/office/timeline', icon: Activity },
       { name: 'Reminders', href: '/office/reminders', icon: Bell },
       { name: 'Activity', href: '/office/activity', icon: Clock },
-      { name: 'AI Log', href: '/office/activity/ai-log', icon: Bot },
       { name: 'Reports', href: '/office/reports', icon: BarChart3 },
       { name: 'Cash Flow', href: '/office/cash-flow', icon: Wallet },
     ],
   },
   {
     title: 'FLEET',
+    collapsible: true,
+    defaultExpanded: false,
     items: [
       { name: 'Travel Logbook', href: '/office/travel', icon: Car },
       { name: 'Fuel Tracker', href: '/office/fuel', icon: Fuel },
@@ -93,12 +103,17 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'ADMIN',
+    collapsible: true,
+    defaultExpanded: false,
     items: [
       { name: 'Certificates', href: '/office/certificates', icon: Shield },
       { name: 'Settings', href: '/office/settings', icon: Settings },
+      { name: 'AI Log', href: '/office/activity/ai-log', icon: Bot },
+      { name: 'AI Diagnostics', href: '/office/ai-assistant/diagnostics', icon: Bot },
     ],
   },
 ];
+
 
 function getStoredOfficeTheme(): OfficeTheme {
   if (typeof window === 'undefined') return 'dark';
@@ -127,108 +142,290 @@ function SidebarNav({
   isCollapsed,
   pathname,
   sidebarRef,
-  overdueReminderCount
+  overdueReminderCount,
+  onSignOut,
 }: {
-  navGroups: NavGroup[],
-  isCollapsed: boolean,
-  pathname: string,
-  sidebarRef?: React.MutableRefObject<HTMLDivElement | null>,
-  overdueReminderCount?: number
+  navGroups: NavGroup[];
+  isCollapsed: boolean;
+  pathname: string;
+  sidebarRef?: React.MutableRefObject<HTMLDivElement | null>;
+  overdueReminderCount?: number;
+  onSignOut: () => void;
 }) {
   const searchParams = useSearchParams();
+
+  // Initialise group open/closed state — expand the group that contains the active page
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => {
+    const state: Record<string, boolean> = {};
+    for (const group of navGroups) {
+      if (!group.collapsible) continue;
+      const activeInGroup = group.items.some((item) => {
+        const itemPath = item.href.split('?')[0];
+        return (
+          pathname === itemPath ||
+          (itemPath !== '/office/dashboard' && pathname.startsWith(itemPath))
+        );
+      });
+      state[group.title] = activeInGroup ? true : group.defaultExpanded;
+    }
+    return state;
+  });
+
+  // On mount, overlay with persisted localStorage values (but keep active group forced open)
+  useEffect(() => {
+    setGroupOpen((prev) => {
+      const next = { ...prev };
+      for (const group of navGroups) {
+        if (!group.collapsible) continue;
+        const activeInGroup = group.items.some((item) => {
+          const itemPath = item.href.split('?')[0];
+          return (
+            pathname === itemPath ||
+            (itemPath !== '/office/dashboard' && pathname.startsWith(itemPath))
+          );
+        });
+        if (activeInGroup) {
+          next[group.title] = true; // always open active group
+        } else {
+          const saved = window.localStorage.getItem(`nav-group-v2-${group.title}`);
+          if (saved !== null) next[group.title] = saved === 'true';
+        }
+      }
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When pathname changes, force the active group open
+  useEffect(() => {
+    setGroupOpen((prev) => {
+      const next = { ...prev };
+      for (const group of navGroups) {
+        if (!group.collapsible) continue;
+        const activeInGroup = group.items.some((item) => {
+          const itemPath = item.href.split('?')[0];
+          return (
+            pathname === itemPath ||
+            (itemPath !== '/office/dashboard' && pathname.startsWith(itemPath))
+          );
+        });
+        if (activeInGroup) next[group.title] = true;
+      }
+      return next;
+    });
+  }, [pathname, navGroups]);
+
+  const toggleGroup = (title: string) => {
+    setGroupOpen((prev) => {
+      const next = { ...prev, [title]: !prev[title] };
+      window.localStorage.setItem(`nav-group-v2-${title}`, String(next[title]));
+      return next;
+    });
+  };
 
   // Handle wheel scrolling for sidebar - prevent main content from scrolling
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Check if mouse is over sidebar
       const sidebar = sidebarRef?.current;
       if (!sidebar) return;
-      
       const rect = sidebar.getBoundingClientRect();
-      const isOverSidebar = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-      
+      const isOverSidebar =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
       if (isOverSidebar) {
         e.stopPropagation();
         e.preventDefault();
-        
         const { scrollTop, scrollHeight, clientHeight } = sidebar;
         const canScrollUp = scrollTop > 0;
         const canScrollDown = scrollTop + clientHeight < scrollHeight;
-
-        // Only scroll if not at edges
         if ((e.deltaY < 0 && canScrollUp) || (e.deltaY > 0 && canScrollDown)) {
           sidebar.scrollTop += e.deltaY;
         }
       }
     };
-
     document.addEventListener('wheel', handleWheel, { passive: false });
     return () => document.removeEventListener('wheel', handleWheel);
   }, [sidebarRef]);
 
+  const renderItem = (item: { name: string; href: string; icon: any }) => {
+    const itemUrl = item.href.includes('?')
+      ? new URL(item.href, 'http://localhost')
+      : { pathname: item.href, searchParams: new URLSearchParams() };
+    const itemTab = (itemUrl as any).searchParams?.get('tab');
+    const currentTab = searchParams.get('tab');
+
+    let isActive = false;
+    if (itemTab) {
+      isActive = pathname === (itemUrl as any).pathname && currentTab === itemTab;
+    } else if (pathname === '/office/invoices' && currentTab) {
+      isActive = false;
+    } else {
+      isActive =
+        item.href === '/office/dashboard'
+          ? pathname === item.href
+          : pathname.startsWith(item.href.split('?')[0]);
+    }
+
+    // ── Collapsed (icon-only) ─────────────────────────────────────────────────
+    if (isCollapsed) {
+      return (
+        <div key={item.name} className="relative group/tooltip">
+          <Link
+            href={item.href}
+            className={`group flex items-center justify-center p-3 rounded-lg transition-all ${
+              isActive
+                ? 'bg-orange-500 shadow-lg shadow-orange-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <item.icon
+              size={20}
+              className={`flex-shrink-0 transition-colors ${
+                isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#FF6900]'
+              }`}
+            />
+            {item.name === 'Reminders' && overdueReminderCount && overdueReminderCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-orange-500 text-white rounded-full flex items-center justify-center text-[10px] font-black leading-none">
+                {overdueReminderCount > 99 ? '99+' : overdueReminderCount}
+              </span>
+            )}
+          </Link>
+          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity z-[200]">
+            {item.name}
+            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+          </div>
+        </div>
+      );
+    }
+
+    // ── Expanded (tree-style with horizontal connector) ───────────────────────
+    return (
+      <div key={item.name} className="relative group/tooltip pl-[30px]">
+        {/* Horizontal branch line — connects to the vertical tree line */}
+        <div className="absolute left-[14px] top-1/2 -translate-y-1/2 w-[14px] h-px bg-slate-700/60 pointer-events-none" />
+        <Link
+          href={item.href}
+          className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] transition-all ${
+            isActive
+              ? 'bg-orange-500 shadow-lg shadow-orange-500/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <item.icon
+            size={16}
+            className={`flex-shrink-0 transition-colors ${
+              isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#FF6900]'
+            }`}
+          />
+          <span className={`text-[12px] font-semibold uppercase tracking-wide whitespace-nowrap ${
+            isActive ? 'text-white' : ''
+          }`}>
+            {item.name}
+          </span>
+          {item.name === 'Reminders' && overdueReminderCount && overdueReminderCount > 0 && (
+            <span className="ml-auto min-w-5 h-5 px-1 bg-orange-500 text-white rounded-full flex items-center justify-center text-[10px] font-black leading-none">
+              {overdueReminderCount > 99 ? '99+' : overdueReminderCount}
+            </span>
+          )}
+        </Link>
+      </div>
+    );
+  };
+
   return (
     <nav
-      className={`flex-1 min-h-0 py-4 space-y-4 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'px-2' : 'px-3'} scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent`}
+      className={`flex-1 min-h-0 py-4 overflow-y-auto overflow-x-hidden ${
+        isCollapsed ? 'px-2' : 'px-3'
+      } scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent`}
       onWheel={(e) => e.stopPropagation()}
       style={{ overflowY: 'auto' }}
     >
-      {navGroups.map((group) => (
-        <div key={group.title}>
-          {!isCollapsed && (
-            <div className="px-3 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">{group.title}</span>
+      {navGroups.map((group, groupIndex) => {
+        const isOpen = !group.collapsible || groupOpen[group.title] === true;
+
+        return (
+          <div key={group.title} className={groupIndex > 0 ? 'mt-5' : ''}>
+            {/* Group header */}
+            {!isCollapsed && (
+              group.collapsible ? (
+                <button
+                  onClick={() => toggleGroup(group.title)}
+                  className="w-full flex items-center justify-between px-1 py-1 mb-2 rounded-md hover:bg-slate-800/30 transition-colors group/header"
+                >
+                  <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-slate-400 group-hover/header:text-slate-300 transition-colors">
+                    {group.title}
+                  </span>
+                  <ChevronDown
+                    size={11}
+                    className={`text-slate-600 group-hover/header:text-slate-400 transition-all duration-200 ${
+                      isOpen ? 'rotate-0' : '-rotate-90'
+                    }`}
+                  />
+                </button>
+              ) : (
+                <div className="px-1 py-1 mb-2">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-slate-400">
+                    {group.title}
+                  </span>
+                </div>
+              )
+            )}
+
+            {/* Group items — always visible when collapsed (icon-only), animate when expanded */}
+            {isCollapsed ? (
+              <div className="space-y-0.5">
+                {group.items.map(renderItem)}
+              </div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    key="items"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    {/* Tree container: vertical connecting line + items */}
+                    <div className="relative">
+                      <div className="absolute left-[14px] top-[14px] bottom-[14px] w-px bg-slate-700/50 pointer-events-none" />
+                      <div className="space-y-0.5">
+                        {group.items.map(renderItem)}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Sign out — inside nav so it scrolls with content when collapsed */}
+      <div className="pt-2 border-t border-slate-800/50 mt-2">
+        <div className="relative group/tooltip">
+          <button
+            onClick={onSignOut}
+            className={`w-full flex items-center rounded-lg text-slate-400 hover:text-white hover:bg-red-500/10 transition-all group ${
+              isCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'
+            }`}
+          >
+            <LogOut size={18} className="group-hover:text-red-500 flex-shrink-0" />
+            {!isCollapsed && (
+              <span className="font-bold text-[13px] uppercase tracking-wider">Sign Out</span>
+            )}
+          </button>
+          {isCollapsed && (
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity z-[200]">
+              Sign Out
+              <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
             </div>
           )}
-          <div className="space-y-0.5">
-            {group.items.map((item) => {
-              const itemUrl = item.href.includes('?')
-                ? new URL(item.href, 'http://localhost')
-                : { pathname: item.href, searchParams: new URLSearchParams() };
-              const itemTab = (itemUrl as any).searchParams?.get('tab');
-              const currentTab = searchParams.get('tab');
-
-              let isActive = false;
-              if (itemTab) {
-                isActive = pathname === (itemUrl as any).pathname && currentTab === itemTab;
-              } else {
-                if (pathname === '/office/invoices' && currentTab) {
-                  isActive = false;
-                } else {
-                  isActive = item.href === '/office/dashboard'
-                    ? pathname === item.href
-                    : pathname.startsWith(item.href);
-                }
-              }
-              return (
-                <div key={item.name} className="relative group/tooltip">
-                  <Link
-                    href={item.href}
-                    className={`group flex items-center rounded-lg transition-all ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'} ${isActive ? 'bg-orange-500 shadow-lg shadow-orange-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                  >
-                    <item.icon size={20} className={`flex-shrink-0 transition-colors ${isActive ? 'text-[#FFFFFF]' : 'text-slate-400 group-hover:text-[#FF6900]'}`} />
-                    {!isCollapsed && (
-                      <span className="font-bold text-[13px] uppercase tracking-wider whitespace-nowrap">
-                        {item.name}
-                      </span>
-                    )}
-                    {item.name === 'Reminders' && overdueReminderCount && overdueReminderCount > 0 && (
-                      <span className={`${isCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} min-w-5 h-5 px-1 bg-orange-500 text-white rounded-full flex items-center justify-center text-[10px] font-black leading-none`}>
-                        {overdueReminderCount > 99 ? '99+' : overdueReminderCount}
-                      </span>
-                    )}
-                  </Link>
-                  {isCollapsed && (
-                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity z-[200]">
-                      {item.name}
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </div>
-      ))}
+      </div>
     </nav>
   );
 }
@@ -505,23 +702,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
 
                   {/* Navigation */}
                   <div ref={sidebarRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                    <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} sidebarRef={sidebarRef} overdueReminderCount={overdueReminderCount} />
-                  </div>
-
-                  {/* Bottom: Sign Out */}
-                  <div className={`border-t border-slate-800/50 flex flex-col gap-1 flex-shrink-0 ${isCollapsed ? 'p-2' : 'p-3'}`}>
-                    <div className="relative group/tooltip">
-                      <button onClick={handleSignOut} className={`w-full flex items-center rounded-lg text-slate-400 hover:text-white hover:bg-red-500/10 transition-all group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'}`}>
-                        <LogOut size={18} className="group-hover:text-red-500 flex-shrink-0" />
-                        {!isCollapsed && <span className="font-bold text-[13px] uppercase tracking-wider">Sign Out</span>}
-                      </button>
-                      {isCollapsed && (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-opacity z-[200]">
-                          Sign Out
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-                        </div>
-                      )}
-                    </div>
+                    <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} sidebarRef={sidebarRef} overdueReminderCount={overdueReminderCount} onSignOut={handleSignOut} />
                   </div>
                 </motion.aside>
 

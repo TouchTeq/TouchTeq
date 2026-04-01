@@ -11,6 +11,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { decryptValue } from '@/lib/encryption';
 
+// Startup validation: warn if ENCRYPTION_KEY is missing or invalid
+if (typeof process !== 'undefined' && process.env) {
+  const encKey = process.env.ENCRYPTION_KEY;
+  if (!encKey || encKey.length < 32) {
+    console.error('[STARTUP WARNING] ENCRYPTION_KEY is missing or too short. BYOK feature will not work.');
+  }
+}
+
+// Startup validation: warn if ENCRYPTION_KEY is missing or invalid
+if (typeof process !== 'undefined' && process.env) {
+  const encKey = process.env.ENCRYPTION_KEY;
+  if (!encKey || encKey.length < 32) {
+    console.error('[STARTUP WARNING] ENCRYPTION_KEY is missing or too short. BYOK feature will not work.');
+  }
+}
+
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',

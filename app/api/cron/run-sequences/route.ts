@@ -19,7 +19,26 @@ export async function GET(request: Request) {
     }
 
     const supabase = createAdminClient();
+    const startTime = Date.now();
+
+    // Idempotency guard: skip if already run within the last 23 hours
+    const { data: lastRun } = await supabase
+      .from('cron_log')
+      .select('ran_at')
+      .order('ran_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastRun && new Date(lastRun.ran_at) > new Date(Date.now() - 23 * 60 * 60 * 1000)) {
+      return NextResponse.json({
+        skipped: true,
+        reason: 'Already ran within 23 hours',
+        lastRun: lastRun.ran_at,
+      });
+    }
+
     const result = await runOfficeSequences(supabase);
+    const durationMs = Date.now() - startTime;
 
     await supabase
       .from("ai_rate_limits")
@@ -61,6 +80,13 @@ export async function GET(request: Request) {
         .update({ document_settings: nextDocumentSettings })
         .eq('id', profile.id);
     }
+
+    // Log this run to cron_log for idempotency tracking
+    await supabase.from('cron_log').insert({
+      ran_at: ranAt,
+      result: { ...result },
+      duration_ms: durationMs,
+    });
 
     return NextResponse.json({
       ok: true,
