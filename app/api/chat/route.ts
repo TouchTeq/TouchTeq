@@ -736,6 +736,7 @@ async function resolveCreditNoteForWrite(supabase: any, reference: string): Prom
   client_name: string;
   total: number;
   status: string;
+  invoice_id: string | null;
 }>> {
   const ref = reference.trim().toUpperCase();
   if (!ref) return { kind: "not_found" };
@@ -743,7 +744,7 @@ async function resolveCreditNoteForWrite(supabase: any, reference: string): Prom
   // 1. Exact match
   const { data: exact } = await supabase
     .from("credit_notes")
-    .select("id, cn_number, total, status, clients(company_name)")
+    .select("id, cn_number, total, status, invoice_id, clients(company_name)")
     .eq("cn_number", ref)
     .maybeSingle();
 
@@ -756,6 +757,7 @@ async function resolveCreditNoteForWrite(supabase: any, reference: string): Prom
         client_name: (exact as any).clients?.company_name || "Unknown",
         total: Number(exact.total) || 0,
         status: exact.status,
+        invoice_id: exact.invoice_id,
       },
     };
   }
@@ -763,7 +765,7 @@ async function resolveCreditNoteForWrite(supabase: any, reference: string): Prom
   // 2. Fuzzy
   const { data: fuzzy } = await supabase
     .from("credit_notes")
-    .select("id, cn_number, total, status, clients(company_name)")
+    .select("id, cn_number, total, status, invoice_id, clients(company_name)")
     .ilike("cn_number", `%${ref}%`)
     .limit(10);
 
@@ -778,6 +780,7 @@ async function resolveCreditNoteForWrite(supabase: any, reference: string): Prom
         client_name: (cn as any).clients?.company_name || "Unknown",
         total: Number(cn.total) || 0,
         status: cn.status,
+        invoice_id: cn.invoice_id,
       },
     };
   }
@@ -1786,6 +1789,440 @@ const tools = [
           required: ["documentType", "reference", "action"],
         },
       },
+      {
+        name: "createTask",
+        description: "Creates a new task or to-do item. Use this when the user asks to create a task, add a to-do, set a reminder, or when they say things like 'remind me to...', 'I need to...', 'don't forget to...', 'schedule...', or 'add to my list...'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "The task title — a clear, concise description of what needs to be done."
+            },
+            description: {
+              type: "string",
+              description: "Optional longer description with additional details or context."
+            },
+            priority: {
+              type: "string",
+              enum: ["low", "medium", "high", "urgent"],
+              description: "Task priority. Default to 'medium' if the user does not specify. Use 'urgent' only if the user explicitly says urgent, critical, or ASAP. Use 'high' if they say important or high priority."
+            },
+            dueDate: {
+              type: "string",
+              description: "Due date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'end of the week', 'next month', etc. If the user says 'remind me' with a date, use that as the due date."
+            },
+            dueTime: {
+              type: "string",
+              description: "Optional due time in HH:MM format (24-hour). Only set if the user specifies a specific time."
+            },
+            category: {
+              type: "string",
+              description: "Task category. Common categories: Admin, Site Visit, Follow-up, Procurement, Documentation, Maintenance, Client Communication, Invoicing, Safety. Infer from context if not explicitly stated."
+            },
+            clientName: {
+              type: "string",
+              description: "Client name to link the task to, if the task relates to a specific client. Will be looked up by name."
+            },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+              description: "Optional tags for the task."
+            },
+            notes: {
+              type: "string",
+              description: "Optional additional notes."
+            }
+          },
+          required: ["title"]
+        },
+      },
+      {
+        name: "updateTask",
+        description: "Updates an existing task. Use this when the user asks to change a task's priority, due date, description, status, or any other field. Also use this when the user asks to 'start working on' a task (set status to in_progress).",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            taskIdentifier: {
+              type: "string",
+              description: "The task title or a description that identifies the task. Will be searched by title."
+            },
+            title: { type: "string", description: "New title, if changing." },
+            description: { type: "string", description: "New description, if changing." },
+            priority: {
+              type: "string",
+              enum: ["low", "medium", "high", "urgent"],
+              description: "New priority, if changing."
+            },
+            status: {
+              type: "string",
+              enum: ["todo", "in_progress", "done", "cancelled"],
+              description: "New status, if changing."
+            },
+            dueDate: { type: "string", description: "New due date in YYYY-MM-DD format, if changing." },
+            dueTime: { type: "string", description: "New due time in HH:MM format, if changing." },
+            category: { type: "string", description: "New category, if changing." },
+            notes: { type: "string", description: "New notes, if changing." }
+          },
+          required: ["taskIdentifier"]
+        },
+      },
+      {
+        name: "completeTask",
+        description: "Marks a task as done/completed. Use this when the user says 'done', 'finished', 'completed', 'tick off', or 'mark as done' for a specific task.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            taskIdentifier: {
+              type: "string",
+              description: "The task title or description that identifies the task."
+            }
+          },
+          required: ["taskIdentifier"]
+        },
+      },
+      {
+        name: "queryTasks",
+        description: "Queries tasks based on filters. Use this when the user asks 'what do I need to do today?', 'show me my overdue tasks', 'what tasks are due this week?', 'what are my high priority tasks?', 'how many tasks do I have?', or any question about their task list.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            queryType: {
+              type: "string",
+              enum: ["today", "overdue", "this_week", "all_open", "by_priority", "by_client", "by_category", "stats", "search"],
+              description: "The type of query to run."
+            },
+            priority: {
+              type: "string",
+              enum: ["low", "medium", "high", "urgent"],
+              description: "Filter by priority (for by_priority query)."
+            },
+            clientName: {
+              type: "string",
+              description: "Client name to filter by (for by_client query)."
+            },
+            category: {
+              type: "string",
+              description: "Category to filter by (for by_category query)."
+            },
+            searchTerm: {
+              type: "string",
+              description: "Search term for task titles and descriptions (for search query)."
+            }
+          },
+          required: ["queryType"]
+        },
+      },
+      {
+        name: "deleteTask",
+        description: "Deletes a task permanently. Use this when the user explicitly asks to delete or remove a task. For tasks the user just wants to dismiss or skip, suggest marking as cancelled instead.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            taskIdentifier: {
+              type: "string",
+              description: "The task title or description that identifies the task to delete."
+            }
+          },
+          required: ["taskIdentifier"]
+        },
+      },
+      {
+        name: "createNote",
+        description: "Creates a new note. Use this when the user says 'take a note', 'note that...', 'jot down...', 'write down...', 'remember that...', or describes something they want to record. For phone calls, use note_type 'call'. For meetings, use 'meeting'. For site visits, use 'site_visit'. For quick one-liners, use 'quick'. For everything else, use 'general'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "Optional title for the note. Generate a short descriptive title if the user does not provide one."
+            },
+            content: {
+              type: "string",
+              description: "The note content. Capture what the user said, organized clearly. For call notes, structure as: who was called, what was discussed, outcomes. For site visits: site name, observations, action items."
+            },
+            noteType: {
+              type: "string",
+              enum: ["general", "call", "meeting", "site_visit", "quick"],
+              description: "The type of note. Infer from context: if the user mentions a phone call, use 'call'. If they mention a meeting, use 'meeting'. If they mention a site visit or being on site, use 'site_visit'. If it is a brief note or reminder-style, use 'quick'. Default to 'general'."
+            },
+            contactName: {
+              type: "string",
+              description: "For call/meeting notes: the name of the person contacted or who attended."
+            },
+            contactPhone: {
+              type: "string",
+              description: "For call notes: the phone number if mentioned."
+            },
+            callDirection: {
+              type: "string",
+              enum: ["inbound", "outbound"],
+              description: "For call notes: whether the call was inbound or outbound."
+            },
+            meetingAttendees: {
+              type: "array",
+              items: { type: "string" },
+              description: "For meeting notes: list of attendee names."
+            },
+            siteName: {
+              type: "string",
+              description: "For site visit notes: the name of the site."
+            },
+            clientName: {
+              type: "string",
+              description: "Client to link this note to, if it relates to a specific client."
+            },
+            followUpRequired: {
+              type: "boolean",
+              description: "Whether a follow-up action is needed. Set to true if the user mentions needing to follow up, get back to someone, or take further action."
+            },
+            followUpDate: {
+              type: "string",
+              description: "If follow-up is required, the date by which it should happen (YYYY-MM-DD). Interpret natural language dates."
+            },
+            followUpNotes: {
+              type: "string",
+              description: "Brief description of the follow-up action needed."
+            },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+              description: "Optional tags for categorising the note."
+            }
+          },
+          required: ["content"]
+        },
+      },
+      {
+        name: "searchNotes",
+        description: "Searches through existing notes. Use this when the user asks 'what did I note about...', 'find my notes on...', 'show me notes about...', 'what did we discuss with [client]...', 'any notes about [topic]...', or 'show me my follow-ups'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            searchTerm: {
+              type: "string",
+              description: "Text to search for in note titles and content."
+            },
+            noteType: {
+              type: "string",
+              enum: ["general", "call", "meeting", "site_visit", "quick", "all"],
+              description: "Filter by note type. Default to 'all'."
+            },
+            clientName: {
+              type: "string",
+              description: "Filter notes by client name."
+            },
+            followUpPending: {
+              type: "boolean",
+              description: "If true, only return notes with pending (not completed) follow-ups."
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of notes to return. Default 10."
+            }
+          },
+          required: []
+        },
+      },
+      {
+        name: "logCallNote",
+        description: "Quickly logs a phone call note. Use this when the user explicitly mentions a phone call: 'just got off the phone with...', 'called [person/company]...', 'log a call with...', '[person] called about...'. This is a shortcut that pre-sets the note type to 'call'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            contactName: {
+              type: "string",
+              description: "Who the call was with."
+            },
+            clientName: {
+              type: "string",
+              description: "The client company, if applicable."
+            },
+            callDirection: {
+              type: "string",
+              enum: ["inbound", "outbound"],
+              description: "Whether the user called them (outbound) or they called the user (inbound). Infer from context: 'I called' = outbound, 'they called' or '[person] called' = inbound."
+            },
+            content: {
+              type: "string",
+              description: "What was discussed, decisions made, outcomes, and any action items. Structure the content clearly."
+            },
+            followUpRequired: {
+              type: "boolean",
+              description: "Whether follow-up is needed."
+            },
+            followUpDate: {
+              type: "string",
+              description: "Follow-up date if needed (YYYY-MM-DD)."
+            },
+            followUpNotes: {
+              type: "string",
+              description: "What the follow-up should involve."
+            }
+          },
+          required: ["contactName", "content"]
+        },
+      },
+      {
+        name: "createCalendarEvent",
+        description: "Creates a new calendar event or appointment. Use this when the user asks to schedule a meeting, add an appointment, block time, set up a call, or when they say 'book...', 'schedule...', 'set up...', 'add to calendar...', or 'I have a meeting with...'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "The event title — what the event is called."
+            },
+            description: {
+              type: "string",
+              description: "Optional longer description with additional details."
+            },
+            eventType: {
+              type: "string",
+              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
+              description: "Type of event. Default to 'appointment' if not specified."
+            },
+            startDate: {
+              type: "string",
+              description: "Start date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'next week', etc."
+            },
+            startTime: {
+              type: "string",
+              description: "Start time in HH:MM format (24-hour). Only set if the user specifies a specific time."
+            },
+            endDate: {
+              type: "string",
+              description: "End date in YYYY-MM-DD format. If not set, defaults to start date."
+            },
+            endTime: {
+              type: "string",
+              description: "End time in HH:MM format (24-hour)."
+            },
+            allDay: {
+              type: "boolean",
+              description: "Whether this is an all-day event. Default false."
+            },
+            location: {
+              type: "string",
+              description: "Where the event takes place."
+            },
+            clientName: {
+              type: "string",
+              description: "Client name to link the event to, if applicable. Will be looked up by name."
+            },
+            status: {
+              type: "string",
+              enum: ["scheduled", "completed", "cancelled", "rescheduled"],
+              description: "Event status. Default to 'scheduled'."
+            },
+            colour: {
+              type: "string",
+              description: "Event colour in hex format (e.g., '#3B82F6'). Optional."
+            },
+            notes: {
+              type: "string",
+              description: "Internal/private notes about the event."
+            }
+          },
+          required: ["title", "startDate"]
+        },
+      },
+      {
+        name: "queryCalendarEvents",
+        description: "Queries calendar events for a specific date range or searches for events. Use this when the user asks 'what's on my calendar', 'what meetings do I have', 'show me my schedule', 'any events on [date]', 'what's happening today/tomorrow/this week', or 'do I have anything scheduled'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            startDate: {
+              type: "string",
+              description: "Start date in YYYY-MM-DD format. If not set, defaults to today."
+            },
+            endDate: {
+              type: "string",
+              description: "End date in YYYY-MM-DD format. If not set, defaults to start date."
+            },
+            eventType: {
+              type: "string",
+              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
+              description: "Filter by event type."
+            },
+            clientName: {
+              type: "string",
+              description: "Filter events by client name."
+            },
+            status: {
+              type: "string",
+              enum: ["scheduled", "completed", "cancelled", "rescheduled"],
+              description: "Filter by event status."
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of events to return. Default 20."
+            }
+          },
+          required: []
+        },
+      },
+      {
+        name: "updateCalendarEvent",
+        description: "Updates an existing calendar event. Use this when the user asks to change an event's time, location, title, status, or any other field.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            eventIdentifier: {
+              type: "string",
+              description: "The event title or description that identifies the event. Will be searched by title."
+            },
+            title: {
+              type: "string",
+              description: "New event title."
+            },
+            description: {
+              type: "string",
+              description: "New description."
+            },
+            eventType: {
+              type: "string",
+              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
+              description: "New event type."
+            },
+            startDate: {
+              type: "string",
+              description: "New start date in YYYY-MM-DD format."
+            },
+            startTime: {
+              type: "string",
+              description: "New start time in HH:MM format."
+            },
+            endDate: {
+              type: "string",
+              description: "New end date in YYYY-MM-DD format."
+            },
+            endTime: {
+              type: "string",
+              description: "New end time in HH:MM format."
+            },
+            allDay: {
+              type: "boolean",
+              description: "Whether this is an all-day event."
+            },
+            location: {
+              type: "string",
+              description: "New location."
+            },
+            status: {
+              type: "string",
+              enum: ["scheduled", "completed", "cancelled", "rescheduled"],
+              description: "New status."
+            },
+            notes: {
+              type: "string",
+              description: "New internal notes."
+            }
+          },
+          required: ["eventIdentifier"]
+        },
+      },
     ],
   },
 ];
@@ -1796,7 +2233,7 @@ const tools = [
 
 // Tools that execute server-side and return data for a follow-up AI call
 // Tools that execute server-side and return data for a follow-up AI call
-const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice"]);
+const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice", "createTask", "updateTask", "completeTask", "queryTasks", "deleteTask", "createNote", "searchNotes", "logCallNote", "createCalendarEvent", "queryCalendarEvents", "updateCalendarEvent"]);
 
 async function executeLogTrip(args: any): Promise<string> {
   const supabase = getSupabase();
@@ -4174,6 +4611,1389 @@ async function executeConvertQuoteToInvoice(args: { quoteReference: string; paym
   }
 }
 
+// ============================================================
+// TASK TOOLS
+// ============================================================
+
+async function executeCreateTask(
+  args: {
+    title: string;
+    description?: string;
+    priority?: string;
+    dueDate?: string;
+    dueTime?: string;
+    category?: string;
+    clientName?: string;
+    tags?: string[];
+    notes?: string;
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    let clientId: string | null = null;
+    let clientCompanyName: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients, error: clientError } = await supabase
+        .from("clients")
+        .select("id, company_name")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(5);
+
+      if (clientError) {
+        return wrapWithActionResult(actionFailed({
+          action: "create_task",
+          targetType: "task",
+          toolUsed: "createTask",
+          error: `Error looking up client: ${clientError.message}`,
+          nextStep: "Please check the client name and try again."
+        }));
+      }
+
+      if (clients && clients.length === 1) {
+        clientId = clients[0].id;
+        clientCompanyName = clients[0].company_name;
+      } else if (clients && clients.length > 1) {
+        const exactMatch = clients.find(
+          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+        );
+        if (exactMatch) {
+          clientId = exactMatch.id;
+          clientCompanyName = exactMatch.company_name;
+        } else {
+          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
+          return wrapWithActionResult(actionNeedInfo({
+            action: "create_task",
+            targetType: "task",
+            toolUsed: "createTask",
+            missingFields: ["clientName"],
+            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
+          }));
+        }
+      }
+    }
+
+    const { data: task, error: insertError } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: user.id,
+        title: args.title,
+        description: args.description || null,
+        status: "todo",
+        priority: args.priority || "medium",
+        due_date: args.dueDate || null,
+        due_time: args.dueTime || null,
+        category: args.category || null,
+        client_id: clientId,
+        tags: args.tags || [],
+        notes: args.notes || null,
+      })
+      .select("id, title, status, priority, due_date, due_time, category")
+      .single();
+
+    if (insertError) {
+      return wrapWithActionResult(actionFailed({
+        action: "create_task",
+        targetType: "task",
+        toolUsed: "createTask",
+        error: `Failed to create task: ${insertError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    let message = `Task created: "${task.title}"`;
+    message += ` | Priority: ${task.priority}`;
+    if (task.due_date) message += ` | Due: ${task.due_date}`;
+    if (task.due_time) message += ` at ${task.due_time}`;
+    if (task.category) message += ` | Category: ${task.category}`;
+    if (clientCompanyName) message += ` | Client: ${clientCompanyName}`;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "create_task",
+        targetType: "task",
+        targetReference: task.title,
+        toolUsed: "createTask",
+        summary: message,
+        verified: true,
+      }),
+      {
+        task: {
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          due_date: task.due_date,
+          due_time: task.due_time,
+          category: task.category,
+          client_name: clientCompanyName,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "create_task",
+      targetType: "task",
+      toolUsed: "createTask",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeUpdateTask(
+  args: {
+    taskIdentifier: string;
+    title?: string;
+    description?: string;
+    priority?: string;
+    status?: string;
+    dueDate?: string;
+    dueTime?: string;
+    category?: string;
+    notes?: string;
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    const { data: tasks, error: searchError } = await supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date, due_time, category")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.taskIdentifier}%`)
+      .limit(10);
+
+    if (searchError) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_task",
+        targetType: "task",
+        toolUsed: "updateTask",
+        error: `Error searching for task: ${searchError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    if (!tasks || tasks.length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_task",
+        targetType: "task",
+        toolUsed: "updateTask",
+        error: `No task found matching "${args.taskIdentifier}".`,
+        nextStep: "Please check the task name and try again."
+      }));
+    }
+
+    let task: any;
+    if (tasks.length === 1) {
+      task = tasks[0];
+    } else {
+      const exactMatch = tasks.find(
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+      );
+      if (exactMatch) {
+        task = exactMatch;
+      } else {
+        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
+        return wrapWithActionResult(actionNeedInfo({
+          action: "update_task",
+          targetType: "task",
+          toolUsed: "updateTask",
+          missingFields: ["taskIdentifier"],
+          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
+        }));
+      }
+    }
+
+    const updates: any = {};
+    if (args.title !== undefined) updates.title = args.title;
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.priority !== undefined) updates.priority = args.priority;
+    if (args.status !== undefined) updates.status = args.status;
+    if (args.dueDate !== undefined) updates.due_date = args.dueDate;
+    if (args.dueTime !== undefined) updates.due_time = args.dueTime;
+    if (args.category !== undefined) updates.category = args.category;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    if (args.status === "done") {
+      updates.completed_at = new Date().toISOString();
+    }
+    if (args.status && args.status !== "done") {
+      updates.completed_at = null;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_task",
+        targetType: "task",
+        toolUsed: "updateTask",
+        error: "No fields to update.",
+        nextStep: "Please specify what to change."
+      }));
+    }
+
+    const { data: updatedTask, error: updateError } = await supabase
+      .from("tasks")
+      .update(updates)
+      .eq("id", task.id)
+      .select("id, title, status, priority, due_date, due_time, category")
+      .single();
+
+    if (updateError) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_task",
+        targetType: "task",
+        toolUsed: "updateTask",
+        error: `Failed to update task: ${updateError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const changes = Object.keys(updates)
+      .filter(k => k !== "completed_at")
+      .map(k => `${k}: ${updates[k]}`)
+      .join(", ");
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "update_task",
+        targetType: "task",
+        targetReference: updatedTask.title,
+        toolUsed: "updateTask",
+        summary: `Task "${updatedTask.title}" updated. Changes: ${changes}.`,
+        verified: true,
+      }),
+      {
+        task: {
+          id: updatedTask.id,
+          title: updatedTask.title,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+          due_date: updatedTask.due_date,
+          category: updatedTask.category,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "update_task",
+      targetType: "task",
+      toolUsed: "updateTask",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeCompleteTask(
+  args: { taskIdentifier: string },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    const { data: tasks, error: searchError } = await supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.taskIdentifier}%`)
+      .limit(10);
+
+    if (searchError) {
+      return wrapWithActionResult(actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `Error searching for task: ${searchError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    if (!tasks || tasks.length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `No task found matching "${args.taskIdentifier}".`,
+        nextStep: "Please check the task name and try again."
+      }));
+    }
+
+    let task: any;
+    if (tasks.length === 1) {
+      task = tasks[0];
+    } else {
+      const exactMatch = tasks.find(
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+      );
+      if (exactMatch) {
+        task = exactMatch;
+      } else {
+        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
+        return wrapWithActionResult(actionNeedInfo({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          missingFields: ["taskIdentifier"],
+          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
+        }));
+      }
+    }
+
+    if (task.status === "done") {
+      return wrapWithActionResult(actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `Task "${task.title}" is already completed.`,
+        nextStep: "No action needed."
+      }));
+    }
+
+    if (task.status === "cancelled") {
+      return wrapWithActionResult(actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `Task "${task.title}" was cancelled and cannot be completed.`,
+        nextStep: "You may want to create a new task instead."
+      }));
+    }
+
+    const completedAt = new Date().toISOString();
+
+    const { data: updatedTask, error: updateError } = await supabase
+      .from("tasks")
+      .update({ status: "done", completed_at: completedAt })
+      .eq("id", task.id)
+      .select("id, title, status")
+      .single();
+
+    if (updateError) {
+      return wrapWithActionResult(actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `Failed to complete task: ${updateError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "complete_task",
+        targetType: "task",
+        targetReference: updatedTask.title,
+        toolUsed: "completeTask",
+        summary: `Task completed: "${updatedTask.title}". Well done!`,
+        verified: true,
+      }),
+      {
+        task: {
+          id: updatedTask.id,
+          title: updatedTask.title,
+          previous_status: task.status,
+          completed_at: completedAt,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "complete_task",
+      targetType: "task",
+      toolUsed: "completeTask",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeQueryTasks(
+  args: {
+    queryType: string;
+    priority?: string;
+    clientName?: string;
+    category?: string;
+    searchTerm?: string;
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    if (args.queryType === "stats") {
+      const { data: allTasks } = await supabase
+        .from("tasks")
+        .select("id, status, due_date, priority")
+        .eq("user_id", user.id);
+
+      const tasks = allTasks || [];
+      const stats = {
+        total: tasks.length,
+        todo: tasks.filter((t: any) => t.status === "todo").length,
+        in_progress: tasks.filter((t: any) => t.status === "in_progress").length,
+        done: tasks.filter((t: any) => t.status === "done").length,
+        overdue: tasks.filter((t: any) => t.due_date && t.due_date < today && t.status !== "done" && t.status !== "cancelled").length,
+        due_today: tasks.filter((t: any) => t.due_date === today && t.status !== "done" && t.status !== "cancelled").length,
+        urgent: tasks.filter((t: any) => t.priority === "urgent" && t.status !== "done" && t.status !== "cancelled").length,
+      };
+
+      return wrapWithActionResult(
+        actionSuccess({
+          action: "query_tasks",
+          targetType: "task_query",
+          targetReference: "stats",
+          toolUsed: "queryTasks",
+          summary: `You have ${stats.total} total tasks: ${stats.todo} to do, ${stats.in_progress} in progress, ${stats.done} completed. ${stats.overdue} overdue, ${stats.due_today} due today, ${stats.urgent} urgent.`,
+          verified: true,
+        }),
+        { stats }
+      );
+    }
+
+    let query = supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date, due_time, category, client_id, clients(company_name)")
+      .eq("user_id", user.id)
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+
+    switch (args.queryType) {
+      case "today":
+        query = query.eq("due_date", today).neq("status", "done").neq("status", "cancelled");
+        break;
+      case "overdue":
+        query = query.lt("due_date", today).neq("status", "done").neq("status", "cancelled");
+        break;
+      case "this_week":
+        query = query.gte("due_date", today).lte("due_date", weekEnd).neq("status", "done").neq("status", "cancelled");
+        break;
+      case "all_open":
+        query = query.neq("status", "done").neq("status", "cancelled");
+        break;
+      case "by_priority":
+        if (args.priority) {
+          query = query.eq("priority", args.priority).neq("status", "done").neq("status", "cancelled");
+        }
+        break;
+      case "by_client":
+        if (args.clientName) {
+          const { data: clients } = await supabase
+            .from("clients")
+            .select("id")
+            .ilike("company_name", `%${args.clientName}%`)
+            .limit(1);
+          if (clients && clients.length > 0) {
+            query = query.eq("client_id", clients[0].id);
+          } else {
+            return wrapWithActionResult(
+              actionSuccess({
+                action: "query_tasks",
+                targetType: "task_query",
+                targetReference: args.clientName,
+                toolUsed: "queryTasks",
+                summary: `No client found matching '${args.clientName}'.`,
+                verified: true,
+              }),
+              { tasks: [], count: 0 }
+            );
+          }
+        }
+        break;
+      case "by_category":
+        if (args.category) {
+          query = query.eq("category", args.category).neq("status", "done").neq("status", "cancelled");
+        }
+        break;
+      case "search":
+        if (args.searchTerm) {
+          query = query.or(`title.ilike.%${args.searchTerm}%,description.ilike.%${args.searchTerm}%`);
+        }
+        break;
+    }
+
+    const { data: tasks, error } = await query.limit(25);
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "query_tasks",
+        targetType: "task_query",
+        toolUsed: "queryTasks",
+        error: `Failed to query tasks: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const formattedTasks = (tasks || []).map((t: any) => ({
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      due_date: t.due_date,
+      category: t.category,
+      client: t.clients?.company_name || null,
+    }));
+
+    const queryLabels: Record<string, string> = {
+      today: "due today",
+      overdue: "overdue",
+      this_week: "due this week",
+      all_open: "open",
+      by_priority: `${args.priority} priority`,
+      by_client: `for client "${args.clientName}"`,
+      by_category: `in category "${args.category}"`,
+      search: `matching "${args.searchTerm}"`,
+    };
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "query_tasks",
+        targetType: "task_query",
+        targetReference: args.queryType,
+        toolUsed: "queryTasks",
+        summary: formattedTasks.length === 0
+          ? `No ${queryLabels[args.queryType] || ""} tasks found.`
+          : `Found ${formattedTasks.length} ${queryLabels[args.queryType] || ""} task(s).`,
+        verified: true,
+      }),
+      {
+        queryType: args.queryType,
+        count: formattedTasks.length,
+        tasks: formattedTasks,
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "query_tasks",
+      targetType: "task_query",
+      toolUsed: "queryTasks",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeDeleteTask(
+  args: { taskIdentifier: string },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    const { data: tasks, error: searchError } = await supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.taskIdentifier}%`)
+      .limit(10);
+
+    if (searchError) {
+      return wrapWithActionResult(actionFailed({
+        action: "delete_task",
+        targetType: "task",
+        toolUsed: "deleteTask",
+        error: `Error searching for task: ${searchError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    if (!tasks || tasks.length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "delete_task",
+        targetType: "task",
+        toolUsed: "deleteTask",
+        error: `No task found matching "${args.taskIdentifier}".`,
+        nextStep: "Please check the task name and try again."
+      }));
+    }
+
+    let task: any;
+    if (tasks.length === 1) {
+      task = tasks[0];
+    } else {
+      const exactMatch = tasks.find(
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+      );
+      if (exactMatch) {
+        task = exactMatch;
+      } else {
+        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
+        return wrapWithActionResult(actionNeedInfo({
+          action: "delete_task",
+          targetType: "task",
+          toolUsed: "deleteTask",
+          missingFields: ["taskIdentifier"],
+          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
+        }));
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", task.id);
+
+    if (deleteError) {
+      return wrapWithActionResult(actionFailed({
+        action: "delete_task",
+        targetType: "task",
+        toolUsed: "deleteTask",
+        error: `Failed to delete task: ${deleteError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const { data: verifyTasks } = await supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", task.id);
+
+    const isVerified = !verifyTasks || verifyTasks.length === 0;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "delete_task",
+        targetType: "task",
+        targetReference: task.title,
+        toolUsed: "deleteTask",
+        summary: `Task deleted: "${task.title}" (priority: ${task.priority}, due: ${task.due_date || "no date"}).`,
+        verified: isVerified,
+      }),
+      {
+        deleted_task: {
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          due_date: task.due_date,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "delete_task",
+      targetType: "task",
+      toolUsed: "deleteTask",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+// ============================================================
+// NOTE TOOLS
+// ============================================================
+
+async function executeCreateNote(
+  args: {
+    content: string;
+    title?: string;
+    noteType?: string;
+    contactName?: string;
+    contactPhone?: string;
+    callDirection?: string;
+    meetingAttendees?: string[];
+    siteName?: string;
+    clientName?: string;
+    followUpRequired?: boolean;
+    followUpDate?: string;
+    followUpNotes?: string;
+    tags?: string[];
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    let clientId: string | null = null;
+    let clientCompanyName: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients, error: clientError } = await supabase
+        .from("clients")
+        .select("id, company_name")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(5);
+
+      if (clientError) {
+        return wrapWithActionResult(actionFailed({
+          action: "create_note",
+          targetType: "note",
+          toolUsed: "createNote",
+          error: `Error looking up client: ${clientError.message}`,
+          nextStep: "Please check the client name and try again."
+        }));
+      }
+
+      if (clients && clients.length === 1) {
+        clientId = clients[0].id;
+        clientCompanyName = clients[0].company_name;
+      } else if (clients && clients.length > 1) {
+        const exactMatch = clients.find(
+          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+        );
+        if (exactMatch) {
+          clientId = exactMatch.id;
+          clientCompanyName = exactMatch.company_name;
+        } else {
+          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
+          return wrapWithActionResult(actionNeedInfo({
+            action: "create_note",
+            targetType: "note",
+            toolUsed: "createNote",
+            missingFields: ["clientName"],
+            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
+          }));
+        }
+      }
+    }
+
+    const autoTitle = args.title || args.content.slice(0, 60) + (args.content.length > 60 ? "..." : "");
+
+    const { data: note, error: insertError } = await supabase
+      .from("notes")
+      .insert({
+        user_id: user.id,
+        title: autoTitle,
+        content: args.content,
+        note_type: args.noteType || "general",
+        contact_name: args.contactName || null,
+        contact_phone: args.contactPhone || null,
+        call_direction: args.callDirection || null,
+        meeting_attendees: args.meetingAttendees || null,
+        site_name: args.siteName || null,
+        client_id: clientId,
+        follow_up_required: args.followUpRequired || false,
+        follow_up_date: args.followUpDate || null,
+        follow_up_notes: args.followUpNotes || null,
+        tags: args.tags || [],
+      })
+      .select("id, title, note_type, follow_up_required, follow_up_date")
+      .single();
+
+    if (insertError) {
+      return wrapWithActionResult(actionFailed({
+        action: "create_note",
+        targetType: "note",
+        toolUsed: "createNote",
+        error: `Failed to create note: ${insertError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    let message = `Note created: "${note.title}"`;
+    message += ` | Type: ${note.note_type}`;
+    if (clientCompanyName) message += ` | Client: ${clientCompanyName}`;
+    if (note.follow_up_required) {
+      message += ` | Follow-up required`;
+      if (note.follow_up_date) message += ` by ${note.follow_up_date}`;
+    }
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "create_note",
+        targetType: "note",
+        targetReference: note.title,
+        toolUsed: "createNote",
+        summary: message,
+        verified: true,
+      }),
+      {
+        note: {
+          id: note.id,
+          title: note.title,
+          note_type: note.note_type,
+          client_name: clientCompanyName,
+          follow_up_required: note.follow_up_required,
+          follow_up_date: note.follow_up_date,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "create_note",
+      targetType: "note",
+      toolUsed: "createNote",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeSearchNotes(
+  args: {
+    searchTerm?: string;
+    noteType?: string;
+    clientName?: string;
+    followUpPending?: boolean;
+    limit?: number;
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    let clientId: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(1);
+      if (clients && clients.length > 0) {
+        clientId = clients[0].id;
+      } else {
+        return wrapWithActionResult(
+          actionSuccess({
+            action: "search_notes",
+            targetType: "note_query",
+            targetReference: args.clientName,
+            toolUsed: "searchNotes",
+            summary: `No client found matching '${args.clientName}'.`,
+            verified: true,
+          }),
+          { notes: [], count: 0 }
+        );
+      }
+    }
+
+    let query = supabase
+      .from("notes")
+      .select("id, title, content, note_type, created_at, client_id, clients(company_name), follow_up_required, follow_up_completed, follow_up_date, tags")
+      .eq("user_id", user.id)
+      .order("is_pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(args.limit || 10);
+
+    if (args.searchTerm) {
+      query = query.or(`title.ilike.%${args.searchTerm}%,content.ilike.%${args.searchTerm}%`);
+    }
+    if (args.noteType && args.noteType !== "all") {
+      query = query.eq("note_type", args.noteType);
+    }
+    if (clientId) {
+      query = query.eq("client_id", clientId);
+    }
+    if (args.followUpPending) {
+      query = query.eq("follow_up_required", true).eq("follow_up_completed", false);
+    }
+
+    const { data: notes, error } = await query;
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "search_notes",
+        targetType: "note_query",
+        toolUsed: "searchNotes",
+        error: `Failed to search notes: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const formattedNotes = (notes || []).map((n: any) => ({
+      title: n.title || n.content.slice(0, 60),
+      note_type: n.note_type,
+      created_at: n.created_at,
+      client: n.clients?.company_name || null,
+      follow_up_required: n.follow_up_required,
+      follow_up_date: n.follow_up_date,
+      content_preview: n.content.slice(0, 150) + (n.content.length > 150 ? "..." : ""),
+      tags: n.tags || [],
+    }));
+
+    const searchDesc = args.followUpPending
+      ? "with pending follow-ups"
+      : args.searchTerm
+        ? `matching "${args.searchTerm}"`
+        : args.noteType && args.noteType !== "all"
+          ? `of type "${args.noteType}"`
+          : args.clientName
+            ? `for client "${args.clientName}"`
+            : "all";
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "search_notes",
+        targetType: "note_query",
+        targetReference: args.searchTerm || args.clientName || "all",
+        toolUsed: "searchNotes",
+        summary: formattedNotes.length === 0
+          ? `No notes found ${searchDesc}.`
+          : `Found ${formattedNotes.length} note(s) ${searchDesc}.`,
+        verified: true,
+      }),
+      {
+        count: formattedNotes.length,
+        notes: formattedNotes,
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "search_notes",
+      targetType: "note_query",
+      toolUsed: "searchNotes",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeLogCallNote(
+  args: {
+    contactName: string;
+    content: string;
+    clientName?: string;
+    callDirection?: string;
+    followUpRequired?: boolean;
+    followUpDate?: string;
+    followUpNotes?: string;
+  },
+  user: { id: string }
+): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    let clientId: string | null = null;
+    let clientCompanyName: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients, error: clientError } = await supabase
+        .from("clients")
+        .select("id, company_name")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(5);
+
+      if (clientError) {
+        return wrapWithActionResult(actionFailed({
+          action: "log_call_note",
+          targetType: "note",
+          toolUsed: "logCallNote",
+          error: `Error looking up client: ${clientError.message}`,
+          nextStep: "Please check the client name and try again."
+        }));
+      }
+
+      if (clients && clients.length === 1) {
+        clientId = clients[0].id;
+        clientCompanyName = clients[0].company_name;
+      } else if (clients && clients.length > 1) {
+        const exactMatch = clients.find(
+          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+        );
+        if (exactMatch) {
+          clientId = exactMatch.id;
+          clientCompanyName = exactMatch.company_name;
+        } else {
+          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
+          return wrapWithActionResult(actionNeedInfo({
+            action: "log_call_note",
+            targetType: "note",
+            toolUsed: "logCallNote",
+            missingFields: ["clientName"],
+            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
+          }));
+        }
+      }
+    }
+
+    const title = `Call with ${args.contactName}${clientCompanyName ? ` (${clientCompanyName})` : ""}`;
+
+    const { data: note, error: insertError } = await supabase
+      .from("notes")
+      .insert({
+        user_id: user.id,
+        title,
+        content: args.content,
+        note_type: "call",
+        contact_name: args.contactName,
+        call_direction: args.callDirection || null,
+        client_id: clientId,
+        follow_up_required: args.followUpRequired || false,
+        follow_up_date: args.followUpDate || null,
+        follow_up_notes: args.followUpNotes || null,
+      })
+      .select("id, title, note_type, follow_up_required, follow_up_date")
+      .single();
+
+    if (insertError) {
+      return wrapWithActionResult(actionFailed({
+        action: "log_call_note",
+        targetType: "note",
+        toolUsed: "logCallNote",
+        error: `Failed to log call note: ${insertError.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    if (clientId) {
+      await supabase
+        .from("client_communications")
+        .insert({
+          client_id: clientId,
+          type: "call",
+          subject: title,
+          content: args.content,
+          note_type: args.callDirection || "outbound",
+          is_manual: true,
+          timestamp: new Date().toISOString(),
+        });
+    }
+
+    let message = `Call note logged: "${title}"`;
+    if (args.callDirection) message += ` | ${args.callDirection}`;
+    if (clientCompanyName) message += ` | Client: ${clientCompanyName}`;
+    if (note.follow_up_required) {
+      message += ` | Follow-up required`;
+      if (note.follow_up_date) message += ` by ${note.follow_up_date}`;
+    }
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "log_call_note",
+        targetType: "note",
+        targetReference: title,
+        toolUsed: "logCallNote",
+        summary: message,
+        verified: true,
+      }),
+      {
+        note: {
+          id: note.id,
+          title: note.title,
+          note_type: note.note_type,
+          client_name: clientCompanyName,
+          follow_up_required: note.follow_up_required,
+          follow_up_date: note.follow_up_date,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "log_call_note",
+      targetType: "note",
+      toolUsed: "logCallNote",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeCreateCalendarEvent(args: {
+  title: string;
+  description?: string;
+  eventType?: string;
+  startDate: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  allDay?: boolean;
+  location?: string;
+  clientName?: string;
+  status?: string;
+  colour?: string;
+  notes?: string;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+    let clientId: string | null = null;
+    let clientCompanyName: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, company_name")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(1);
+      if (clients && clients.length > 0) {
+        clientId = clients[0].id;
+        clientCompanyName = clients[0].company_name;
+      }
+    }
+
+    const { data: event, error } = await supabase
+      .from("calendar_events")
+      .insert({
+        user_id: user.id,
+        title: args.title,
+        description: args.description || null,
+        event_type: args.eventType || "appointment",
+        start_date: args.startDate,
+        start_time: args.startTime || null,
+        end_date: args.endDate || args.startDate,
+        end_time: args.endTime || null,
+        all_day: args.allDay || false,
+        location: args.location || null,
+        client_id: clientId,
+        status: args.status || "scheduled",
+        colour: args.colour || "#3B82F6",
+        notes: args.notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "create_calendar_event",
+        targetType: "calendar_event",
+        toolUsed: "createCalendarEvent",
+        error: `Failed to create calendar event: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    let message = `Calendar event created: "${args.title}"`;
+    if (args.startTime) message += ` at ${args.startTime}`;
+    message += ` on ${args.startDate}`;
+    if (clientCompanyName) message += ` with ${clientCompanyName}`;
+    if (args.location) message += ` at ${args.location}`;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "create_calendar_event",
+        targetType: "calendar_event",
+        targetReference: args.title,
+        toolUsed: "createCalendarEvent",
+        summary: message,
+        verified: true,
+      }),
+      {
+        event: {
+          id: event.id,
+          title: event.title,
+          event_type: event.event_type,
+          start_date: event.start_date,
+          start_time: event.start_time,
+          location: event.location,
+          client_name: clientCompanyName,
+          status: event.status,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "create_calendar_event",
+      targetType: "calendar_event",
+      toolUsed: "createCalendarEvent",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeQueryCalendarEvents(args: {
+  startDate?: string;
+  endDate?: string;
+  eventType?: string;
+  clientName?: string;
+  status?: string;
+  limit?: number;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+    let clientId: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(1);
+      if (clients && clients.length > 0) {
+        clientId = clients[0].id;
+      }
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const startDate = args.startDate || today;
+    const endDate = args.endDate || startDate;
+
+    let query = supabase
+      .from("calendar_events")
+      .select("id, title, description, event_type, start_date, start_time, end_date, end_time, all_day, location, client_id, status, colour, clients(company_name)")
+      .eq("user_id", user.id)
+      .gte("start_date", startDate)
+      .lte("start_date", endDate)
+      .order("start_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .limit(args.limit || 20);
+
+    if (args.eventType) {
+      query = query.eq("event_type", args.eventType);
+    }
+    if (clientId) {
+      query = query.eq("client_id", clientId);
+    }
+    if (args.status) {
+      query = query.eq("status", args.status);
+    }
+
+    const { data: events, error } = await query;
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "query_calendar_events",
+        targetType: "calendar_event_query",
+        toolUsed: "queryCalendarEvents",
+        error: `Failed to query calendar events: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const formattedEvents = (events || []).map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      event_type: e.event_type,
+      start_date: e.start_date,
+      start_time: e.start_time,
+      end_date: e.end_date,
+      end_time: e.end_time,
+      all_day: e.all_day,
+      location: e.location,
+      client_name: e.clients?.company_name || null,
+      status: e.status,
+      colour: e.colour,
+    }));
+
+    let filterDesc = args.clientName
+      ? `for client "${args.clientName}"`
+      : args.eventType
+        ? `of type "${args.eventType}"`
+        : args.status
+          ? `with status "${args.status}"`
+          : "";
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "query_calendar_events",
+        targetType: "calendar_event_query",
+        targetReference: `${startDate} to ${endDate}`,
+        toolUsed: "queryCalendarEvents",
+        summary: `Found ${formattedEvents.length} calendar event${formattedEvents.length !== 1 ? "s" : ""} ${filterDesc || "in date range"}`,
+        verified: true,
+      }),
+      {
+        events: formattedEvents,
+        count: formattedEvents.length,
+        date_range: { start: startDate, end: endDate },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "query_calendar_events",
+      targetType: "calendar_event_query",
+      toolUsed: "queryCalendarEvents",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeUpdateCalendarEvent(args: {
+  eventIdentifier: string;
+  title?: string;
+  description?: string;
+  eventType?: string;
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  allDay?: boolean;
+  location?: string;
+  status?: string;
+  notes?: string;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+
+    const { data: existing } = await supabase
+      .from("calendar_events")
+      .select("id, title")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.eventIdentifier}%`)
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_calendar_event",
+        targetType: "calendar_event",
+        toolUsed: "updateCalendarEvent",
+        error: `No calendar event found matching "${args.eventIdentifier}"`,
+        nextStep: "Try using the exact event title or check the spelling."
+      }));
+    }
+
+    const eventId = existing[0].id;
+    const updateData: any = {};
+
+    if (args.title) updateData.title = args.title;
+    if (args.description !== undefined) updateData.description = args.description;
+    if (args.eventType) updateData.event_type = args.eventType;
+    if (args.startDate) updateData.start_date = args.startDate;
+    if (args.startTime !== undefined) updateData.start_time = args.startTime || null;
+    if (args.endDate) updateData.end_date = args.endDate;
+    if (args.endTime !== undefined) updateData.end_time = args.endTime || null;
+    if (args.allDay !== undefined) updateData.all_day = args.allDay;
+    if (args.location !== undefined) updateData.location = args.location || null;
+    if (args.status) updateData.status = args.status;
+    if (args.notes !== undefined) updateData.notes = args.notes;
+
+    const { data: event, error } = await supabase
+      .from("calendar_events")
+      .update(updateData)
+      .eq("id", eventId)
+      .select()
+      .single();
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_calendar_event",
+        targetType: "calendar_event",
+        toolUsed: "updateCalendarEvent",
+        error: `Failed to update calendar event: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const changes = Object.keys(updateData).filter(k => k !== "updated_at");
+    const message = changes.length > 0
+      ? `Updated calendar event "${event.title}": ${changes.join(", ")}`
+      : `Calendar event "${event.title}" updated`;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "update_calendar_event",
+        targetType: "calendar_event",
+        targetReference: event.title,
+        toolUsed: "updateCalendarEvent",
+        summary: message,
+        verified: true,
+      }),
+      {
+        event: {
+          id: event.id,
+          title: event.title,
+          start_date: event.start_date,
+          start_time: event.start_time,
+          status: event.status,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "update_calendar_event",
+      targetType: "calendar_event",
+      toolUsed: "updateCalendarEvent",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
 // Generic status transition executor using verified rules from lib/office/status-actions
 async function executeDocumentTransition(args: {
   documentType: "invoice" | "quote" | "purchase_order" | "credit_note";
@@ -4853,6 +6673,18 @@ export async function POST(req: NextRequest) {
               else if (toolName === "cancelCreditNote") toolResult = await executeCancelCreditNote(toolArgs);
               else if (toolName === "transitionDocumentStatus") toolResult = await executeDocumentTransition(toolArgs);
               else if (toolName === "convertQuoteToInvoice") toolResult = await executeConvertQuoteToInvoice(toolArgs);
+              else if (!user) toolResult = JSON.stringify({ error: "Authentication required" });
+              else if (toolName === "createTask") toolResult = await executeCreateTask(toolArgs, user);
+              else if (toolName === "updateTask") toolResult = await executeUpdateTask(toolArgs, user);
+              else if (toolName === "completeTask") toolResult = await executeCompleteTask(toolArgs, user);
+              else if (toolName === "queryTasks") toolResult = await executeQueryTasks(toolArgs, user);
+              else if (toolName === "deleteTask") toolResult = await executeDeleteTask(toolArgs, user);
+              else if (toolName === "createNote") toolResult = await executeCreateNote(toolArgs, user);
+              else if (toolName === "searchNotes") toolResult = await executeSearchNotes(toolArgs, user);
+              else if (toolName === "logCallNote") toolResult = await executeLogCallNote(toolArgs, user);
+              else if (toolName === "createCalendarEvent") toolResult = await executeCreateCalendarEvent(toolArgs, user);
+              else if (toolName === "queryCalendarEvents") toolResult = await executeQueryCalendarEvents(toolArgs, user);
+              else if (toolName === "updateCalendarEvent") toolResult = await executeUpdateCalendarEvent(toolArgs, user);
               else toolResult = wrapWithActionResult(
                 actionUnsupported({
                   action: toolName,

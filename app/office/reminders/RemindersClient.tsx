@@ -1,71 +1,253 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Bell,
   BellRing,
+  Search,
+  Clock,
+  X,
+  Edit2,
+  Trash2,
+  Check,
+  AlertCircle,
+  Calendar,
+  Phone,
+  Users,
+  FileText,
+  ChevronDown,
+  RotateCcw,
+  Plus,
   TrendingUp,
   Mail,
-  AlertCircle,
-  ChevronRight,
-  Send,
-  Loader2,
-  X,
   History,
   CheckCircle2,
-  Clock
+  Loader2,
 } from 'lucide-react';
-import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { createClient } from '@/lib/supabase/client';
-import { pickPreferredRecipient } from '@/lib/clients/contactPreference';
+import {
+  createReminder,
+  getReminders,
+  updateReminder,
+  deleteReminder,
+  completeReminder,
+  snoozeReminder,
+  getReminderStats,
+  type Reminder,
+} from '@/lib/reminders/actions';
 
-export default function RemindersClient({ overdueInvoices, history, stats }: any) {
+const REMINDER_TYPES = [
+  { value: 'task', label: 'Task Reminder', icon: Check },
+  { value: 'follow_up', label: 'Follow-up', icon: Bell },
+  { value: 'meeting', label: 'Meeting', icon: Calendar },
+  { value: 'call', label: 'Call Reminder', icon: Phone },
+  { value: 'custom', label: 'Custom', icon: Bell },
+] as const;
+
+const REMINDER_STATUSES = [
+  { value: 'pending', label: 'Pending', color: 'bg-amber-500/20 text-amber-400' },
+  { value: 'completed', label: 'Completed', color: 'bg-green-500/20 text-green-400' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-slate-500/20 text-slate-400' },
+  { value: 'missed', label: 'Missed', color: 'bg-red-500/20 text-red-400' },
+];
+
+const SNOOZE_OPTIONS = [
+  { value: 5, label: '5 minutes' },
+  { value: 15, label: '15 minutes' },
+  { value: 30, label: '30 minutes' },
+  { value: 60, label: '1 hour' },
+  { value: 1440, label: '1 day' },
+];
+
+interface RemindersClientProps {
+  reminders?: Reminder[];
+  stats?: { total: number; pending: number; overdue: number; completed: number };
+  overdueInvoices?: any[];
+  history?: any[];
+}
+
+export default function RemindersClient({ 
+  reminders: initialReminders = [], 
+  stats: initialStats = { total: 0, pending: 0, overdue: 0, completed: 0 },
+  overdueInvoices = [],
+  history = []
+}: RemindersClientProps) {
   const router = useRouter();
   const toast = useOfficeToast();
-  const [loading, setLoading] = useState<string | null>(null);
-  const [showManualModal, setShowManualModal] = useState<any>(null); // { invoice, nextType }
-  const [customMessage, setCustomMessage] = useState('');
-  const [manualRecipientEmail, setManualRecipientEmail] = useState<string | null>(null);
-  const [manualRecipientName, setManualRecipientName] = useState<string | null>(null);
-  const [manualRecipientMatched, setManualRecipientMatched] = useState<'technical' | 'finance' | 'primary' | 'none'>('none');
+  const supabase = createClient();
+  
+  const [reminders, setReminders] = useState<Reminder[]>(initialReminders);
+  const [stats, setStats] = useState(initialStats);
+  const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  
+  const [activeTab, setActiveTab] = useState<'personal' | 'invoices'>('personal');
+  
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [showModal, setShowModal] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  
+  const [formTitle, setFormTitle] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+  const [formReminderType, setFormReminderType] = useState('custom');
+  const [formReminderAt, setFormReminderAt] = useState('');
+  const [formClientId, setFormClientId] = useState('');
+  const [formIsRecurring, setFormIsRecurring] = useState(false);
+  const [formRecurringFrequency, setFormRecurringFrequency] = useState('');
+  
+  const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+  const [snoozingReminder, setSnoozingReminder] = useState<Reminder | null>(null);
+
+  const loadReminders = useCallback(async () => {
+    setLoading(true);
+    const filters: any = {};
+    if (statusFilter !== 'all') filters.status = statusFilter;
+    if (typeFilter !== 'all') filters.reminderType = typeFilter;
+    
+    const { data } = await getReminders(
+      filters.status,
+      undefined,
+      undefined,
+      filters.reminderType
+    );
+    if (data) setReminders(data);
+    
+    const statsData = await getReminderStats();
+    if (!statsData.error && statsData.total !== undefined) {
+      setStats({ total: statsData.total, pending: statsData.pending, overdue: statsData.overdue, completed: statsData.completed });
+    }
+    
+    setLoading(false);
+  }, [statusFilter, typeFilter]);
+
+  const loadClients = async () => {
+    const { data } = await supabase.from('profiles').select('id, full_name, company_name').limit(50);
+    if (data) setClients(data);
+  };
 
   useEffect(() => {
-    if (!showManualModal) return;
-    let cancelled = false;
+    loadClients();
+  }, []);
 
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('client_contacts')
-          .select('contact_type, full_name, email, is_primary')
-          .eq('client_id', showManualModal.invoice.client_id);
+  const openNewReminderModal = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+    setFormTitle('');
+    setFormDescription('');
+    setFormReminderType('custom');
+    setFormReminderAt(now.toISOString().slice(0, 16));
+    setFormClientId('');
+    setFormIsRecurring(false);
+    setFormRecurringFrequency('');
+    setEditingReminder(null);
+    setShowModal(true);
+  };
 
-        const pref = pickPreferredRecipient(data || [], 'invoice');
-        const email = pref.email || showManualModal.invoice.clients?.email || null;
-        const name = pref.name || showManualModal.invoice.clients?.contact_person || null;
+  const openEditModal = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setFormTitle(reminder.title);
+    setFormDescription(reminder.description || '');
+    setFormReminderType(reminder.reminder_type);
+    setFormReminderAt(reminder.reminder_at.slice(0, 16));
+    setFormClientId(reminder.client_id || '');
+    setFormIsRecurring(reminder.is_recurring || false);
+    setFormRecurringFrequency(reminder.recurring_frequency || '');
+    setShowModal(true);
+  };
 
-        if (!cancelled) {
-          setManualRecipientEmail(email);
-          setManualRecipientName(name);
-          setManualRecipientMatched(pref.matched);
-        }
-      } catch {
-        if (!cancelled) {
-          setManualRecipientEmail(showManualModal.invoice.clients?.email || null);
-          setManualRecipientName(showManualModal.invoice.clients?.contact_person || null);
-          setManualRecipientMatched('none');
-        }
+  const openSnoozeModal = (reminder: Reminder) => {
+    setSnoozingReminder(reminder);
+    setShowSnoozeModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('title', formTitle);
+    formData.append('description', formDescription);
+    formData.append('reminder_type', formReminderType);
+    formData.append('reminder_at', new Date(formReminderAt).toISOString());
+    formData.append('client_id', formClientId);
+    formData.append('is_recurring', formIsRecurring.toString());
+    if (formIsRecurring && formRecurringFrequency) {
+      formData.append('recurring_frequency', formRecurringFrequency);
+    }
+
+    let result;
+    if (editingReminder) {
+      result = await updateReminder(editingReminder.id, formData);
+    } else {
+      result = await createReminder(formData);
+    }
+
+    if (!result.error) {
+      setShowModal(false);
+      loadReminders();
+      toast.success({ title: 'Reminder saved' });
+    } else {
+      toast.error({ title: result.error });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingReminder) return;
+    if (confirm('Delete this reminder?')) {
+      const result = await deleteReminder(editingReminder.id);
+      if (!result.error) {
+        setShowModal(false);
+        loadReminders();
+        toast.success({ title: 'Reminder deleted' });
       }
-    })();
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
-  }, [showManualModal]);
+  const handleComplete = async (id: string) => {
+    await completeReminder(id);
+    loadReminders();
+    toast.success({ title: 'Reminder completed' });
+  };
+
+  const handleSnooze = async (minutes: number) => {
+    if (!snoozingReminder) return;
+    await snoozeReminder(snoozingReminder.id, minutes);
+    setShowSnoozeModal(false);
+    loadReminders();
+    toast.success({ title: 'Reminder snoozed' });
+  };
+
+  const filteredReminders = reminders.filter(r => {
+    if (searchQuery && !r.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const getTypeConfig = (type: string) => {
+    return REMINDER_TYPES.find(t => t.value === type) || REMINDER_TYPES[REMINDER_TYPES.length - 1];
+  };
+
+  const formatDateTime = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const isOverdue = (reminderAt: string, status: string) => {
+    if (status !== 'pending') return false;
+    return new Date(reminderAt) < new Date();
+  };
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val).replace('ZAR', 'R');
@@ -77,300 +259,540 @@ export default function RemindersClient({ overdueInvoices, history, stats }: any
     return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
   };
 
-  const handleSendManual = async () => {
-    if (!showManualModal) return;
-    setLoading('manual');
-    try {
-      // In a real app, we'd have a specific manual trigger endpoint 
-      // or we can reuse the process endpoint with a body specifying the invoice.
-      const res = await fetch('/api/reminders/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: showManualModal.invoice.id, manual: true, message: customMessage })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      toast.success({
-        title: 'Reminder Sent',
-        message: `Sent for ${showManualModal.invoice.invoice_number}.`,
-      });
-      setShowManualModal(null);
-      setCustomMessage('');
-      setManualRecipientEmail(null);
-      setManualRecipientName(null);
-      setManualRecipientMatched('none');
-      router.refresh();
-    } catch (err: any) {
-      toast.error({ title: 'Send Failed', message: err.message });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const handleRunSequence = async () => {
-    setLoading('sequence');
-
-    try {
-      const res = await fetch('/api/reminders/process', {
-        method: 'POST',
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to run automated reminder sequence.');
-      }
-
-      const sentCount = Array.isArray(data.results)
-        ? data.results.filter((item: any) => item.status === 'Sent').length
-        : 0;
-
-      toast.success({
-        title: 'Sequence Complete',
-        message: sentCount > 0 ? `${sentCount} reminder(s) delivered.` : 'No reminders were due to send.',
-      });
-      router.refresh();
-    } catch (err: any) {
-      toast.error({ title: 'Sequence Failed', message: err.message });
-    } finally {
-      setLoading(null);
-    }
-  };
-
   return (
-    <div className="space-y-10 pb-20">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#151B28] border border-slate-800/50 p-8 rounded-xl shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <AlertCircle size={80} />
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 font-mono">Currently Overdue</p>
-          <div className="flex items-end gap-3">
-            <h3 className="text-4xl font-black text-white">{stats.totalOverdueCount}</h3>
-            <p className="text-xs font-bold text-red-500 mb-1 uppercase tracking-tighter">Invoices</p>
-          </div>
-        </div>
-
-        <div className="bg-[#151B28] border border-slate-800/50 p-8 rounded-xl shadow-2xl group">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 font-mono">Reminders Sent (MTD)</p>
-          <div className="flex items-end gap-3">
-            <h3 className="text-4xl font-black text-white">{stats.remindersSentThisMonth}</h3>
-            <p className="text-xs font-bold text-blue-500 mb-1 uppercase tracking-tighter">Successfully Delivered</p>
-          </div>
-        </div>
-
-        <div className="bg-orange-500 p-8 rounded-xl shadow-2xl shadow-orange-500/10">
-          <p className="text-[10px] font-black uppercase tracking-widest text-orange-200 mb-2 font-mono">Total Recoverable Value</p>
-          <div className="flex items-end gap-3">
-            <h3 className="text-4xl font-black text-white">{formatCurrency(stats.totalOverdueValue)}</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Active Sequence */}
-      <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
-        <div className="p-8 border-b border-slate-800/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center text-orange-500">
-              <BellRing size={20} />
-            </div>
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Active Reminder Sequence</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Clients currently being chased</p>
-            </div>
+    <div className="min-h-screen bg-[#151B28] p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Reminders</h1>
+            <p className="text-slate-400 text-sm mt-1">Manage your follow-ups, tasks, and payment reminders</p>
           </div>
           <button
-            type="button"
-            onClick={handleRunSequence}
-            disabled={loading === 'sequence'}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#0B0F19] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-200 transition-all hover:bg-slate-800/70 disabled:opacity-50"
+            onClick={openNewReminderModal}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
           >
-            {loading === 'sequence' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            Run Automated Sequence
+            <Plus size={18} />
+            <span>New Reminder</span>
           </button>
         </div>
 
-        <div className="overflow-x-auto text-white">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em] border-b border-slate-800/50 bg-slate-900/50">
-                <th className="px-8 py-5">Invoice / Client</th>
-                <th className="px-6 py-5">Days Overdue</th>
-                <th className="px-6 py-5">Balance Due</th>
-                <th className="px-6 py-5">Last Reminder</th>
-                <th className="px-6 py-5 text-right font-black uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/30">
-              {overdueInvoices.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center">
-                    <div className="bg-slate-900/50 p-12 rounded-lg border border-dashed border-slate-800">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No active overdue reminders</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : overdueInvoices.map((inv: any) => {
-                const days = differenceInDays(new Date(), new Date(inv.due_date));
-                return (
-                  <tr key={inv.id} className="group hover:bg-[#0B0F19]/50 transition-colors">
-                    <td className="px-8 py-6">
-                      <Link href={`/office/invoices/${inv.id}`} className="block group/link">
-                        <p className="font-black text-sm uppercase tracking-tight group-hover/link:text-orange-500 transition-colors">{inv.invoice_number}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">{inv.clients?.company_name || 'N/A'}</p>
-                      </Link>
-                    </td>
-                    <td className="px-6 py-6">
-                      <span className={`px-2 py-1 rounded text-[10px] font-black border uppercase tracking-widest ${getSeverityColor(days)} ${days >= 15 ? 'animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.2)]' : ''}`}>
-                        {days} Days
-                      </span>
-                    </td>
-                    <td className="px-6 py-6">
-                      <p className="font-bold text-sm">{formatCurrency(inv.balance_due)}</p>
-                    </td>
-                    <td className="px-6 py-6 font-mono text-[10px] text-slate-400 font-bold">
-                      {/* Simplified last rem detection - in real app we'd pass this from server */}
-                      Automated Sequence Active
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <button
-                        onClick={() => {
-                          setManualRecipientEmail(null);
-                          setManualRecipientName(null);
-                          setManualRecipientMatched('none');
-                          setShowManualModal({ invoice: inv, nextType: 'Manual reminder' });
-                        }}
-                        className="p-3 bg-slate-800 text-slate-400 hover:text-white hover:bg-orange-500 rounded transition-all"
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('personal')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'personal'
+                ? 'bg-orange-500 text-white'
+                : 'bg-[#1a2235] text-slate-400 hover:text-white'
+            }`}
+          >
+            <Bell className="inline mr-2" size={16} />
+            Personal Reminders
+          </button>
+          <button
+            onClick={() => setActiveTab('invoices')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'invoices'
+                ? 'bg-orange-500 text-white'
+                : 'bg-[#1a2235] text-slate-400 hover:text-white'
+            }`}
+          >
+            <BellRing className="inline mr-2" size={16} />
+            Payment Reminders
+          </button>
+        </div>
+
+        {activeTab === 'personal' ? (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                    <Bell size={20} className="text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{stats.total}</p>
+                    <p className="text-sm text-slate-400">Total</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Clock size={20} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{stats.pending}</p>
+                    <p className="text-sm text-slate-400">Pending</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <AlertCircle size={20} className="text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{stats.overdue}</p>
+                    <p className="text-sm text-slate-400">Overdue</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <Check size={20} className="text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{stats.completed}</p>
+                    <p className="text-sm text-slate-400">Completed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1 relative">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search reminders..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-[#1a2235] border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 bg-[#1a2235] border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-4 py-2 bg-[#1a2235] border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              >
+                <option value="all">All Types</option>
+                {REMINDER_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Reminders List */}
+            <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 overflow-hidden">
+              {loading ? (
+                <div className="p-8 text-center text-slate-400">Loading...</div>
+              ) : filteredReminders.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <Bell size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No personal reminders found</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-700/30">
+                  {filteredReminders.map((reminder) => {
+                    const typeConfig = getTypeConfig(reminder.reminder_type);
+                    const statusConfig = REMINDER_STATUSES.find(s => s.value === reminder.status);
+                    const overdue = isOverdue(reminder.reminder_at, reminder.status);
+                    
+                    return (
+                      <div
+                        key={reminder.id}
+                        className="p-4 hover:bg-slate-800/30 transition-colors"
                       >
-                        <Send size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                        <div className="flex items-start gap-4">
+                          <button
+                            onClick={() => handleComplete(reminder.id)}
+                            disabled={reminder.status !== 'pending'}
+                            className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              reminder.status === 'completed'
+                                ? 'bg-green-500 border-green-500'
+                                : 'border-slate-500 hover:border-orange-500'
+                            }`}
+                          >
+                            {reminder.status === 'completed' && <Check size={12} className="text-white" />}
+                          </button>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`font-medium ${reminder.status === 'completed' ? 'text-slate-500 line-through' : 'text-white'}`}>
+                                {reminder.title}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-xs ${statusConfig?.color}`}>
+                                {statusConfig?.label}
+                              </span>
+                              {overdue && (
+                                <span className="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-400">
+                                  Overdue
+                                </span>
+                              )}
+                            </div>
+                            
+                            {reminder.description && (
+                              <p className="text-sm text-slate-400 mb-2 line-clamp-2">{reminder.description}</p>
+                            )}
+                            
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
+                              <div className="flex items-center gap-1">
+                                <typeConfig.icon size={14} />
+                                <span>{typeConfig.label}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock size={14} />
+                                <span className={overdue ? 'text-red-400' : ''}>
+                                  {formatDateTime(reminder.reminder_at)}
+                                </span>
+                              </div>
+                              {reminder.client && (
+                                <div className="flex items-center gap-1">
+                                  <Users size={14} />
+                                  <span>{reminder.client.company_name}</span>
+                                </div>
+                              )}
+                              {reminder.is_recurring && (
+                                <div className="flex items-center gap-1">
+                                  <RotateCcw size={14} />
+                                  <span>{reminder.recurring_frequency}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            {reminder.status === 'pending' && (
+                              <button
+                                onClick={() => openSnoozeModal(reminder)}
+                                className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                title="Snooze"
+                              >
+                                <RotateCcw size={18} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openEditModal(reminder)}
+                              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Invoice Reminders Tab */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <AlertCircle size={20} className="text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{overdueInvoices.length}</p>
+                    <p className="text-sm text-slate-400">Overdue Invoices</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <TrendingUp size={20} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">
+                      {formatCurrency(overdueInvoices.reduce((sum, inv) => sum + Number(inv.balance_due || 0), 0))}
+                    </p>
+                    <p className="text-sm text-slate-400">Total Overdue Value</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <Mail size={20} className="text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{history.filter(h => h.status === 'Sent').length}</p>
+                    <p className="text-sm text-slate-400">Reminders This Month</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Overdue Invoices */}
+            <div className="bg-[#1a2235] rounded-xl border border-slate-700/50 overflow-hidden">
+              <div className="p-4 border-b border-slate-700/50">
+                <h2 className="text-lg font-medium text-white">Overdue Invoices</h2>
+              </div>
+              {overdueInvoices.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
+                  <p>No overdue invoices - all payments up to date!</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-700/30">
+                  {overdueInvoices.map((invoice: any) => {
+                    const daysOverdue = differenceInDays(new Date(), new Date(invoice.due_date));
+                    return (
+                      <div key={invoice.id} className="p-4 hover:bg-slate-800/30">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-white font-medium">{invoice.invoice_number}</p>
+                            <p className="text-sm text-slate-400">{invoice.clients?.company_name}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white font-medium">{formatCurrency(invoice.balance_due)}</p>
+                            <p className={`text-sm ${getSeverityColor(daysOverdue)}`}>
+                              {daysOverdue} days overdue
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* History */}
+            {history.length > 0 && (
+              <div className="mt-6 bg-[#1a2235] rounded-xl border border-slate-700/50 overflow-hidden">
+                <div className="p-4 border-b border-slate-700/50">
+                  <h2 className="text-lg font-medium text-white flex items-center gap-2">
+                    <History size={20} />
+                    Recent Reminder History
+                  </h2>
+                </div>
+                <div className="divide-y divide-slate-700/30">
+                  {history.slice(0, 10).map((item: any) => (
+                    <div key={item.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white">{item.invoices?.invoice_number}</p>
+                          <p className="text-sm text-slate-400">{item.invoices?.clients?.company_name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm ${item.status === 'Sent' ? 'text-green-400' : 'text-slate-400'}`}>
+                            {item.status}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {item.sent_at ? new Date(item.sent_at).toLocaleString() : '-'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* History Table */}
-      <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
-        <div className="p-8 border-b border-slate-800/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500">
-              <History size={20} />
-            </div>
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Reminder History</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Deliveries for {format(new Date(), 'MMMM yyyy')}</p>
-            </div>
-          </div>
-        </div>
-        <div className="overflow-x-auto text-white">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em] bg-slate-900/50 border-b border-slate-800/50">
-                <th className="px-8 py-5">Date/Time</th>
-                <th className="px-6 py-5">Invoice</th>
-                <th className="px-6 py-5">Recipient</th>
-                <th className="px-6 py-5">Type</th>
-                <th className="px-8 py-5 text-right font-black">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/30">
-              {history.map((h: any) => (
-                <tr key={h.id} className="text-xs font-medium border-b border-slate-800/30">
-                  <td className="px-8 py-4 text-slate-500 font-mono">{format(new Date(h.sent_at), 'dd MMM, HH:mm')}</td>
-                  <td className="px-6 py-4 font-black uppercase tracking-tight">{h.invoices?.invoice_number}</td>
-                  <td className="px-6 py-4 text-slate-400">{h.recipient_email}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
-                      {h.reminder_type}
-                    </span>
-                  </td>
-                  <td className="px-8 py-4 text-right">
-                    {h.status === 'Sent' ? (
-                      <span className="flex items-center justify-end gap-1.5 text-green-500 font-black uppercase text-[10px] tracking-widest">
-                        <CheckCircle2 size={12} /> Delivered
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-end gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest">
-                        <X size={12} /> Failed
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Manual Modal */}
+      {/* Create/Edit Modal */}
       <AnimatePresence>
-        {showManualModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowModal(false)}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setShowManualModal(null);
-                setManualRecipientEmail(null);
-                setManualRecipientName(null);
-                setManualRecipientMatched('none');
-              }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#151B28] border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl relative z-10" >
-              <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-                <h3 className="text-white font-black uppercase tracking-widest text-xs">Send Manual Reminder</h3>
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1a2235] rounded-xl border border-slate-700/50 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                <h2 className="text-lg font-medium text-white">
+                  {editingReminder ? 'Edit Reminder' : 'New Reminder'}
+                </h2>
                 <button
-                  onClick={() => {
-                    setShowManualModal(null);
-                    setManualRecipientEmail(null);
-                    setManualRecipientName(null);
-                    setManualRecipientMatched('none');
-                  }}
-                  className="text-slate-500 hover:text-white"
+                  onClick={() => setShowModal(false)}
+                  className="p-1 text-slate-400 hover:text-white transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="p-8 space-y-6">
-                <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
-                  <p className="text-[10px] font-black text-slate-500 uppercase mb-1">To: {showManualModal.invoice.clients?.company_name || 'N/A'}</p>
-                  <p className="text-white font-bold">{manualRecipientEmail || showManualModal.invoice.clients?.email || '—'}</p>
-                  {(manualRecipientName || manualRecipientMatched !== 'none') && (
-                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">
-                      {manualRecipientName ? `Attn: ${manualRecipientName}` : null}
-                      {manualRecipientName && manualRecipientMatched !== 'none' ? ' • ' : null}
-                      {manualRecipientMatched !== 'none' ? `${manualRecipientMatched} contact` : null}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Custom message (Optional Override)</label>
-                  <textarea
-                    rows={5}
-                    value={customMessage}
-                    onChange={(e) => setCustomMessage(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 text-white text-xs outline-none resize-none font-medium"
-                    placeholder="Add a personal note or instruction for the client..."
+
+              <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">Title *</label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    placeholder="Reminder title"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">Description</label>
+                  <textarea
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none"
+                    placeholder="Additional details"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">Type</label>
+                  <select
+                    value={formReminderType}
+                    onChange={(e) => setFormReminderType(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  >
+                    {REMINDER_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">Remind me at *</label>
+                  <input
+                    type="datetime-local"
+                    value={formReminderAt}
+                    onChange={(e) => setFormReminderAt(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1.5">Client</label>
+                  <select
+                    value={formClientId}
+                    onChange={(e) => setFormClientId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  >
+                    <option value="">No client</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.company_name || client.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isRecurring"
+                    checked={formIsRecurring}
+                    onChange={(e) => setFormIsRecurring(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-600 text-orange-500 focus:ring-orange-500/50"
+                  />
+                  <label htmlFor="isRecurring" className="text-sm text-slate-300">Recurring reminder</label>
+                </div>
+
+                {formIsRecurring && (
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1.5">Frequency</label>
+                    <select
+                      value={formRecurringFrequency}
+                      onChange={(e) => setFormRecurringFrequency(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    >
+                      <option value="">Select frequency</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  {editingReminder && (
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      className="px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                  >
+                    {editingReminder ? 'Update' : 'Create'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Snooze Modal */}
+      <AnimatePresence>
+        {showSnoozeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowSnoozeModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1a2235] rounded-xl border border-slate-700/50 w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                <h2 className="text-lg font-medium text-white">Snooze Reminder</h2>
                 <button
-                  onClick={handleSendManual}
-                  disabled={loading === 'manual'}
-                  className="w-full py-5 bg-orange-500 text-white font-black uppercase tracking-[0.3em] text-sm rounded-sm hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-3"
+                  onClick={() => setShowSnoozeModal(false)}
+                  className="p-1 text-slate-400 hover:text-white transition-colors"
                 >
-                  {loading === 'manual' ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Send Overnight Now
+                  <X size={20} />
                 </button>
               </div>
+
+              <div className="p-4 space-y-2">
+                {SNOOZE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleSnooze(option.value)}
+                    className="w-full px-4 py-3 text-left bg-slate-800/50 hover:bg-slate-800 rounded-lg text-white transition-colors"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

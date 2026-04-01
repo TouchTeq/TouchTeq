@@ -252,6 +252,17 @@ export function extractTargetInfo(
     queryBusinessData: { type: "query", refField: "queryType" },
     stageEmailForConfirmation: { type: "email", refField: "recipientEmail" },
     navigateTo: { type: "navigation", refField: "destination" },
+    createTask: { type: "task", refField: "title" },
+    updateTask: { type: "task", refField: "taskIdentifier" },
+    completeTask: { type: "task", refField: "taskIdentifier" },
+    queryTasks: { type: "task_query", refField: "queryType" },
+    deleteTask: { type: "task", refField: "taskIdentifier" },
+    createNote: { type: "note", refField: "title" },
+    searchNotes: { type: "note_query", refField: "searchTerm" },
+    logCallNote: { type: "note", refField: "contactName" },
+    createCalendarEvent: { type: "calendar_event", refField: "title" },
+    queryCalendarEvents: { type: "calendar_event_query", refField: "startDate" },
+    updateCalendarEvent: { type: "calendar_event", refField: "eventIdentifier" },
   };
   
   const config = toolTypeMap[toolName];

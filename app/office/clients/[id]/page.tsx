@@ -21,7 +21,10 @@ import {
   Wallet,
   MailX,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  StickyNote,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -29,6 +32,7 @@ import { format } from 'date-fns';
 import { ClientCommunicationsLog } from '@/components/office/ClientCommunicationsLog';
 import { ClientDetailPageHeader } from './HeaderActions';
 import SettleOpeningBalanceButton from './SettleOpeningBalanceButton';
+import { getNotes } from '@/lib/notes/actions';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-ZA', {
@@ -81,6 +85,9 @@ export default async function ClientDetailPage({
   const contacts = (client.client_contacts || [])
     .slice()
     .sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
+
+  // Fetch notes linked to this client
+  const clientNotes = await getNotes({ clientId: id });
 
   return (
     <div className="space-y-8 pb-20">
@@ -357,6 +364,20 @@ export default async function ClientDetailPage({
                 </span>
               )}
             </Link>
+            <Link
+              href={`/office/clients/${id}?tab=notes`}
+              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all flex items-center gap-3 ${tab === 'notes'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/10'
+                : 'text-slate-500 hover:text-white'
+                }`}
+            >
+              <StickyNote size={16} /> Notes
+              {clientNotes.length > 0 && (
+                <span className="bg-white/20 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center font-black">
+                  {clientNotes.length}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Tab Content */}
@@ -473,6 +494,103 @@ export default async function ClientDetailPage({
               </div>
             )}
           </div>
+
+          {/* Notes Tab */}
+          {tab === 'notes' && (
+            <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <StickyNote size={18} className="text-orange-500" />
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white">Notes</h3>
+                </div>
+                <Link href="/office/notes" className="p-2 bg-orange-500/10 text-orange-500 rounded hover:bg-orange-500/20 transition-all border border-orange-500/20">
+                  <Plus size={16} />
+                </Link>
+              </div>
+              {clientNotes.length > 0 ? (
+                <div className="divide-y divide-slate-800/30">
+                  {clientNotes.map((note: any) => {
+                    const typeColors: Record<string, { bg: string; text: string; icon: any }> = {
+                      general: { bg: 'bg-slate-500/20', text: 'text-slate-400', icon: FileText },
+                      call: { bg: 'bg-blue-500/20', text: 'text-blue-400', icon: Phone },
+                      meeting: { bg: 'bg-purple-500/20', text: 'text-purple-400', icon: Users },
+                      site_visit: { bg: 'bg-green-500/20', text: 'text-green-400', icon: MapPin },
+                      quick: { bg: 'bg-amber-500/20', text: 'text-amber-400', icon: StickyNote },
+                    };
+                    const config = typeColors[note.note_type] || typeColors.general;
+                    const NoteIcon = config.icon;
+                    const hasPendingFollowUp = note.follow_up_required && !note.follow_up_completed;
+
+                    return (
+                      <div key={note.id} className="p-6 hover:bg-slate-800/20 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-md ${config.bg} flex-shrink-0`}>
+                            <NoteIcon size={16} className={config.text} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {note.title && (
+                                <h4 className="font-bold text-sm text-white">{note.title}</h4>
+                              )}
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${config.bg} ${config.text}`}>
+                                {note.note_type.replace('_', ' ')}
+                              </span>
+                              {note.is_pinned && (
+                                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">
+                                  Pinned
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400 mb-2 whitespace-pre-wrap line-clamp-3">
+                              {note.content}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Calendar size={12} />
+                                {format(new Date(note.created_at), 'dd MMM yyyy')}
+                              </span>
+                              {note.contact_name && (
+                                <span className="flex items-center gap-1">
+                                  <Phone size={12} />
+                                  {note.contact_name}
+                                </span>
+                              )}
+                              {note.site_name && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={12} />
+                                  {note.site_name}
+                                </span>
+                              )}
+                              {note.tags && note.tags.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <Tag size={12} />
+                                  {note.tags.slice(0, 3).map((tag: string) => (
+                                    <span key={tag} className="text-slate-600">#{tag}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {hasPendingFollowUp && (
+                              <div className="mt-3 flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2 w-fit">
+                                <AlertCircle size={14} className="text-amber-400 flex-shrink-0" />
+                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                                  Follow-up due: {note.follow_up_date ? format(new Date(note.follow_up_date), 'dd MMM yyyy') : 'No date set'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="px-6 py-12 text-center text-slate-600 font-bold uppercase text-[10px] tracking-widest">
+                  No notes linked to this client.
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Financial Summary Card */}
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl">

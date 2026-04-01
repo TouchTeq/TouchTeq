@@ -32,6 +32,9 @@ import {
   ShoppingBag,
   Bot,
   ChevronDown,
+  CheckSquare,
+  StickyNote,
+  Calendar,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@/lib/supabase/client';
@@ -65,6 +68,10 @@ const navGroups: NavGroup[] = [
       { name: 'Dashboard', href: '/office/dashboard', icon: LayoutDashboard },
       { name: 'Clients', href: '/office/clients', icon: Users },
       { name: 'AI Assistant', href: '/office/ai-assistant', icon: Sparkles },
+      { name: 'Tasks', href: '/office/tasks', icon: CheckSquare },
+      { name: 'Notes', href: '/office/notes', icon: StickyNote },
+      { name: 'Calendar', href: '/office/calendar', icon: Calendar },
+      { name: 'Reminders', href: '/office/reminders', icon: Bell },
     ],
   },
   {
@@ -631,6 +638,9 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     { id: 'settings-assistant', label: 'Settings: AI Assistant', keywords: 'assistant voice language concise confirmation hands free', Icon: Search as any, onSelect: () => router.push('/office/settings?tab=assistant') },
     { id: 'settings-system', label: 'Settings: System Preferences', keywords: 'preferences currency vat export data system reference', Icon: Settings as any, onSelect: () => router.push('/office/settings?tab=system') },
     { id: 'fuel-tracker', label: 'Fuel Tracker', keywords: 'fuel petrol diesel log expense', Icon: Fuel as any, onSelect: () => router.push('/office/fuel') },
+    { id: 'tasks', label: 'Tasks', keywords: 'task todo', Icon: CheckSquare as any, onSelect: () => router.push('/office/tasks') },
+    { id: 'notes', label: 'Notes', keywords: 'note sticky', Icon: StickyNote as any, onSelect: () => router.push('/office/notes') },
+    { id: 'calendar', label: 'Calendar', keywords: 'cal date schedule', Icon: Calendar as any, onSelect: () => router.push('/office/calendar') },
   ];
 
   return (

@@ -11,13 +11,15 @@ import {
   Plus,
   Users,
   Wallet,
-  TrendingDown
+  TrendingDown,
+  CheckSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import WelcomeBanner from '@/components/office/WelcomeBanner';
 import DashboardSummaryCards from '@/components/office/DashboardSummaryCards';
 import RecentActivitySection from '@/components/office/RecentActivitySection';
 import DashboardGreeting from '@/components/office/DashboardGreeting';
+import { getTaskStats } from '@/lib/tasks/actions';
 
 // Helper for Rand formatting
 const formatRand = (amount: number) => {
@@ -165,6 +167,9 @@ export default async function DashboardPage() {
     user?.email?.split('@')[0] ||
     'there';
 
+  // Task stats
+  const taskStats = await getTaskStats();
+
   return (
     <div className="space-y-10">
       <DashboardGreeting name={firstName} />
@@ -285,6 +290,47 @@ export default async function DashboardPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tasks Summary Card */}
+      <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <CheckSquare size={80} className="text-orange-500" />
+        </div>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Tasks Overview</p>
+            <div className="flex items-baseline gap-3">
+              <h3 className="text-4xl font-black text-white">{taskStats.todo + taskStats.inProgress}</h3>
+              <span className="text-xs font-bold px-2 py-1 bg-slate-700/50 text-slate-300 rounded">{taskStats.total} Total</span>
+            </div>
+          </div>
+          <Link href="/office/tasks" className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all">
+            <ExternalLink size={16} />
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-4 pt-4 border-t border-slate-800/50">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-slate-500 uppercase">Overdue</span>
+            <span className="text-[10px] font-black text-red-500">{taskStats.overdue}</span>
+          </div>
+          <div className="w-px h-8 bg-slate-800" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-slate-500 uppercase">Due Today</span>
+            <span className="text-[10px] font-black text-blue-400">{taskStats.dueToday}</span>
+          </div>
+          <div className="w-px h-8 bg-slate-800" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-slate-500 uppercase">Due This Week</span>
+            <span className="text-[10px] font-black text-cyan-400">{taskStats.dueThisWeek}</span>
+          </div>
+          <div className="w-px h-8 bg-slate-800" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-slate-500 uppercase">Completed</span>
+            <span className="text-[10px] font-black text-green-500">{taskStats.done}</span>
           </div>
         </div>
       </div>

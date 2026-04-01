@@ -1,58 +1,65 @@
 import { createClient } from '@/lib/supabase/server';
-import RemindersClient from '@/app/office/reminders/RemindersClient';
+import RemindersClient from './RemindersClient';
 
 export default async function RemindersPage() {
   const supabase = await createClient();
 
-  // 1. Fetch Overdue Invoices for Active Sequence
-  const { data: overdueInvoicesRaw } = await supabase
-    .from('invoices')
-    .select(`
-      *,
-      clients (company_name, email, contact_person)
-    `)
-    .eq('status', 'Overdue')
-    .order('due_date', { ascending: true });
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let reminders: any[] = [];
+  let stats = { total: 0, pending: 0, overdue: 0, completed: 0 };
+  let overdueInvoices: any[] = [];
+  let history: any[] = [];
 
-  // Filter out invoices where the client has been deleted (orphaned invoices)
-  const overdueInvoices = overdueInvoicesRaw?.filter(inv => inv.clients !== null) || [];
-
-  // 2. Fetch Reminder History for current month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const { data: history } = await supabase
-    .from('reminder_logs')
-    .select(`
-      *,
-      invoices (invoice_number, client_id, clients (company_name))
-    `)
-    .gte('sent_at', startOfMonth.toISOString())
-    .order('sent_at', { ascending: false });
-
-  // 3. Stats
-  const totalOverdueValue = overdueInvoices?.reduce((sum, inv) => sum + Number(inv.balance_due), 0) || 0;
-  const remindersSentThisMonth = history?.filter(h => h.status === 'Sent').length || 0;
+  if (user) {
+    const now = new Date().toISOString();
+    
+    const { data: remindersData } = await supabase
+      .from('reminders')
+      .select('*, client:clients(company_name)')
+      .eq('user_id', user.id)
+      .order('reminder_at', { ascending: true })
+      .limit(50);
+    
+    reminders = remindersData || [];
+    
+    const allReminders = reminders;
+    stats = {
+      total: allReminders.length,
+      pending: allReminders.filter(r => r.status === 'pending').length,
+      overdue: allReminders.filter(r => r.status === 'pending' && r.reminder_at < now).length,
+      completed: allReminders.filter(r => r.status === 'completed').length,
+    };
+    
+    const { data: invoicesData } = await supabase
+      .from('invoices')
+      .select('*, clients(company_name, email, contact_person)')
+      .eq('status', 'Overdue')
+      .order('due_date', { ascending: true })
+      .limit(10);
+    
+    overdueInvoices = invoicesData?.filter(inv => inv.clients !== null) || [];
+    
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const { data: historyData } = await supabase
+      .from('reminder_logs')
+      .select('*, invoices(invoice_number, client_id, clients(company_name))')
+      .gte('sent_at', startOfMonth.toISOString())
+      .order('sent_at', { ascending: false })
+      .limit(20);
+    
+    history = historyData || [];
+  }
 
   return (
-    <div className="space-y-10">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Reminders</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Automated Payment Chasing</p>
-        </div>
-      </div>
-
-      <RemindersClient
-        overdueInvoices={overdueInvoices || []}
-        history={history || []}
-        stats={{
-          totalOverdueCount: overdueInvoices?.length || 0,
-          totalOverdueValue,
-          remindersSentThisMonth
-        }}
-      />
-    </div>
+    <RemindersClient
+      reminders={reminders}
+      stats={stats}
+      overdueInvoices={overdueInvoices}
+      history={history}
+    />
   );
 }
