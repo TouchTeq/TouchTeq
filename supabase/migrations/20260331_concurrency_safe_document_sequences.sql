@@ -241,7 +241,7 @@ begin
     returning next_number into next_num;
   end if;
 
-  select coalesce(invoice_prefix, 'QT'), coalesce(quote_include_year, false)
+  select coalesce(quote_prefix, 'QT'), coalesce(quote_include_year, false)
   into prefix_val, include_year_val
   from public.business_profile limit 1;
 

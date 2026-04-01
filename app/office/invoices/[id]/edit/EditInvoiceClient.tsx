@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { createClient } from '@/lib/supabase/client';
 import DraftActionDock from '@/components/office/DraftActionDock';
 import { useAiDraft } from '@/components/office/AiDraftContext';
 import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
@@ -27,7 +26,6 @@ import { DatePicker } from '@/components/ui/DatePicker';
 
 export default function EditInvoiceClient({ initialInvoice, initialLineItems, initialClients }: any) {
   const router = useRouter();
-  const supabase = createClient();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,40 +160,32 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
     setError(null);
 
     try {
-      // 1. Update Invoice
-      const { error: invError } = await supabase
-        .from('invoices')
-        .update({
+      const itemsJson = lineItems.map((item: any, idx: number) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        qty_type: item.qty_type || 'qty',
+      }));
+
+      const response = await fetch(`/api/office/invoices/${initialInvoice.id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           client_id: selectedClient.id,
           issue_date: formData.issue_date,
           due_date: formData.due_date,
-          reference: formData.reference,
-          subtotal,
-          vat_amount: vatAmount,
-          total,
+          status: formData.status,
           notes: formData.notes,
           internal_notes: formData.internal_notes,
-          status: formData.status
-        })
-        .eq('id', initialInvoice.id);
+          reference: formData.reference,
+          line_items: itemsJson,
+        }),
+      });
 
-      if (invError) throw invError;
-
-      // 2. Refresh line items: Delete existing and add new
-      await supabase.from('invoice_line_items').delete().eq('invoice_id', initialInvoice.id);
-      
-      const { error: itemsError } = await supabase
-        .from('invoice_line_items')
-        .insert(lineItems.map((item: any, idx: number) => ({
-          invoice_id: initialInvoice.id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          qty_type: item.qty_type || 'qty',
-          sort_order: idx
-        })));
-
-      if (itemsError) throw itemsError;
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Invoice update failed');
+      }
 
       router.push(`/office/invoices/${initialInvoice.id}`);
       router.refresh();

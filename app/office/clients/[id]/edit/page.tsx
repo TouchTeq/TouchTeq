@@ -74,6 +74,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         if (!contactsError && contactsData && contactsData.length > 0) {
           setContacts(
             contactsData.map((c: any) => ({
+              id: String(c.id),
               localId: String(c.id),
               contact_type: c.contact_type,
               full_name: c.full_name || '',
@@ -119,6 +120,35 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const submitClientUpdate = async (nextClient: typeof formData) => {
+    const contactPayload = contacts.map((c) => ({
+      id: c.id,
+      contact_type: c.contact_type,
+      full_name: c.full_name,
+      job_title: c.job_title || null,
+      email: c.email || null,
+      cell_number: c.cell_number || null,
+      landline_number: c.landline_number || null,
+      extension: c.extension || null,
+      notes: c.notes || null,
+      is_primary: !!c.is_primary,
+    }));
+
+    const response = await fetch(`/api/office/clients/${id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client: nextClient,
+        contacts: contactPayload,
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || 'Client update failed');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -136,39 +166,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         return;
       }
 
-      const primary = contacts.find((c) => c.is_primary) || contacts.find((c) => c.contact_type === 'Technical') || contacts[0];
-      const legacyEmail = primary?.email?.trim() || contacts.find((c) => c.email.trim())?.email?.trim() || null;
-      const legacyPhone = primary?.cell_number?.trim() || primary?.landline_number?.trim() || '';
-
-      const { error: updateError } = await supabase
-        .from('clients')
-        .update({
-          ...formData,
-          contact_person: primary?.full_name || '',
-          job_title: primary?.job_title || '',
-          email: legacyEmail,
-          phone: legacyPhone,
-        })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
-      await supabase.from('client_contacts').delete().eq('client_id', id);
-      const { error: contactsError } = await supabase.from('client_contacts').insert(
-        contacts.map((c) => ({
-          client_id: id,
-          contact_type: c.contact_type,
-          full_name: c.full_name,
-          job_title: c.job_title || null,
-          email: c.email || null,
-          cell_number: c.cell_number || null,
-          landline_number: c.landline_number || null,
-          extension: c.landline_number ? (c.extension || null) : null,
-          is_primary: !!c.is_primary,
-          notes: c.notes || null,
-        }))
-      );
-      if (contactsError) throw contactsError;
+      await submitClientUpdate(formData);
 
       router.push(`/office/clients/${id}`);
       router.refresh();
@@ -182,12 +180,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const setStatus = async (active: boolean) => {
     setSaving(true);
     try {
-      const { error: updateError } = await supabase
-        .from('clients')
-        .update({ is_active: active })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
+      const nextClient = { ...formData, is_active: active };
+      await submitClientUpdate(nextClient);
       setFormData(prev => ({ ...prev, is_active: active }));
       router.refresh();
     } catch (err: any) {

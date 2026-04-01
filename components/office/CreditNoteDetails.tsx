@@ -22,6 +22,7 @@ import { updateCreditNoteStatus } from '@/lib/office/creditNoteActions';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { sendDocumentEmail } from '@/lib/office/outbound-email';
 import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 
 interface CreditNoteDetailsProps {
   cn: any;
@@ -196,6 +197,14 @@ export function CreditNoteDetails({ cn, isOpen, onClose, onRefresh, onDelete }: 
                     </div>
 
                     <div className="flex items-center gap-3">
+                      {cn.status === 'Draft' && (
+                        <Link
+                          href={`/office/credit-notes/${cn.id}/edit`}
+                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border border-slate-700 transition-all"
+                        >
+                          <FileText size={14} /> Edit Credit Note
+                        </Link>
+                      )}
                       <button 
                         onClick={handleSendEmail}
                         disabled={isSending}

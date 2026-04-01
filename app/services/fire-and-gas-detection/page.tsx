@@ -13,6 +13,10 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const services = [
   {
@@ -139,6 +143,34 @@ export default function FireAndGasPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Services', url: 'https://touchteq.co.za/#services' },
+          { name: 'Fire & Gas Detection', url: 'https://touchteq.co.za/services/fire-and-gas-detection' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({ question: faq.q, answer: faq.a }))}
+      />
+      <ServiceJsonLd 
+        name="Fire and Gas Detection Engineering"
+        description="Specialist engineering, design, and installation of fire and gas detection systems for high-risk industrial facilities. Compliant with IEC 61511 and SANS 10089."
+        url="https://touchteq.co.za/services/fire-and-gas-detection"
+        serviceType={[
+          'Fire Detection', 
+          'Gas Monitoring', 
+          'Toxic Gas Detection', 
+          'Flammable Gas Detection',
+          'Industrial Safety Systems'
+        ]}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
       
       {/* Hero Section */}

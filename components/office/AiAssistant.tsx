@@ -5,8 +5,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { useAiDraft, type AiDraftType } from '@/components/office/AiDraftContext';
-import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
+import { useActiveDocument, type ActiveDocumentSession, type ActiveDocumentType } from '@/components/office/ActiveDocumentContext';
 import { createClient } from '@/lib/supabase/client';
+import {
+  generateToolCallId,
+  waitForToolAck,
+  waitForSaveAck,
+  dispatchSaveEvent,
+  dispatchStaleSessionEvent,
+  AI_TOOL_EVENT_NAMES,
+  AI_STALE_SESSION_EVENT_NAME,
+  type StaleSessionEvent,
+  type AiSaveAckEvent,
+  type SaveEventResult,
+} from '@/lib/office/ai-tool-ack';
 import AiMorningBriefing from '@/components/office/AiMorningBriefing';
 import { createFuelLog } from '@/lib/fuel/actions';
 import { format } from 'date-fns';
@@ -41,8 +53,12 @@ import {
   AlertTriangle,
   Info,
   XCircle,
-  Clock
+  Clock,
+  SlidersHorizontal
 } from 'lucide-react';
+
+/** How far along a direct-action tool call has progressed */
+type ApplyProgress = 'not_started' | 'applied_locally' | 'saving' | 'saved_to_server' | 'save_failed' | 'no_document';
 
 type ActionStatusType = "confirmed" | "attempted" | "could_not_verify" | "failed" | "need_info" | "unsupported";
 
@@ -57,6 +73,14 @@ interface ParsedActionStatus {
   summary: string;
   error: string | null;
   nextStep: string;
+  /** Whether the mutation was applied locally to the open document */
+  appliedLocally?: boolean;
+  /** Whether the change has been persisted to the server */
+  savedToServer?: boolean;
+  /** Progress tracker for AI-assisted edits */
+  applyProgress?: ApplyProgress;
+  /** Tool call ID for reference and retry */
+  toolCallId?: string;
 }
 
 function extractActionStatus(text: string): ParsedActionStatus | null {
@@ -528,17 +552,30 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
   const toast = useOfficeToast();
   const supabase = useMemo(() => createClient(), []);
   const { setAiDraft } = useAiDraft();
+  const activeDocumentCtx = useActiveDocument();
   const {
     documentType: activeDocumentType,
     documentId: activeDocumentId,
     documentData: activeDocumentData,
+    documentReference: activeDocumentRef,
     isOpen: activeDocumentIsOpen,
+    isDirty: activeDocumentIsDirty,
+    lastSaveStatus: activeDocumentLastSaveStatus,
+    lastSavedAt: activeDocumentLastSavedAt,
+    mode: activeDocumentMode,
+    version: activeDocumentVersion,
+    lineItemCount: activeDocumentLineItemCount,
     updateField,
     addLineItem,
     removeLineItem,
     updateLineItem,
     clearDocumentSession,
-  } = useActiveDocument();
+    validateSession,
+    getSnapshot,
+    markSaved,
+    markSaveError,
+    beginSave,
+  } = activeDocumentCtx;
 
   const [isOpen, setIsOpen] = useState(isPageMode);
   const [isRecording, setIsRecording] = useState(false);
@@ -584,6 +621,10 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
   });
   const [sessionCacheStatus, setSessionCacheStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [isStreamingResponse, setIsStreamingResponse] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [isSavingMessages, setIsSavingMessages] = useState(false);
+  const [conversationList, setConversationList] = useState<Array<{ id: string; title: string; updated_at: string }>>([]);
+  const [showConversationList, setShowConversationList] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -628,7 +669,7 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
   });
   const handleSendRef = useRef<(fromVoice?: boolean, textOverride?: string) => void | Promise<void>>(() => undefined);
   const sendStagedEmailRef = useRef<(args: any) => void | Promise<void>>(() => undefined);
-  const executeDirectToolCallRef = useRef<(name: string, args: any) => boolean>(() => false);
+  const executeDirectToolCallRef = useRef<(name: string, args: any) => boolean | Promise<boolean>>(() => false);
   const confirmPendingActionRef = useRef<() => void | Promise<void>>(() => undefined);
   const cancelPendingConfirmationRef = useRef<() => void>(() => undefined);
 
@@ -784,12 +825,93 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
     void loadSessionCache();
   }, [loadSessionCache]);
 
-  // Persist History
+  // Load persistent conversation from DB on mount (all modes)
   useEffect(() => {
-    if (messages.length > 1) {
-      sessionStorage.setItem('touchteq_ai_history', JSON.stringify(messages));
+    
+    const loadPersistentConversation = async () => {
+      try {
+        const response = await fetch('/api/office/assistant-conversations');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.conversation && data.messages && data.messages.length > 0) {
+          setCurrentConversationId(data.conversation.id);
+          
+          // Convert DB messages to UI messages
+          const uiMessages: Message[] = data.messages.map((msg: any) => ({
+            id: msg.id || createMessageId(msg.role),
+            text: msg.content || '',
+            sender: msg.role === 'assistant' ? 'assistant' : 'user',
+            timestamp: new Date(msg.created_at),
+          }));
+          
+          // Ensure we have at least a welcome message
+          if (uiMessages.length === 0 || uiMessages[0].sender !== 'assistant') {
+            uiMessages.unshift(createWelcomeMessage());
+          }
+          
+          setMessages(uiMessages);
+        }
+      } catch (err) {
+        console.error('Failed to load persistent conversation:', err);
+      }
+    };
+    
+    loadPersistentConversation();
+  }, []);
+
+  // Save messages to DB periodically (debounced) - all modes
+  const saveMessagesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  useEffect(() => {
+    if (messages.length <= 1) return;
+    
+    // Also save to sessionStorage for immediate persistence
+    sessionStorage.setItem('touchteq_ai_history', JSON.stringify(messages));
+    
+    // Debounce DB save to avoid excessive writes
+    if (saveMessagesTimeoutRef.current) {
+      clearTimeout(saveMessagesTimeoutRef.current);
     }
-  }, [messages]);
+    
+    saveMessagesTimeoutRef.current = setTimeout(async () => {
+      if (!currentConversationId) return;
+      
+      setIsSavingMessages(true);
+      try {
+        // Only save new messages (those without DB IDs)
+        const messagesToSave = messages
+          .filter(msg => !msg.id.startsWith('msg-') || msg.id.includes('welcome'))
+          .map((msg, idx) => ({
+            role: msg.sender === 'assistant' ? 'assistant' : 'user',
+            content: msg.text,
+            message_order: idx,
+          }));
+        
+        if (messagesToSave.length === 0) return;
+        
+        await fetch('/api/office/assistant-conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_messages',
+            conversation_id: currentConversationId,
+            messages: messagesToSave,
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to save conversation messages:', err);
+      } finally {
+        setIsSavingMessages(false);
+      }
+    }, 2000);
+    
+    return () => {
+      if (saveMessagesTimeoutRef.current) {
+        clearTimeout(saveMessagesTimeoutRef.current);
+      }
+    };
+  }, [messages, isPageMode, currentConversationId]);
 
   useEffect(() => {
     localStorage.setItem('touchteq_ai_voice_pause_ms', String(voicePauseMs));
@@ -1603,6 +1725,29 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
         let errorMessage = "Could not connect to the AI brain. Check your network or API keys in .env.local.";
         let parsedError = null;
         
+        if (response.status === 429) {
+          try {
+            parsedError = JSON.parse(errorText);
+            if (parsedError.error) {
+              errorMessage = parsedError.error;
+            }
+          } catch {
+            errorMessage = "You are sending too many requests. Please wait a moment and try again.";
+          }
+          setIsTyping(false);
+          setIsStreamingResponse(false);
+          if (thinkingRef.current) clearTimeout(thinkingRef.current);
+          setThinkingTime(false);
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === assistantId
+                ? { ...message, text: errorMessage }
+                : message
+            )
+          );
+          return;
+        }
+        
         try {
           parsedError = JSON.parse(errorText);
           if (parsedError.error) {
@@ -1612,7 +1757,6 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
             }
           }
         } catch (e) {
-          // not JSON, fallback to generic error message
         }
         
         console.error(`AI request failed with status ${response.status}`, parsedError || errorText);
@@ -2035,101 +2179,289 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
     }
   };
 
+  const buildLineItemPayload = (items: any[], docType?: string) => {
+    return (items || []).map((item: any) => {
+      const base = {
+        description: String(item.description || '').trim(),
+        quantity: Number(item.quantity) || 0,
+        unit_price: Number(item.unitPrice ?? item.unit_price) || 0,
+        qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty',
+      };
+      if (docType === 'credit_note') {
+        return {
+          ...base,
+          vat_rate: Number(item.vat_rate ?? 15),
+        };
+      }
+      return base;
+    });
+  };
+
+  const canServerSave = (session: typeof activeDocumentSessionRef.current) => {
+    if (!session?.isOpen || !session.documentType || !session.documentId) return false;
+    if (!['invoice', 'quote', 'purchase_order', 'credit_note'].includes(session.documentType)) return false;
+    if (!session.documentData) return false;
+    if (!Array.isArray(session.documentData.lineItems) || session.documentData.lineItems.length === 0) return false;
+    return true;
+  };
+
+  const saveActiveDocumentServer = async (session: typeof activeDocumentSessionRef.current) => {
+    if (!canServerSave(session)) {
+      return { ok: false, error: 'No open document data to save.' };
+    }
+
+    const doc = session.documentData || {};
+    const docType = session.documentType;
+    const lineItems = buildLineItemPayload(doc.lineItems || [], docType || undefined);
+    let payload: any = null;
+    let endpoint = '';
+
+    if (docType === 'invoice') {
+      payload = {
+        client_id: doc.clientId,
+        issue_date: doc.issue_date,
+        due_date: doc.due_date,
+        status: doc.status || 'Draft',
+        notes: doc.notes,
+        internal_notes: doc.internal_notes,
+        reference: doc.reference,
+        line_items: lineItems,
+      };
+      endpoint = `/api/office/invoices/${session.documentId}/update`;
+    } else if (docType === 'quote') {
+      payload = {
+        client_id: doc.clientId,
+        issue_date: doc.issue_date,
+        expiry_date: doc.expiry_date,
+        status: doc.status || 'Draft',
+        notes: doc.notes,
+        internal_notes: doc.internal_notes,
+        line_items: lineItems,
+      };
+      endpoint = `/api/office/quotes/${session.documentId}/update`;
+    } else if (docType === 'purchase_order') {
+      payload = {
+        supplier_name: doc.supplier_name,
+        supplier_contact: doc.supplier_contact,
+        supplier_email: doc.supplier_email,
+        date_raised: doc.date_raised,
+        delivery_date: doc.delivery_date,
+        status: doc.status || 'Draft',
+        notes: doc.notes,
+        linked_quote_id: doc.linked_quote_id || null,
+        linked_invoice_id: doc.linked_invoice_id || null,
+        line_items: lineItems,
+      };
+      endpoint = `/api/office/purchase-orders/${session.documentId}/update`;
+    } else if (docType === 'credit_note') {
+      payload = {
+        client_id: doc.clientId,
+        issue_date: doc.issue_date,
+        status: doc.status || 'Draft',
+        reason: doc.reason,
+        notes: doc.notes,
+        line_items: lineItems,
+      };
+      endpoint = `/api/office/credit-notes/${session.documentId}/update`;
+    }
+
+    if (!payload || !endpoint) {
+      return { ok: false, error: 'Unsupported document type.' };
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        return { ok: false, error: result?.error || 'Save failed.' };
+      }
+
+      const documentNumber =
+        result.invoice?.invoice_number ||
+        result.quote?.quote_number ||
+        result.purchaseOrder?.po_number ||
+        result.creditNote?.credit_note_number ||
+        '';
+
+      return {
+        ok: true,
+        documentNumber,
+      };
+    } catch (err: any) {
+      return { ok: false, error: err?.message || 'Save failed.' };
+    }
+  };
+
   // Execute a direct-action tool call immediately without showing a button.
   // This is the heart of the "smart AI" fix — these actions happen instantly.
-  const executeDirectToolCallInline = useCallback((name: string, args: any): boolean => {
+  // Each tool dispatches a custom event and awaits an acknowledgement.
+  const executeDirectToolCallInline = useCallback(async (name: string, args: any): Promise<boolean> => {
     const session = activeDocumentSessionRef.current;
+    const documentTools = ['addLineItem', 'removeLineItem', 'updateLineItem', 'updateDocumentField', 'saveDocument'];
+
+    if (documentTools.includes(name) && (!session.isOpen || !session.documentType)) {
+      appendAssistantMessage("No document is currently open for editing. Please open an invoice, quote, or other document first, then ask me to make changes.");
+      return true;
+    }
 
     switch (name) {
       case 'addLineItem': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open. Please create or open a document first.");
-          return true;
+        const toolCallId = generateToolCallId('addLineItem');
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.addLineItem, {
+          detail: {
+            toolCallId,
+            description: args.description || '',
+            quantity: Number(args.quantity) || 1,
+            unitPrice: Number(args.unitPrice) || 0,
+          },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 3000);
+        if (ack.success) {
+          appendAssistantMessage(ack.message || `Done — added "${args.description || 'New item'}".`);
+        } else {
+          appendAssistantMessage(ack.error || "The line item could not be added. Please check if a document is currently open.");
         }
-        const item = {
-          description: args.description || '',
-          quantity: Number(args.quantity) || 1,
-          unitPrice: Number(args.unitPrice) || 0,
-          total: (Number(args.quantity) || 1) * (Number(args.unitPrice) || 0),
-          line_total: (Number(args.quantity) || 1) * (Number(args.unitPrice) || 0),
-        };
-        const nextDoc = addLineItem(item);
-        const { itemCount, total } = getDocumentTotals(nextDoc);
-        appendAssistantMessage(`Done — added "${args.description || 'New item'}". Your ${session.documentType} now has ${itemCount} items totalling ${formatRand(total)}.`);
         return true;
       }
 
       case 'removeLineItem': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open.");
-          return true;
-        }
-        const idx = Number(args.index) || 0;
+        const toolCallId = generateToolCallId('removeLineItem');
         const currentItems = Array.isArray(session.documentData?.lineItems) ? session.documentData.lineItems : [];
+        const idx = Number(args.index) || 0;
         if (idx < 0 || idx >= currentItems.length) {
           appendAssistantMessage(`Line ${idx + 1} doesn't exist. You have ${currentItems.length} items.`);
           return true;
         }
-        const removedDesc = currentItems[idx]?.description || `Line ${idx + 1}`;
-        const nextDoc2 = removeLineItem(idx);
-        const { itemCount: ic2, total: t2 } = getDocumentTotals(nextDoc2);
-        appendAssistantMessage(`Done — removed "${removedDesc}". ${ic2} items remaining, totalling ${formatRand(t2)}.`);
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.removeLineItem, {
+          detail: { toolCallId, index: idx },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 3000);
+        if (ack.success) {
+          appendAssistantMessage(ack.message || `Done — removed line ${idx + 1}.`);
+        } else {
+          appendAssistantMessage(ack.error || "The line item could not be removed.");
+        }
         return true;
       }
 
       case 'updateLineItem': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open.");
-          return true;
-        }
+        const toolCallId = generateToolCallId('updateLineItem');
         const lineIdx = Number(args.index) || 0;
         const field = args.field || 'description';
         let val: any = args.value;
         if (field === 'quantity' || field === 'unitPrice') {
           val = Number(val) || 0;
         }
-        const nextDoc3 = updateLineItem(lineIdx, field, val);
-        const { itemCount: ic3, total: t3 } = getDocumentTotals(nextDoc3);
-        const fieldLabel = field === 'unitPrice' ? 'price' : field;
-        appendAssistantMessage(`Done — line ${lineIdx + 1} ${fieldLabel} updated to ${val}. Total: ${formatRand(t3)}.`);
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.updateLineItem, {
+          detail: { toolCallId, index: lineIdx, field, value: val },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 3000);
+        if (ack.success) {
+          appendAssistantMessage(ack.message || `Done — line ${lineIdx + 1} ${field} updated.`);
+        } else {
+          appendAssistantMessage(ack.error || "The line item could not be updated.");
+        }
         return true;
       }
 
       case 'updateDocumentField': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open.");
-          return true;
+        const toolCallId = generateToolCallId('updateDocumentField');
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.updateDocumentField, {
+          detail: { toolCallId, field: args.field, value: args.value },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 3000);
+        if (ack.success) {
+          appendAssistantMessage(ack.message || `Done — ${String(args.field).replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').toLowerCase().trim()} updated.`);
+        } else {
+          appendAssistantMessage(ack.error || "The field could not be updated.");
         }
-        const nextDoc4 = updateField(args.field, args.value);
-        const fieldName = String(args.field).replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').toLowerCase().trim();
-        appendAssistantMessage(`Done — ${fieldName} updated.`);
         return true;
       }
 
       case 'saveDocument': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open to save.");
+        if (canServerSave(session)) {
+          appendAssistantMessage("Saving your document now.");
+          void (async () => {
+            const result = await saveActiveDocumentServer(session);
+            if (result.ok) {
+              appendAssistantMessage(
+                result.documentNumber
+                  ? `Saved ${session.documentType} ${result.documentNumber}.`
+                  : `Saved your ${session.documentType}.`
+              );
+              toast.success({ title: 'Saved', message: 'Your changes were saved successfully.' });
+              router.refresh();
+            } else {
+              appendAssistantMessage(`I tried to save the document, but it failed: ${result.error}`);
+              toast.error({ title: 'Save Failed', message: result.error || 'Unable to save document.' });
+            }
+          })();
           return true;
         }
-        // Dispatch a custom event that the invoice/quote page can listen to
-        window.dispatchEvent(new CustomEvent('touchteq-ai-save-document'));
-        appendAssistantMessage("Saving your document now.");
-        toast.success({ title: 'Saving', message: 'AI triggered save on your open document.' });
+
+        // Fallback to UI event with ack
+        const toolCallId = generateToolCallId('saveDocument');
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.saveDocument, {
+          detail: { toolCallId },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 5000);
+        if (ack.success) {
+          appendAssistantMessage(ack.message || "Document saved successfully.");
+          toast.success({ title: 'Saved', message: ack.message || 'Your changes were saved successfully.' });
+        } else {
+          appendAssistantMessage(ack.error || "I tried to save the document, but no confirmation was received. Please check if it was saved.");
+          toast.error({ title: 'Save Uncertain', message: ack.error || 'Unable to confirm save.' });
+        }
         return true;
       }
 
       case 'closeDocument': {
-        if (!session.isOpen || !session.documentType) {
-          appendAssistantMessage("No document is currently open.");
-          return true;
-        }
-        // Dispatch save first, then navigate
-        window.dispatchEvent(new CustomEvent('touchteq-ai-save-document'));
-        clearDocumentSession();
         const closeDest = args.navigateTo || 'dashboard';
         const closeRoute = NAVIGATION_ROUTES[closeDest] || NAVIGATION_ROUTES.dashboard;
-        setTimeout(() => router.push(closeRoute), 500);
-        appendAssistantMessage(`Document closed. Opening ${closeDest}.`);
+
+        if (canServerSave(session)) {
+          appendAssistantMessage("Saving and closing your document now.");
+          void (async () => {
+            const result = await saveActiveDocumentServer(session);
+            if (!result.ok) {
+              appendAssistantMessage(`I tried to save the document, but it failed: ${result.error}`);
+              toast.error({ title: 'Save Failed', message: result.error || 'Unable to save document.' });
+              return;
+            }
+
+            clearDocumentSession();
+            router.push(closeRoute);
+            appendAssistantMessage(`Document closed. Opening ${closeDest}.`);
+          })();
+          return true;
+        }
+
+        // Fallback: save via event, then close
+        const toolCallId = generateToolCallId('closeDocument');
+        window.dispatchEvent(new CustomEvent(AI_TOOL_EVENT_NAMES.saveDocument, {
+          detail: { toolCallId },
+        }));
+
+        const ack = await waitForToolAck(toolCallId, 5000);
+        if (ack.success) {
+          clearDocumentSession();
+          setTimeout(() => router.push(closeRoute), 300);
+          appendAssistantMessage(`Document saved and closed. Opening ${closeDest}.`);
+        } else {
+          clearDocumentSession();
+          setTimeout(() => router.push(closeRoute), 300);
+          appendAssistantMessage(`Document closed (save could not be confirmed). Opening ${closeDest}.`);
+        }
         return true;
       }
 
@@ -2153,7 +2485,6 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
           appendAssistantMessage("Please provide a document reference number (e.g., INV-0001 or QT-0023).");
           return true;
         }
-        // Look up the document in Supabase
         const table = docType === 'quote' ? 'quotes' : docType === 'certificate' ? 'certificates' : 'invoices';
         const numberField = docType === 'quote' ? 'quote_number' : docType === 'certificate' ? 'certificate_number' : 'invoice_number';
         supabase
@@ -2181,7 +2512,7 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
       default:
         return false;
     }
-  }, [addLineItem, appendAssistantMessage, clearDocumentSession, removeLineItem, router, supabase, toast, updateField, updateLineItem]);
+  }, [appendAssistantMessage, canServerSave, clearDocumentSession, router, saveActiveDocumentServer, supabase, toast]);
 
   useEffect(() => {
     executeDirectToolCallRef.current = executeDirectToolCallInline;
@@ -2531,6 +2862,14 @@ const triggerShortcut = (command: string, starter?: string) => {
               >
                 <Command size={16} />
               </button>
+              <button
+                type="button"
+                onClick={() => router.push('/office/settings?tab=assistant')}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:border-orange-400/60 hover:bg-orange-500/10 hover:text-white"
+                aria-label="Settings"
+              >
+                <SlidersHorizontal size={16} />
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -2684,16 +3023,15 @@ const triggerShortcut = (command: string, starter?: string) => {
                 <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Touch Teq AI Assistant</div>
               )}
 
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={toggleVoiceMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${voiceMode ? 'border-orange-400 bg-orange-500/20 text-orange-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Voice Mode</button>
-                <button type="button" onClick={toggleDriveMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${driveMode ? 'border-green-500/30 bg-green-500/12 text-green-300' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Car Mode</button>
-                <button type="button" onClick={toggleAutoListen} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${autoListen ? 'border-sky-500/30 bg-sky-500/12 text-sky-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Hands-Free</button>
-                <button type="button" onClick={() => void loadSessionCache()} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300 transition-all hover:text-white">
-                  {sessionCacheStatus === 'loading' ? 'Refreshing...' : 'Refresh Context'}
-                </button>
-                <button type="button" onClick={() => router.push('/office/settings?tab=assistant')} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300 transition-all hover:text-white">AI Settings</button>
-                <button type="button" onClick={clearChat} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-all hover:border-orange-400/40 hover:bg-orange-500/10">New Conversation</button>
-              </div>
+             <div className="flex flex-wrap items-center gap-2">
+                 <button type="button" onClick={toggleVoiceMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${voiceMode ? 'border-orange-400 bg-orange-500/20 text-orange-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Voice Mode</button>
+                 <button type="button" onClick={toggleDriveMode} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${driveMode ? 'border-green-500/30 bg-green-500/12 text-green-300' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Car Mode</button>
+                 <button type="button" onClick={toggleAutoListen} className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${autoListen ? 'border-sky-500/30 bg-sky-500/12 text-sky-200' : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'}`}>Hands-Free</button>
+                  <button type="button" onClick={() => void loadSessionCache()} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-300 transition-all hover:text-white">
+                    {sessionCacheStatus === 'loading' ? 'Refreshing...' : 'Refresh Context'}
+                  </button>
+                  <button type="button" onClick={clearChat} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-all hover:border-orange-400/40 hover:bg-orange-500/10">New Conversation</button>
+               </div>
             </div>
 
             <div className={`flex flex-1 flex-col ${showHero ? 'justify-center' : 'gap-6'}`}>

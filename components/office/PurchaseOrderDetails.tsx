@@ -25,6 +25,7 @@ import { PurchaseOrderPDF } from '@/lib/office/PurchaseOrderPDF';
 import { updatePurchaseOrderStatus } from '@/lib/office/purchaseOrderActions';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { DeleteConfirmationModal } from '@/components/office/DeleteConfirmationModal';
+import Link from 'next/link';
 
 interface PurchaseOrderDetailsProps {
   po: any;
@@ -152,9 +153,14 @@ export function PurchaseOrderDetails({ po, isOpen, onClose, onRefresh, onDelete 
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <button className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border border-slate-700 transition-all">
-                        <Edit size={14} /> Edit PO
-                      </button>
+                      {po.status === 'Draft' && (
+                        <Link
+                          href={`/office/purchase-orders/${po.id}/edit`}
+                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest border border-slate-700 transition-all"
+                        >
+                          <Edit size={14} /> Edit PO
+                        </Link>
+                      )}
                       <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all">
                         <Mail size={14} /> Send to Supplier
                       </button>

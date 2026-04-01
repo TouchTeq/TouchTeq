@@ -20,6 +20,12 @@ export async function GET(request: Request) {
 
     const supabase = createAdminClient();
     const result = await runOfficeSequences(supabase);
+
+    await supabase
+      .from("ai_rate_limits")
+      .delete()
+      .lt("window_start", new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString());
+
     const ranAt = new Date().toISOString();
 
     const { data: profile } = await supabase

@@ -138,50 +138,37 @@ export default function CreateCreditNotePage() {
     try {
       const selectedItems = formData.items.filter(i => i.selected);
       
-      const { data: creditNote, error: cnError } = await supabase
-        .from('credit_notes')
-        .insert({
-          invoice_id: invoiceId,
-          client_id: invoice.client_id,
-          issue_date: formData.issue_date,
-          reason: formData.reason,
-          notes: formData.notes,
-          status: formData.status,
-          subtotal: totals.subtotal,
-          vat_amount: totals.vat_amount,
-          total: totals.total
-        })
-        .select()
-        .single();
-
-      if (cnError) throw cnError;
-
-      const creditNoteItems = selectedItems.map((item: any) => ({
-        credit_note_id: creditNote.id,
+      const itemsJson = selectedItems.map((item: any) => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
         vat_rate: item.vat_rate,
         line_total: item.line_total,
-        invoice_item_id: item.invoice_item_id
+        invoice_item_id: item.invoice_item_id,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('credit_note_items')
-        .insert(creditNoteItems);
+      const { data: result, error: rpcError } = await supabase.rpc('create_credit_note_with_items', {
+        p_client_id: invoice.client_id,
+        p_line_items: itemsJson,
+        p_reason: formData.reason,
+        p_notes: formData.notes || null,
+        p_invoice_id: invoiceId,
+        p_issue_date: formData.issue_date,
+        p_status: formData.status,
+      });
 
-      if (itemsError) throw itemsError;
+      if (rpcError || !result) throw new Error(rpcError?.message || 'Credit note creation failed');
 
       const creditStatus = totals.total >= invoice.total ? 'Fully Credited' : 'Partially Credited';
       await supabase
         .from('invoices')
         .update({ 
-          credit_note_id: creditNote.id,
+          credit_note_id: result.id,
           credit_status: creditStatus
         })
         .eq('id', invoiceId);
 
-      toast.success({ title: 'Credit Note Created', message: `Credit note ${creditNote.credit_note_number} has been created.` });
+      toast.success({ title: 'Credit Note Created', message: `Credit note ${result.document_number} has been created.` });
       router.push('/office/invoices?tab=credit-notes');
     } catch (err: any) {
       toast.error({ title: 'Error', message: err.message });

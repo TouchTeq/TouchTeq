@@ -6,6 +6,7 @@ export const CONTACT_TYPES = ['Technical', 'Finance', 'General'] as const;
 export type ContactType = (typeof CONTACT_TYPES)[number];
 
 export type ClientContactDraft = {
+  id?: string;
   localId: string;
   contact_type: ContactType;
   full_name: string;

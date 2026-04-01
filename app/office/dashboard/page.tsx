@@ -49,8 +49,9 @@ export default async function DashboardPage() {
   const { data: overdueData } = await supabase
     .from('invoices')
     .select('total, balance_due, due_date')
-    .neq('status', 'Paid')
-    .lt('due_date', format(now, 'yyyy-MM-dd'));
+    .in('status', ['Sent', 'Overdue', 'Partially Paid'])
+    .lt('due_date', format(now, 'yyyy-MM-dd'))
+    .gt('balance_due', 0);
 
   const overdueCount = overdueData?.length || 0;
   const overdueValue = overdueData?.reduce((sum, inv) => sum + (inv.balance_due || 0), 0) || 0;

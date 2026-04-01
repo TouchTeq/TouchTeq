@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { sendGAEvent } from '@next/third-parties/google';
 import { Turnstile } from '@marsidev/react-turnstile';
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
 
 const questions = [
   {
@@ -203,6 +205,23 @@ export default function RiskAssessment() {
 
   return (
     <main className="bg-[#0A1120] min-h-screen font-sans flex flex-col items-center">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Solutions', url: 'https://touchteq.co.za' },
+          { name: 'Industrial Risk Assessment', url: 'https://touchteq.co.za/risk-assessment' }
+        ]}
+      />
+      <ServiceJsonLd 
+        name="Industrial Fire & Gas Risk Assessment"
+        description="A comprehensive assessment tool for industrial facilities to evaluate their fire and gas detection system readiness and regulatory compliance level."
+        url="https://touchteq.co.za/risk-assessment"
+        serviceType={[
+          'Risk Assessment', 
+          'Compliance Audit', 
+          'Safety System Evaluation'
+        ]}
+      />
       <Header />
 
       <section className="w-full max-w-4xl mx-auto px-4 pt-32 pb-24 md:pt-48 md:pb-32 flex-grow flex flex-col justify-center">

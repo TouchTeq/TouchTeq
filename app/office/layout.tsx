@@ -29,7 +29,8 @@ import {
   Fuel,
   Sparkles,
   Wallet,
-  ShoppingBag
+  ShoppingBag,
+  Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@/lib/supabase/client';
@@ -78,6 +79,7 @@ const navGroups: NavGroup[] = [
       { name: 'Timeline', href: '/office/timeline', icon: Activity },
       { name: 'Reminders', href: '/office/reminders', icon: Bell },
       { name: 'Activity', href: '/office/activity', icon: Clock },
+      { name: 'AI Log', href: '/office/activity/ai-log', icon: Bot },
       { name: 'Reports', href: '/office/reports', icon: BarChart3 },
       { name: 'Cash Flow', href: '/office/cash-flow', icon: Wallet },
     ],

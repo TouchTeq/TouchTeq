@@ -13,6 +13,10 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const services = [
   {
@@ -124,12 +128,51 @@ export default function InstallationCommissioningPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Services', url: 'https://touchteq.co.za/#services' },
+          { name: 'Installation & Commissioning', url: 'https://touchteq.co.za/services/installation-and-commissioning' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({ question: faq.q, answer: faq.a }))}
+      />
+      <ServiceJsonLd 
+        name="Industrial Installation & Commissioning"
+        description="Expert installation and commissioning of industrial safety and control systems. Specialists in Fire & Gas, C&I, and Hazardous Area (Ex) equipment."
+        url="https://touchteq.co.za/services/installation-and-commissioning"
+        serviceType={[
+          'Field Device Installation', 
+          'Cable Reticulation', 
+          'Loop Testing', 
+          'Functional Safety Testing',
+          'System Integration',
+          'Hazardous Area Inspection'
+        ]}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 md:pt-48 md:pb-32 bg-[#1A2B4C] overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#ff6900 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0 text-white">
+          <Image
+            src="/Commissioning_testing.png"
+            alt="Installation & Commissioning Services"
+            fill
+            className="object-cover opacity-30"
+            priority
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1A2B4C] via-[#1A2B4C]/80 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#1A2B4C] to-transparent"></div>
         </div>
 
         <div className="container mx-auto px-4 md:px-8 relative z-10">

@@ -16,6 +16,10 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const services = [
   {
@@ -206,6 +210,35 @@ export default function DesignAndEngineeringPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Services', url: 'https://touchteq.co.za/#services' },
+          { name: 'Design & Engineering', url: 'https://touchteq.co.za/services/design-and-engineering' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({ question: faq.q, answer: faq.a }))}
+      />
+      <ServiceJsonLd 
+        name="Industrial Design & Engineering"
+        description="Comprehensive front-end (FEED) and detailed engineering for industrial facilities. Specialist design in Fire & Gas, C&I, and Electrical systems."
+        url="https://touchteq.co.za/services/design-and-engineering"
+        serviceType={[
+          'Front-End Engineering Design (FEED)', 
+          'Detailed Engineering Design', 
+          'P&ID Development', 
+          'Cause and Effect Matrix',
+          'Fire & Gas Detection Design',
+          'Protection Studies'
+        ]}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
       
       {/* Hero Section */}
@@ -213,7 +246,7 @@ export default function DesignAndEngineeringPage() {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://picsum.photos/seed/engineering-design/1920/1080"
+            src="/Industrial_facility.jpeg"
             alt="Design & Engineering Services"
             fill
             className="object-cover opacity-30"

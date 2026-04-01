@@ -7,6 +7,10 @@ import { getActiveApiKey } from "@/lib/api-keys/resolver";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ActionResult, wrapWithActionResult, actionSuccess, actionFailed, actionNeedInfo, actionUnsupported, actionAttempted } from "@/lib/assistant-action";
 import { SYSTEM_PROMPT_BASE } from "@/lib/assistant-prompt";
+import { validateTransition } from "@/lib/office/status-actions";
+import { checkRateLimit } from "@/lib/ai/rate-limiter";
+import { logAIAction, parseActionResult, extractTargetInfo } from "@/lib/ai/action-logger";
+import { recordToolExecution } from "@/lib/ai/tool-telemetry";
 
 // Server-side Supabase client for data queries
 function getSupabase() {
@@ -1356,6 +1360,79 @@ const tools = [
           required: ["companyName"],
         },
       },
+      {
+        name: "updateClient",
+        description: "Updates an existing client's details. Use when user says 'update client', 'change client email', 'fix client phone', 'update Sasol's address'. Only whitelisted fields can be updated. Executes server-side with exact-match-first lookup.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            clientName: { type: "string", description: "The client company name to identify the client. Exact match preferred." },
+            contactPerson: { type: "string", description: "Updated contact person name." },
+            email: { type: "string", description: "Updated email address." },
+            phone: { type: "string", description: "Updated phone number." },
+            physicalAddress: { type: "string", description: "Updated physical address." },
+            vatNumber: { type: "string", description: "Updated VAT registration number." },
+            category: { type: "string", description: "Updated client category." },
+            notes: { type: "string", description: "Updated notes (appends to existing)." },
+          },
+          required: ["clientName"],
+        },
+      },
+      {
+        name: "addClientCommunication",
+        description: "Logs a communication event for a client. Use when user says 'log a call', 'add a note', 'record meeting', 'follow-up note', 'email summary'. Automatically updates last_contact_at and last_contact_summary on the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            clientName: { type: "string", description: "The client company name. Exact match preferred." },
+            noteType: { type: "string", description: "Type of interaction: 'Phone Call', 'Site Visit', 'Meeting', 'WhatsApp', 'Follow-up', 'Other'." },
+            content: { type: "string", description: "The note content, call summary, or meeting minutes." },
+            subject: { type: "string", description: "Optional subject line for the communication." },
+          },
+          required: ["clientName", "content"],
+        },
+      },
+      {
+        name: "createClientContact",
+        description: "Creates a new contact person for an existing client. Use when user says 'add contact', 'new contact for Sasol', 'add John as technical contact'. Prevents duplicates by checking existing contacts.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            clientName: { type: "string", description: "The client company name. Exact match preferred." },
+            fullName: { type: "string", description: "Full name of the contact person. Required." },
+            contactType: { type: "string", description: "Contact type: 'Technical', 'Finance', or 'General'." },
+            jobTitle: { type: "string", description: "Job title of the contact." },
+            email: { type: "string", description: "Contact email address." },
+            cellNumber: { type: "string", description: "Cell/mobile number." },
+            landlineNumber: { type: "string", description: "Office landline number." },
+            extension: { type: "string", description: "Phone extension." },
+            isPrimary: { type: "boolean", description: "Set as primary contact for this client." },
+            notes: { type: "string", description: "Additional notes about this contact." },
+          },
+          required: ["clientName", "fullName"],
+        },
+      },
+      {
+        name: "updateClientContact",
+        description: "Updates an existing client contact. Use when user says 'update contact', 'change contact email', 'fix contact phone'. Identifies contact by client name + contact name.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            clientName: { type: "string", description: "The client company name. Exact match preferred." },
+            contactName: { type: "string", description: "The existing contact's full name to identify them." },
+            fullName: { type: "string", description: "Updated full name." },
+            contactType: { type: "string", description: "Updated contact type: 'Technical', 'Finance', or 'General'." },
+            jobTitle: { type: "string", description: "Updated job title." },
+            email: { type: "string", description: "Updated email address." },
+            cellNumber: { type: "string", description: "Updated cell/mobile number." },
+            landlineNumber: { type: "string", description: "Updated office landline." },
+            extension: { type: "string", description: "Updated phone extension." },
+            isPrimary: { type: "boolean", description: "Set as primary contact." },
+            notes: { type: "string", description: "Updated notes." },
+          },
+          required: ["clientName", "contactName"],
+        },
+      },
 
       // === EXPENSE MANAGEMENT ===
       {
@@ -1427,6 +1504,38 @@ const tools = [
         },
       },
       {
+        name: "updatePurchaseOrderStatus",
+        description: "Updates the status of a purchase order. Use this when the user asks to mark a PO as sent, acknowledged, delivered, or cancelled.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The purchase order number (e.g., 'PO-0001') or a description that identifies the PO." },
+            newStatus: {
+              type: "string",
+              enum: ["Draft", "Sent", "Acknowledged", "Delivered", "Cancelled"],
+              description: "The new status to set.",
+            },
+          },
+          required: ["poReference", "newStatus"],
+        },
+      },
+      {
+        name: "updateCreditNoteStatus",
+        description: "Updates the status of a credit note. Use this when the user asks to issue, apply, send, or cancel a credit note.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            creditNoteReference: { type: "string", description: "The credit note number (e.g., 'CN-0001') or a description that identifies the credit note." },
+            newStatus: {
+              type: "string",
+              enum: ["Draft", "Sent", "Issued", "Applied", "Cancelled"],
+              description: "The new status to set.",
+            },
+          },
+          required: ["creditNoteReference", "newStatus"],
+        },
+      },
+      {
         name: "markInvoicePaid",
         description: "Marks an invoice as fully paid and sets the balance due to zero. Use when the user says an invoice has been paid, is settled, or should be closed. This does NOT record a payment transaction — use recordPayment if the user wants to log a specific payment amount and method.",
         parametersJsonSchema: {
@@ -1448,6 +1557,432 @@ const tools = [
           required: ["invoiceReference"],
         },
       },
+      {
+        name: "markInvoiceSent",
+        description: "Marks an invoice as Sent. Use when the user says the invoice has been sent to the client, emailed, or dispatched.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+          },
+          required: ["invoiceReference"],
+        },
+      },
+      {
+        name: "reopenInvoice",
+        description: "Reopens a cancelled invoice back to Draft. Only allowed if the invoice has no payments recorded.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+          },
+          required: ["invoiceReference"],
+        },
+      },
+      {
+        name: "markQuoteSent",
+        description: "Marks a quote as Sent. Use when the user says the quote has been sent to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "acceptQuote",
+        description: "Marks a quote as Accepted. Use when the client has accepted the quotation.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "declineQuote",
+        description: "Marks a quote as Declined. Use when the client has declined the quotation.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "expireQuote",
+        description: "Marks a quote as Expired. Use when the quote validity period has passed.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "reopenQuote",
+        description: "Reopens a declined, rejected, or expired quote back to Draft for revision.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "rejectQuote",
+        description: "Marks a quote as Rejected. Use when the quote has been formally rejected by the client or internally.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "issueQuote",
+        description: "Marks a quote as Issued. Use when the quote has been formally issued to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "markPOSent",
+        description: "Marks a purchase order as Sent to the supplier.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "acknowledgePO",
+        description: "Marks a purchase order as Acknowledged by the supplier.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "markPODelivered",
+        description: "Marks a purchase order as Delivered.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "cancelPO",
+        description: "Cancels a purchase order. Allowed from any status except Cancelled.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "issueCreditNote",
+        description: "Issues a credit note (changes status from Draft/Sent to Issued).",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "sendCreditNote",
+        description: "Marks a credit note as Sent to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "applyCreditNote",
+        description: "Applies a credit note against its linked invoice (changes status to Applied).",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "cancelCreditNote",
+        description: "Cancels a credit note. Not allowed if the credit note has already been applied.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "voidInvoice",
+        description: "Cancels/voids an invoice by setting its status to Cancelled. Use when the user asks to cancel, void, delete, or remove an invoice. This does not delete the record — it marks it as Cancelled. An invoice that has been paid or partially paid cannot be voided — a credit note should be issued instead.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
+          },
+          required: ["invoiceReference"],
+        },
+      },
+      {
+        name: "markInvoiceSent",
+        description: "Marks an invoice as Sent. Use when the user says the invoice has been sent to the client, emailed, or dispatched.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+          },
+          required: ["invoiceReference"],
+        },
+      },
+      {
+        name: "reopenInvoice",
+        description: "Reopens a cancelled invoice back to Draft. Only allowed if the invoice has no payments recorded.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+          },
+          required: ["invoiceReference"],
+        },
+      },
+      {
+        name: "markQuoteSent",
+        description: "Marks a quote as Sent. Use when the user says the quote has been sent to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "acceptQuote",
+        description: "Marks a quote as Accepted. Use when the client has accepted the quotation.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "declineQuote",
+        description: "Marks a quote as Declined. Use when the client has declined the quotation.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "expireQuote",
+        description: "Marks a quote as Expired. Use when the quote validity period has passed.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "reopenQuote",
+        description: "Reopens a declined, rejected, or expired quote back to Draft for revision.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "rejectQuote",
+        description: "Marks a quote as Rejected. Use when the quote has been formally rejected by the client or internally.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "issueQuote",
+        description: "Marks a quote as Issued. Use when the quote has been formally issued to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "markPOSent",
+        description: "Marks a purchase order as Sent to the supplier.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "acknowledgePO",
+        description: "Marks a purchase order as Acknowledged by the supplier.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "markPODelivered",
+        description: "Marks a purchase order as Delivered.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "cancelPO",
+        description: "Cancels a purchase order. Allowed from any status except Cancelled.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+          },
+          required: ["poReference"],
+        },
+      },
+      {
+        name: "issueCreditNote",
+        description: "Issues a credit note (changes status from Draft/Sent to Issued).",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "sendCreditNote",
+        description: "Marks a credit note as Sent to the client.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "applyCreditNote",
+        description: "Applies a credit note against its linked invoice (changes status to Applied).",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "cancelCreditNote",
+        description: "Cancels a credit note. Not allowed if the credit note has already been applied.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+          },
+          required: ["cnReference"],
+        },
+      },
+      {
+        name: "convertQuoteToInvoice",
+        description: "Converts an accepted quote into an invoice. Copies all line items, totals, and client details from the quote to create a new invoice. The quote status is updated to 'Converted'. Use this when the user says 'convert this quote to an invoice', 'invoice this quote', 'raise an invoice from quote [number]', or after a quote has been accepted and the user wants to proceed.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QUO-0001') to convert.",
+            },
+            paymentTermsDays: {
+              type: "number",
+              description: "Payment terms in days for the invoice. If not specified, the business profile default will be used.",
+            },
+          },
+          required: ["quoteReference"],
+        },
+      },
+      {
+        name: "transitionDocumentStatus",
+        description: "Transitions the status of an invoice, quote, purchase order, or credit note following strict lifecycle rules. Use this for specific transitions like 'mark_sent', 'void', 'reopen', etc.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            documentType: {
+              type: "string",
+              enum: ["invoice", "quote", "purchase_order", "credit_note"],
+              description: "The type of document to transition."
+            },
+            reference: {
+              type: "string",
+              description: "The document number (e.g., 'INV-0001', 'QT-0001')."
+            },
+            action: {
+              type: "string",
+              description: "The transition action to perform (e.g., 'mark_sent', 'accept', 'decline', 'void', 'reopen', 'issue', 'acknowledge', 'mark_delivered', 'cancel')."
+            },
+          },
+          required: ["documentType", "reference", "action"],
+        },
+      },
     ],
   },
 ];
@@ -1457,7 +1992,8 @@ const tools = [
 // ============================================================
 
 // Tools that execute server-side and return data for a follow-up AI call
-const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "markInvoicePaid", "voidInvoice"]);
+// Tools that execute server-side and return data for a follow-up AI call
+const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice"]);
 
 async function executeLogTrip(args: any): Promise<string> {
   const supabase = getSupabase();
@@ -1711,8 +2247,9 @@ async function executeQueryBusinessData(args: any): Promise<string> {
         const { data } = await supabase
           .from("invoices")
           .select("id, invoice_number, total, balance_due, due_date, clients(company_name)")
-          .neq("status", "Paid")
+          .in("status", ["Sent", "Overdue", "Partially Paid"])
           .lt("due_date", today)
+          .gt("balance_due", 0)
           .order("due_date", { ascending: true })
           .limit(limit);
 
@@ -1951,7 +2488,12 @@ async function executeQueryBusinessData(args: any): Promise<string> {
         const totalRevenue = invoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
         const totalPaid = invoices.reduce((s: number, i: any) => s + Number(i.amount_paid || 0), 0);
         const totalOutstanding = invoices.reduce((s: number, i: any) => s + Number(i.balance_due || 0), 0);
-        const overdueCount = invoices.filter((i: any) => i.status !== "Paid" && i.due_date && i.due_date < today).length;
+        const overdueCount = invoices.filter((i: any) => 
+          ["Sent", "Overdue", "Partially Paid"].includes(i.status) && 
+          i.due_date && 
+          i.due_date < today &&
+          i.balance_due > 0
+        ).length;
 
         const quotes = quotesRes.data || [];
         const totalQuoted = quotes.reduce((s: number, q: any) => s + Number(q.total || 0), 0);
@@ -1998,18 +2540,33 @@ async function executeCreateClient(args: any): Promise<string> {
     );
   }
 
-  // Check for duplicates
-  const { data: existing } = await supabase
+  // Check for existing client before creating — with disambiguation
+  const { data: existing, error: existingError } = await supabase
     .from("clients")
-    .select("id, company_name")
-    .ilike("company_name", companyName)
-    .limit(1)
-    .maybeSingle();
+    .select("id, company_name, email, contact_person")
+    .ilike("company_name", `%${companyName}%`)
+    .limit(5);
 
-  if (existing) {
+  if (existingError) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", targetReference: existing.company_name, error: `A client named "${existing.company_name}" already exists.`, nextStep: "Use a different name or edit the existing client." })
+      actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: `Database error checking for duplicates: ${existingError.message}`, nextStep: "Please try again." })
     );
+  }
+
+  if (existing && existing.length > 0) {
+    const exactDuplicate = existing.find(
+      (c: any) => c.company_name.toLowerCase() === companyName.toLowerCase()
+    );
+    if (exactDuplicate) {
+      return wrapWithActionResult(
+        actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", targetReference: exactDuplicate.company_name, error: `A client named "${exactDuplicate.company_name}" already exists.`, nextStep: "Do you want to create a new invoice for them instead?" })
+      );
+    } else {
+      const similarList = existing.map((c: any) => `"${c.company_name}"${c.contact_person ? ` (contact: ${c.contact_person})` : ""}`).join(", ");
+      return wrapWithActionResult(
+        actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: `Similar client names already exist: ${similarList}.`, nextStep: `Do you still want to create a new client called "${companyName}", or did you mean one of these?` })
+      );
+    }
   }
 
   const clientData = {
@@ -2055,6 +2612,641 @@ async function executeCreateClient(args: any): Promise<string> {
         phone: clientData.phone,
       },
       verification,
+    }
+  );
+}
+
+// ============================================================
+// CLIENT UPDATE TOOL
+// ============================================================
+
+// Whitelisted fields for client updates — prevents unsafe patching
+const CLIENT_UPDATE_WHITELIST = new Set([
+  "contact_person",
+  "email",
+  "phone",
+  "physical_address",
+  "vat_number",
+  "category",
+  "notes",
+]);
+
+async function executeUpdateClient(args: any): Promise<string> {
+  const supabase = getSupabase();
+
+  const clientName = String(args.clientName || "").trim();
+  if (!clientName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", error: "Client name is required.", nextStep: "Please provide the client company name." })
+    );
+  }
+
+  // Resolve client — safe exact-match-first lookup
+  const resolved = await resolveClientForWrite(supabase, clientName);
+
+  if (resolved.kind === "not_found") {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+    );
+  }
+
+  if (resolved.kind === "ambiguous") {
+    return wrapWithActionResult(
+      actionNeedInfo({
+        action: "update_client",
+        targetType: "client",
+        toolUsed: "updateClient",
+        missingFields: ["clientName"],
+        nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
+      }),
+      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+    );
+  }
+
+  const client = resolved.record;
+
+  // Build update payload from whitelisted fields only
+  const updatePayload: Record<string, any> = {};
+  const fieldMap: Record<string, string> = {
+    contactPerson: "contact_person",
+    email: "email",
+    phone: "phone",
+    physicalAddress: "physical_address",
+    vatNumber: "vat_number",
+    category: "category",
+    notes: "notes",
+  };
+
+  let hasUpdates = false;
+  for (const [argKey, dbKey] of Object.entries(fieldMap)) {
+    if (args[argKey] !== undefined && args[argKey] !== null) {
+      if (CLIENT_UPDATE_WHITELIST.has(dbKey)) {
+        if (dbKey === "notes") {
+          // Append to existing notes
+          const { data: existing } = await supabase
+            .from("clients")
+            .select("notes")
+            .eq("id", client.id)
+            .maybeSingle();
+          const existingNotes = existing?.notes || "";
+          updatePayload[dbKey] = existingNotes
+            ? `${existingNotes}\n${String(args[argKey])}`
+            : String(args[argKey]);
+        } else {
+          updatePayload[dbKey] = String(args[argKey]);
+        }
+        hasUpdates = true;
+      }
+    }
+  }
+
+  if (!hasUpdates) {
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_client",
+        targetType: "client",
+        toolUsed: "updateClient",
+        targetReference: client.company_name,
+        error: "No valid update fields provided.",
+        nextStep: "Allowed fields: contactPerson, email, phone, physicalAddress, vatNumber, category, notes.",
+      })
+    );
+  }
+
+  // Execute update
+  const { error: updateError } = await supabase
+    .from("clients")
+    .update(updatePayload)
+    .eq("id", client.id);
+
+  if (updateError) {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", targetReference: client.company_name, error: updateError.message })
+    );
+  }
+
+  // Read-after-write verification
+  const { data: verified, error: verifyError } = await supabase
+    .from("clients")
+    .select("company_name, contact_person, email, phone, physical_address, vat_number, category")
+    .eq("id", client.id)
+    .maybeSingle();
+
+  if (verifyError || !verified) {
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "update_client",
+        targetType: "client",
+        targetReference: client.company_name,
+        toolUsed: "updateClient",
+        summary: `Client "${client.company_name}" updated, but verification could not be completed.`,
+        verified: false,
+      }),
+      { updates: updatePayload }
+    );
+  }
+
+  // Build summary of what changed
+  const changedFields = Object.keys(updatePayload).map(k => {
+    const displayKey = Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
+    return displayKey;
+  });
+
+  return wrapWithActionResult(
+    actionSuccess({
+      action: "update_client",
+      targetType: "client",
+      targetReference: verified.company_name,
+      toolUsed: "updateClient",
+      summary: `Client "${verified.company_name}" updated. Changed: ${changedFields.join(", ")}.`,
+      verified: true,
+    }),
+    {
+      client: {
+        companyName: verified.company_name,
+        contactPerson: verified.contact_person,
+        email: verified.email,
+        phone: verified.phone,
+        physicalAddress: verified.physical_address,
+        vatNumber: verified.vat_number,
+        category: verified.category,
+      },
+      updatedFields: changedFields,
+    }
+  );
+}
+
+// ============================================================
+// CLIENT COMMUNICATION LOGGING TOOL
+// ============================================================
+
+const VALID_NOTE_TYPES = ["Phone Call", "Site Visit", "Meeting", "WhatsApp", "Follow-up", "Other"];
+
+async function executeAddClientCommunication(args: any): Promise<string> {
+  const supabase = getSupabase();
+
+  const clientName = String(args.clientName || "").trim();
+  const content = String(args.content || "").trim();
+
+  if (!clientName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: "Client name is required.", nextStep: "Please provide the client company name." })
+    );
+  }
+
+  if (!content) {
+    return wrapWithActionResult(
+      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: "Content is required.", nextStep: "Please provide the note content or call summary." })
+    );
+  }
+
+  // Resolve client — safe exact-match-first lookup
+  const resolved = await resolveClientForWrite(supabase, clientName);
+
+  if (resolved.kind === "not_found") {
+    return wrapWithActionResult(
+      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+    );
+  }
+
+  if (resolved.kind === "ambiguous") {
+    return wrapWithActionResult(
+      actionNeedInfo({
+        action: "add_communication",
+        targetType: "client_communication",
+        toolUsed: "addClientCommunication",
+        missingFields: ["clientName"],
+        nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
+      }),
+      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+    );
+  }
+
+  const client = resolved.record;
+
+  // Validate note type
+  const noteType = String(args.noteType || "Other").trim();
+  const validNoteType = VALID_NOTE_TYPES.includes(noteType) ? noteType : "Other";
+
+  // Build subject
+  const subject = args.subject
+    ? String(args.subject)
+    : `${validNoteType}: ${content.substring(0, 50)}${content.length > 50 ? "..." : ""}`;
+
+  // Insert communication record
+  const commData = {
+    client_id: client.id,
+    type: "General",
+    subject: subject,
+    content: content,
+    note_type: validNoteType,
+    is_manual: true,
+    status: "Recorded",
+    timestamp: new Date().toISOString(),
+  };
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("client_communications")
+    .insert(commData)
+    .select("id, timestamp")
+    .single();
+
+  if (insertError) {
+    return wrapWithActionResult(
+      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: insertError.message })
+    );
+  }
+
+  // Verify the communication was saved and last_contact_at was updated
+  const { data: verifiedComm, error: verifyError } = await supabase
+    .from("client_communications")
+    .select("id, timestamp, note_type, content")
+    .eq("id", inserted.id)
+    .maybeSingle();
+
+  const { data: updatedClient } = await supabase
+    .from("clients")
+    .select("last_contact_at, last_contact_summary")
+    .eq("id", client.id)
+    .maybeSingle();
+
+  const isVerified = !!verifiedComm;
+
+  return wrapWithActionResult(
+    actionSuccess({
+      action: "add_communication",
+      targetType: "client_communication",
+      targetReference: `${client.company_name} — ${validNoteType}`,
+      toolUsed: "addClientCommunication",
+      summary: `${validNoteType} logged for ${client.company_name}. ${content.length > 80 ? content.substring(0, 80) + "..." : content}`,
+      verified: isVerified,
+    }),
+    {
+      communication: {
+        id: inserted.id,
+        clientName: client.company_name,
+        noteType: validNoteType,
+        subject: subject,
+        content: content,
+        timestamp: inserted.timestamp,
+      },
+      clientLastContact: {
+        lastContactAt: updatedClient?.last_contact_at || null,
+        lastContactSummary: updatedClient?.last_contact_summary || null,
+      },
+    }
+  );
+}
+
+// ============================================================
+// CLIENT CONTACT CREATION TOOL
+// ============================================================
+
+const VALID_CONTACT_TYPES = ["Technical", "Finance", "General"];
+
+async function executeCreateClientContact(args: any): Promise<string> {
+  const supabase = getSupabase();
+
+  const clientName = String(args.clientName || "").trim();
+  const fullName = String(args.fullName || "").trim();
+
+  if (!clientName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: "Client name is required.", nextStep: "Please provide the client company name." })
+    );
+  }
+
+  if (!fullName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: "Contact full name is required.", nextStep: "Please provide the contact person's full name." })
+    );
+  }
+
+  // Resolve client — safe exact-match-first lookup
+  const resolved = await resolveClientForWrite(supabase, clientName);
+
+  if (resolved.kind === "not_found") {
+    return wrapWithActionResult(
+      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+    );
+  }
+
+  if (resolved.kind === "ambiguous") {
+    return wrapWithActionResult(
+      actionNeedInfo({
+        action: "create_contact",
+        targetType: "client_contact",
+        toolUsed: "createClientContact",
+        missingFields: ["clientName"],
+        nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
+      }),
+      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+    );
+  }
+
+  const client = resolved.record;
+
+  // Check for duplicate contact by name
+  const { data: existingContacts } = await supabase
+    .from("client_contacts")
+    .select("id, full_name, contact_type, email")
+    .eq("client_id", client.id)
+    .ilike("full_name", fullName)
+    .limit(5);
+
+  if (existingContacts && existingContacts.length > 0) {
+    const exactDupe = existingContacts.find((c: any) => c.full_name.toLowerCase() === fullName.toLowerCase());
+    if (exactDupe) {
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_contact",
+          targetType: "client_contact",
+          toolUsed: "createClientContact",
+          targetReference: `${client.company_name} — ${fullName}`,
+          error: `A contact named "${exactDupe.full_name}" already exists for ${client.company_name}.`,
+          nextStep: "Use updateClientContact to modify the existing contact instead.",
+        })
+      );
+    }
+  }
+
+  // Validate contact type
+  const contactType = String(args.contactType || "General").trim();
+  const validContactType = VALID_CONTACT_TYPES.includes(contactType) ? contactType : "General";
+
+  // Handle isPrimary — if setting as primary, clear existing primary for this client
+  const isPrimary = args.isPrimary === true;
+  if (isPrimary) {
+    await supabase
+      .from("client_contacts")
+      .update({ is_primary: false })
+      .eq("client_id", client.id)
+      .eq("is_primary", true);
+  }
+
+  const contactData = {
+    client_id: client.id,
+    full_name: fullName,
+    contact_type: validContactType,
+    job_title: args.jobTitle || null,
+    email: args.email || null,
+    cell_number: args.cellNumber || null,
+    landline_number: args.landlineNumber || null,
+    extension: args.extension || null,
+    is_primary: isPrimary,
+    notes: args.notes || null,
+  };
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("client_contacts")
+    .insert(contactData)
+    .select("id, full_name, contact_type, email, cell_number, is_primary")
+    .single();
+
+  if (insertError) {
+    return wrapWithActionResult(
+      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: insertError.message })
+    );
+  }
+
+  // Verify
+  const { data: verified } = await supabase
+    .from("client_contacts")
+    .select("id, full_name, contact_type, email, cell_number, is_primary")
+    .eq("id", inserted.id)
+    .maybeSingle();
+
+  const isVerified = !!verified;
+
+  return wrapWithActionResult(
+    actionSuccess({
+      action: "create_contact",
+      targetType: "client_contact",
+      targetReference: `${client.company_name} — ${fullName}`,
+      toolUsed: "createClientContact",
+      summary: `Contact "${fullName}" (${validContactType}) created for ${client.company_name}.${isPrimary ? " Set as primary contact." : ""}`,
+      verified: isVerified,
+    }),
+    {
+      contact: {
+        id: inserted.id,
+        clientName: client.company_name,
+        fullName: inserted.full_name,
+        contactType: inserted.contact_type,
+        email: inserted.email,
+        cellNumber: inserted.cell_number,
+        isPrimary: inserted.is_primary,
+      },
+    }
+  );
+}
+
+// ============================================================
+// CLIENT CONTACT UPDATE TOOL
+// ============================================================
+
+const CONTACT_UPDATE_WHITELIST = new Set([
+  "full_name",
+  "contact_type",
+  "job_title",
+  "email",
+  "cell_number",
+  "landline_number",
+  "extension",
+  "is_primary",
+  "notes",
+]);
+
+async function executeUpdateClientContact(args: any): Promise<string> {
+  const supabase = getSupabase();
+
+  const clientName = String(args.clientName || "").trim();
+  const contactName = String(args.contactName || "").trim();
+
+  if (!clientName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: "Client name is required.", nextStep: "Please provide the client company name." })
+    );
+  }
+
+  if (!contactName) {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: "Contact name is required to identify the contact.", nextStep: "Please provide the existing contact's full name." })
+    );
+  }
+
+  // Resolve client
+  const resolved = await resolveClientForWrite(supabase, clientName);
+
+  if (resolved.kind === "not_found") {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling." })
+    );
+  }
+
+  if (resolved.kind === "ambiguous") {
+    return wrapWithActionResult(
+      actionNeedInfo({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        missingFields: ["clientName"],
+        nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
+      }),
+      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+    );
+  }
+
+  const client = resolved.record;
+
+  // Find the contact by name within this client
+  const { data: contacts, error: contactErr } = await supabase
+    .from("client_contacts")
+    .select("id, full_name, contact_type, email, cell_number, is_primary")
+    .eq("client_id", client.id)
+    .ilike("full_name", `%${contactName}%`)
+    .limit(10);
+
+  if (contactErr || !contacts || contacts.length === 0) {
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: `No contact found matching "${contactName}" for ${client.company_name}.`,
+        nextStep: "Please check the contact name or create the contact first.",
+      })
+    );
+  }
+
+  if (contacts.length > 1) {
+    const exactMatch = contacts.find((c: any) => c.full_name.toLowerCase() === contactName.toLowerCase());
+    if (!exactMatch) {
+      const contactList = contacts.map((c: any) => `"${c.full_name}" (${c.contact_type})`).join(", ");
+      return wrapWithActionResult(
+        actionNeedInfo({
+          action: "update_contact",
+          targetType: "client_contact",
+          toolUsed: "updateClientContact",
+          missingFields: ["contactName"],
+          nextStep: `Multiple contacts match "${contactName}": ${contactList}. Please specify the exact name.`,
+        }),
+        { disambiguation: { type: "contact", query: contactName, candidates: contacts } }
+      );
+    }
+  }
+
+  const targetContact = contacts.find((c: any) => c.full_name.toLowerCase() === contactName.toLowerCase()) || contacts[0];
+
+  // Build update payload from whitelisted fields
+  const updatePayload: Record<string, any> = {};
+  const fieldMap: Record<string, string> = {
+    fullName: "full_name",
+    contactType: "contact_type",
+    jobTitle: "job_title",
+    email: "email",
+    cellNumber: "cell_number",
+    landlineNumber: "landline_number",
+    extension: "extension",
+    isPrimary: "is_primary",
+    notes: "notes",
+  };
+
+  let hasUpdates = false;
+  for (const [argKey, dbKey] of Object.entries(fieldMap)) {
+    if (args[argKey] !== undefined && args[argKey] !== null) {
+      if (CONTACT_UPDATE_WHITELIST.has(dbKey)) {
+        if (dbKey === "contact_type") {
+          const val = String(args[argKey]);
+          updatePayload[dbKey] = VALID_CONTACT_TYPES.includes(val) ? val : "General";
+        } else if (dbKey === "is_primary") {
+          updatePayload[dbKey] = args[argKey] === true;
+        } else if (dbKey === "notes") {
+          // Append to existing
+          const { data: existing } = await supabase
+            .from("client_contacts")
+            .select("notes")
+            .eq("id", targetContact.id)
+            .maybeSingle();
+          const existingNotes = existing?.notes || "";
+          updatePayload[dbKey] = existingNotes
+            ? `${existingNotes}\n${String(args[argKey])}`
+            : String(args[argKey]);
+        } else {
+          updatePayload[dbKey] = String(args[argKey]);
+        }
+        hasUpdates = true;
+      }
+    }
+  }
+
+  if (!hasUpdates) {
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: "No valid update fields provided.",
+        nextStep: "Allowed fields: fullName, contactType, jobTitle, email, cellNumber, landlineNumber, extension, isPrimary, notes.",
+      })
+    );
+  }
+
+  // If setting as primary, clear existing primary
+  if (updatePayload.is_primary === true) {
+    await supabase
+      .from("client_contacts")
+      .update({ is_primary: false })
+      .eq("client_id", client.id)
+      .eq("is_primary", true)
+      .neq("id", targetContact.id);
+  }
+
+  // Execute update
+  const { error: updateError } = await supabase
+    .from("client_contacts")
+    .update(updatePayload)
+    .eq("id", targetContact.id);
+
+  if (updateError) {
+    return wrapWithActionResult(
+      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: updateError.message })
+    );
+  }
+
+  // Verify
+  const { data: verified } = await supabase
+    .from("client_contacts")
+    .select("id, full_name, contact_type, email, cell_number, job_title, is_primary")
+    .eq("id", targetContact.id)
+    .maybeSingle();
+
+  const changedFields = Object.keys(updatePayload).map(k => {
+    const displayKey = Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
+    return displayKey;
+  });
+
+  return wrapWithActionResult(
+    actionSuccess({
+      action: "update_contact",
+      targetType: "client_contact",
+      targetReference: `${client.company_name} — ${verified?.full_name || targetContact.full_name}`,
+      toolUsed: "updateClientContact",
+      summary: `Contact "${verified?.full_name || targetContact.full_name}" updated for ${client.company_name}. Changed: ${changedFields.join(", ")}.`,
+      verified: !!verified,
+    }),
+    {
+      contact: {
+        id: targetContact.id,
+        clientName: client.company_name,
+        fullName: verified?.full_name,
+        contactType: verified?.contact_type,
+        email: verified?.email,
+        cellNumber: verified?.cell_number,
+        jobTitle: verified?.job_title,
+        isPrimary: verified?.is_primary,
+      },
+      updatedFields: changedFields,
     }
   );
 }
@@ -2168,59 +3360,34 @@ async function executeRecordPayment(args: any): Promise<string> {
 
   const invoice = resolved.kind === "exact" ? resolved.record : resolved.record;
 
-  if (invoice.status === "Paid") {
+  // Atomic payment recording via DB function
+  const { data: result, error: rpcError } = await supabase.rpc("record_invoice_payment", {
+    p_invoice_id: invoice.id,
+    p_amount: amount,
+    p_payment_date: args.paymentDate || today,
+    p_payment_method: args.paymentMethod || "EFT",
+    p_reference: args.reference || null,
+    p_notes: args.notes || `Recorded via AI on ${today}`,
+  });
+
+  if (rpcError) {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoice.invoice_number, error: `Invoice ${invoice.invoice_number} is already fully paid (R${Number(invoice.total).toFixed(2)}).` })
+      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: rpcError.message, nextStep: rpcError.message.includes("overpayment") ? "The payment amount exceeds the remaining balance." : "Please check the invoice and try again." })
     );
   }
 
-  // Record payment
-  const paymentData = {
-    invoice_id: invoice.id,
-    payment_date: args.paymentDate || today,
-    amount: amount,
-    payment_method: args.paymentMethod || "EFT",
-    reference: args.reference || null,
-    notes: args.notes || `Recorded via AI on ${today}`,
-  };
-
-  const { error: payErr } = await supabase.from("payments").insert(paymentData);
-  if (payErr) {
+  if (!result || !result.success) {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: payErr.message })
+      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: result?.error || "Payment recording failed." })
     );
   }
 
-  // Update invoice totals
-  const previouslyPaid = Number(invoice.amount_paid) || 0;
-  const newTotalPaid = previouslyPaid + amount;
-  const invoiceTotal = Number(invoice.total) || 0;
-  const newBalance = invoiceTotal - newTotalPaid;
-
-  let newStatus = invoice.status;
-  if (newBalance <= 0) {
-    newStatus = "Paid";
-  } else if (newTotalPaid > 0 && newBalance > 0) {
-    newStatus = "Partially Paid";
-  }
-
-  const { error: updateErr } = await supabase
-    .from("invoices")
-    .update({ amount_paid: newTotalPaid, status: newStatus })
-    .eq("id", invoice.id);
-
-  if (updateErr) {
-    return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: "Payment recorded but invoice update failed: " + updateErr.message })
-    );
-  }
+  const clientName = (invoice as any).clients?.company_name || "Unknown";
 
   const verification = await verifyPayment(supabase, invoice.id, {
     amountPaid: amount,
-    expectedStatus: newStatus,
+    expectedStatus: result.new_status,
   });
-
-  const clientName = (invoice as any).clients?.company_name || "Unknown";
 
   return wrapWithActionResult(
     actionSuccess({
@@ -2228,7 +3395,7 @@ async function executeRecordPayment(args: any): Promise<string> {
       targetType: "payment",
       targetReference: invoice.invoice_number,
       toolUsed: "recordPayment",
-      summary: `Payment of R${amount.toFixed(2)} recorded against ${invoice.invoice_number} (${clientName}). Status: ${newStatus}.`,
+      summary: `Payment of R${amount.toFixed(2)} recorded against ${invoice.invoice_number} (${clientName}). Status: ${result.previous_status} → ${result.new_status}. Balance: R${Number(result.balance_due).toFixed(2)}.`,
       verified: verification.status === "confirmed",
     }),
     {
@@ -2236,12 +3403,12 @@ async function executeRecordPayment(args: any): Promise<string> {
         invoiceNumber: invoice.invoice_number,
         clientName,
         amountPaid: amount.toFixed(2),
-        totalPaid: newTotalPaid.toFixed(2),
-        invoiceTotal: invoiceTotal.toFixed(2),
-        remainingBalance: Math.max(0, newBalance).toFixed(2),
-        newStatus,
-        paymentMethod: paymentData.payment_method,
-        date: paymentData.payment_date,
+        totalPaid: Number(result.amount_paid).toFixed(2),
+        invoiceTotal: Number(result.invoice_total).toFixed(2),
+        remainingBalance: Number(result.balance_due).toFixed(2),
+        newStatus: result.new_status,
+        paymentMethod: args.paymentMethod || "EFT",
+        date: args.paymentDate || today,
       },
       verification,
       currency: "ZAR",
@@ -2251,12 +3418,18 @@ async function executeRecordPayment(args: any): Promise<string> {
 
 async function executeDraftQuote(args: any): Promise<string> {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
       actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: "Client name is required.", nextStep: "Please provide the client name." })
+    );
+  }
+
+  const lineItems = args.lineItems || [];
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
+    return wrapWithActionResult(
+      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
     );
   }
 
@@ -2284,78 +3457,36 @@ async function executeDraftQuote(args: any): Promise<string> {
 
   const client = resolved.kind === "exact" ? resolved.record : resolved.record;
 
-  // Generate quote number via database function (respects prefix, year, starting number settings)
-  const { data: quoteNumber, error: numberError } = await supabase.rpc("generate_quote_number");
-  if (numberError || !quoteNumber) {
+  // Prepare line items as JSONB array for the atomic DB function
+  const itemsJson = lineItems.map((item: any) => ({
+    description: String(item.description || "").trim(),
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unitPrice) || 0,
+  }));
+
+  // Call atomic DB function — header + items + totals in one transaction
+  const { data: result, error: rpcError } = await supabase.rpc("create_quote_with_items", {
+    p_client_id: client.id,
+    p_line_items: itemsJson,
+    p_notes: args.notes || null,
+    p_internal_notes: `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
+  });
+
+  if (rpcError || !result) {
+    console.error("[draftQuote] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: `Failed to generate quote number: ${numberError?.message || "No value returned"}` })
+      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: rpcError?.message || "Quote creation failed.", nextStep: "Please try again or check the quote list." })
     );
   }
 
-  // Default validity days
-  const { data: profile } = await supabase.from("business_profile").select("document_settings").maybeSingle();
-  const documentSettings = profile?.document_settings || {};
-  const validityDays = Number.isFinite(Number(documentSettings.quote_validity_days)) ? Number(documentSettings.quote_validity_days) : 30;
-  
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + validityDays);
-  const expiryDateString = expiryDate.toISOString().split("T")[0];
+  const quoteNumber = result.document_number;
+  const total = Number(result.total) || 0;
 
-  // Calculate totals
-  const lineItems = args.lineItems || [];
-  let subtotal = 0;
-  for (const item of lineItems) {
-    subtotal += (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0);
-  }
-  
-  const includeVat = documentSettings.always_include_vat !== false;
-  const vatAmount = includeVat ? subtotal * 0.15 : 0;
-  const total = subtotal + vatAmount;
+  console.log("[draftQuote] Atomically created quote:", quoteNumber, "for client:", client.company_name);
 
-  // Insert Quote Header
-  const quoteData = {
+  const verification = await verifyQuote(supabase, result.id, {
     quote_number: quoteNumber,
-    client_id: client.id,
-    issue_date: today,
-    expiry_date: expiryDateString,
-    status: "Draft",
-    subtotal: subtotal,
-    vat_amount: vatAmount,
-    total: total,
-    notes: args.notes || documentSettings.quote_default_notes || "",
-    internal_notes: `Drafted by AI on ${today}`
-  };
-
-  const { data: newQuote, error: headerErr } = await supabase.from("quotes").insert(quoteData).select("id").single();
-  if (headerErr) {
-    return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: `Failed to create quote header: ${headerErr.message}` })
-    );
-  }
-
-  // Insert Line Items
-  if (lineItems.length > 0) {
-    const itemsToInsert = lineItems.map((item: any, i: number) => ({
-      quote_id: newQuote.id,
-      description: item.description,
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unitPrice) || 0,
-      sort_order: i
-    }));
-    const { error: lineItemErr } = await supabase.from("quote_line_items").insert(itemsToInsert);
-    if (lineItemErr) {
-      console.error("[draftQuote] Failed to insert line items:", lineItemErr);
-      return wrapWithActionResult(
-        actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", targetReference: quoteNumber, error: `Failed to insert line items: ${lineItemErr.message}` })
-      );
-    }
-  }
-
-  console.log("[draftQuote] Successfully created quote:", quoteNumber, "for client:", client.company_name);
-
-  const verification = await verifyQuote(supabase, newQuote.id, {
-    quote_number: quoteNumber,
-    lineItemCount: lineItems.length,
+    lineItemCount: result.line_item_count,
   });
 
   return wrapWithActionResult(
@@ -2368,7 +3499,7 @@ async function executeDraftQuote(args: any): Promise<string> {
       verified: verification.status === "confirmed",
     }),
     {
-      quote: { id: newQuote.id, quoteNumber, clientName: client.company_name, total: total.toFixed(2), status: "Draft" },
+      quote: { id: result.id, quoteNumber, clientName: result.client_name, total: total.toFixed(2), status: result.status },
       verification,
     }
   );
@@ -2376,12 +3507,18 @@ async function executeDraftQuote(args: any): Promise<string> {
 
 async function executeDraftInvoice(args: any): Promise<string> {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
       actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: "Client name is required.", nextStep: "Please provide the client name." })
+    );
+  }
+
+  const lineItems = args.lineItems || [];
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
+    return wrapWithActionResult(
+      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
     );
   }
 
@@ -2409,83 +3546,37 @@ async function executeDraftInvoice(args: any): Promise<string> {
 
   const client = resolved.kind === "exact" ? resolved.record : resolved.record;
 
-  // Generate invoice number via database function (respects prefix, year, starting number settings)
-  const { data: invoiceNumber, error: numberError } = await supabase.rpc("generate_invoice_number");
-  if (numberError || !invoiceNumber) {
+  const itemsJson = lineItems.map((item: any) => ({
+    description: String(item.description || "").trim(),
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unitPrice) || 0,
+  }));
+
+  const { data: result, error: rpcError } = await supabase.rpc("create_invoice_with_items", {
+    p_client_id: client.id,
+    p_line_items: itemsJson,
+    p_notes: args.notes || null,
+    p_internal_notes: `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
+    p_is_recurring: !!args.isRecurring,
+    p_recurring_freq: args.recurringFrequency || null,
+  });
+
+  if (rpcError || !result) {
+    console.error("[draftInvoice] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: `Failed to generate invoice number: ${numberError?.message || "No value returned"}` })
+      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: rpcError?.message || "Invoice creation failed.", nextStep: "Please try again or check the invoice list." })
     );
   }
 
-  // Default terms
-  const { data: profile } = await supabase.from("business_profile").select("document_settings").maybeSingle();
-  const documentSettings = profile?.document_settings || {};
-  const termsDays = Number.isFinite(Number(documentSettings.invoice_payment_terms_days)) ? Number(documentSettings.invoice_payment_terms_days) : 30;
-  
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + termsDays);
-  const dueDateString = dueDate.toISOString().split("T")[0];
+  const invoiceNumber = result.document_number;
+  const total = Number(result.total) || 0;
 
-  // Calculate totals
-  const lineItems = args.lineItems || [];
-  let subtotal = 0;
-  for (const item of lineItems) {
-    subtotal += (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0);
-  }
-  
-  const includeVat = documentSettings.always_include_vat !== false;
-  const vatAmount = includeVat ? subtotal * 0.15 : 0;
-  const total = subtotal + vatAmount;
+  console.log("[draftInvoice] Atomically created invoice:", invoiceNumber, "for client:", client.company_name);
 
-  // Insert Invoice Header
-  const invoiceData = {
+  const verification = await verifyInvoice(supabase, result.id, {
     invoice_number: invoiceNumber,
-    client_id: client.id,
-    issue_date: today,
-    due_date: dueDateString,
-    status: "Draft",
-    subtotal: subtotal,
-    vat_amount: vatAmount,
-    total: total,
-    amount_paid: 0,
-    notes: args.notes || documentSettings.invoice_default_notes || "",
-    internal_notes: `Drafted by AI on ${today}`,
-    is_recurring: !!args.isRecurring,
-    recurring_frequency: args.recurringFrequency || null,
-    recurring_next_date: args.isRecurring ? today : null, // Set first recurring date to today
-  };
-
-  const { data: newInvoice, error: headerErr } = await supabase.from("invoices").insert(invoiceData).select("id").single();
-  if (headerErr) {
-    return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", targetReference: invoiceNumber, error: `Failed to create invoice header: ${headerErr.message}` })
-    );
-  }
-
-  // Insert Line Items
-  if (lineItems.length > 0) {
-    const itemsToInsert = lineItems.map((item: any, i: number) => ({
-      invoice_id: newInvoice.id,
-      description: item.description,
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unitPrice) || 0,
-      sort_order: i
-    }));
-    const { error: lineItemErr } = await supabase.from("invoice_line_items").insert(itemsToInsert);
-    if (lineItemErr) {
-      console.error("[draftInvoice] Failed to insert line items:", lineItemErr);
-      return wrapWithActionResult(
-        actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", targetReference: invoiceNumber, error: `Failed to insert line items: ${lineItemErr.message}` })
-      );
-    }
-  }
-
-  console.log("[draftInvoice] Successfully created invoice:", invoiceNumber, "for client:", client.company_name);
-
-  const verification = await verifyInvoice(supabase, newInvoice.id, {
-    invoice_number: invoiceNumber,
-    client_id: client.id,
-    lineItemCount: lineItems.length,
+    client_id: result.client_id,
+    lineItemCount: result.line_item_count,
   });
 
   return wrapWithActionResult(
@@ -2498,7 +3589,7 @@ async function executeDraftInvoice(args: any): Promise<string> {
       verified: verification.status === "confirmed",
     }),
     {
-      invoice: { id: newInvoice.id, invoiceNumber, clientName: client.company_name, total: total.toFixed(2), status: "Draft" },
+      invoice: { id: result.id, invoiceNumber, clientName: result.client_name, total: total.toFixed(2), status: result.status },
       verification,
     }
   );
@@ -2506,66 +3597,49 @@ async function executeDraftInvoice(args: any): Promise<string> {
 
 async function executeDraftPurchaseOrder(args: any): Promise<string> {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
-  // Generate PO number via database function (respects prefix, year, starting number settings)
-  const { data: poNumber, error: numberError } = await supabase.rpc("generate_po_number");
-  if (numberError || !poNumber) {
+  const supplierName = String(args.supplierName || "").trim();
+  if (!supplierName) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: `Failed to generate purchase order number: ${numberError?.message || "No value returned"}` })
+      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: "Supplier name is required.", nextStep: "Please provide the supplier name." })
     );
   }
 
-  // Calculate totals
   const lineItems = args.lineItems || [];
-  let subtotal = 0;
-  for (const item of lineItems) {
-    subtotal += (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0);
-  }
-  const vatAmount = subtotal * 0.15; // Standard 15%
-  const total = subtotal + vatAmount;
-
-  const poData = {
-    po_number: poNumber,
-    supplier_name: args.supplierName,
-    date_raised: today,
-    status: "Draft",
-    subtotal,
-    vat_amount: vatAmount,
-    total,
-    notes: args.notes || ""
-  };
-
-  const { data: newPO, error } = await supabase.from("purchase_orders").insert(poData).select("id").single();
-  if (error) {
-    console.error("[draftPurchaseOrder] Failed to insert PO header:", error);
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: error.message })
+      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
     );
   }
 
-  if (lineItems.length > 0) {
-    const itemsToInsert = lineItems.map((item: any) => ({
-      purchase_order_id: newPO.id,
-      description: item.description,
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unitPrice) || 0,
-      line_total: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0)
-    }));
-    const { error: lineItemErr } = await supabase.from("purchase_order_items").insert(itemsToInsert);
-    if (lineItemErr) {
-      console.error("[draftPurchaseOrder] Failed to insert line items:", lineItemErr);
-      return wrapWithActionResult(
-        actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", targetReference: poNumber, error: `Failed to insert line items: ${lineItemErr.message}` })
-      );
-    }
+  const itemsJson = lineItems.map((item: any) => ({
+    description: String(item.description || "").trim(),
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unitPrice) || 0,
+  }));
+
+  const { data: result, error: rpcError } = await supabase.rpc("create_purchase_order_with_items", {
+    p_supplier_name: supplierName,
+    p_line_items: itemsJson,
+    p_notes: args.notes || null,
+    p_date_raised: null,
+  });
+
+  if (rpcError || !result) {
+    console.error("[draftPurchaseOrder] Atomic creation failed:", rpcError);
+    return wrapWithActionResult(
+      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: rpcError?.message || "Purchase order creation failed.", nextStep: "Please try again or check the PO list." })
+    );
   }
 
-  console.log("[draftPurchaseOrder] Successfully created PO:", poNumber, "for supplier:", args.supplierName);
+  const poNumber = result.document_number;
+  const total = Number(result.total) || 0;
 
-  const verification = await verifyPurchaseOrder(supabase, newPO.id, {
+  console.log("[draftPurchaseOrder] Atomically created PO:", poNumber, "for supplier:", supplierName);
+
+  const verification = await verifyPurchaseOrder(supabase, result.id, {
     po_number: poNumber,
-    lineItemCount: lineItems.length,
+    lineItemCount: result.line_item_count,
   });
 
   return wrapWithActionResult(
@@ -2574,22 +3648,27 @@ async function executeDraftPurchaseOrder(args: any): Promise<string> {
       targetType: "purchase_order",
       targetReference: poNumber,
       toolUsed: "draftPurchaseOrder",
-      summary: `PO ${poNumber} created for ${args.supplierName} — R${total.toFixed(2)}`,
+      summary: `PO ${poNumber} created for ${supplierName} — R${total.toFixed(2)}`,
       verified: verification.status === "confirmed",
     }),
-    { po: { id: newPO.id, poNumber, supplierName: args.supplierName, total: total.toFixed(2) }, verification }
+    { po: { id: result.id, poNumber, supplierName: result.supplier_name, total: total.toFixed(2) }, verification }
   );
 }
 
 async function executeDraftCreditNote(args: any): Promise<string> {
   const supabase = getSupabase();
-  const today = new Date().toISOString().split("T")[0];
 
-  // Resolve client — safe exact-match-first lookup
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
       actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: "Client name is required.", nextStep: "Please provide the client name." })
+    );
+  }
+
+  const lineItems = args.lineItems || [];
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
+    return wrapWithActionResult(
+      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
     );
   }
 
@@ -2616,64 +3695,34 @@ async function executeDraftCreditNote(args: any): Promise<string> {
 
   const client = resolved.kind === "exact" ? resolved.record : resolved.record;
 
-  // Generate credit note number via database function (respects prefix, year, starting number settings)
-  const { data: cnNumber, error: numberError } = await supabase.rpc("generate_credit_note_number");
-  if (numberError || !cnNumber) {
+  const itemsJson = lineItems.map((item: any) => ({
+    description: String(item.description || "").trim(),
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unitPrice) || 0,
+  }));
+
+  const { data: result, error: rpcError } = await supabase.rpc("create_credit_note_with_items", {
+    p_client_id: client.id,
+    p_line_items: itemsJson,
+    p_reason: args.reason || null,
+    p_notes: args.notes || null,
+  });
+
+  if (rpcError || !result) {
+    console.error("[draftCreditNote] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: `Failed to generate credit note number: ${numberError?.message || "No value returned"}` })
+      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: rpcError?.message || "Credit note creation failed.", nextStep: "Please try again or check the credit note list." })
     );
   }
 
-  // Calculate totals
-  const lineItems = args.lineItems || [];
-  let subtotal = 0;
-  for (const item of lineItems) {
-    subtotal += (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0);
-  }
-  const vatAmount = subtotal * 0.15;
-  const total = subtotal + vatAmount;
+  const cnNumber = result.document_number;
+  const total = Number(result.total) || 0;
 
-  const cnData = {
+  console.log("[draftCreditNote] Atomically created CN:", cnNumber, "for client:", client.company_name);
+
+  const verification = await verifyCreditNote(supabase, result.id, {
     cn_number: cnNumber,
-    client_id: client.id,
-    date_issued: today,
-    status: "Draft",
-    subtotal,
-    vat_amount: vatAmount,
-    total,
-    reason: args.reason || ""
-  };
-
-  const { data: newCN, error } = await supabase.from("credit_notes").insert(cnData).select("id").single();
-  if (error) {
-    console.error("[draftCreditNote] Failed to insert CN header:", error);
-    return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: error.message })
-    );
-  }
-
-  if (lineItems.length > 0) {
-    const itemsToInsert = lineItems.map((item: any) => ({
-      credit_note_id: newCN.id,
-      description: item.description,
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unitPrice) || 0,
-      line_total: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0)
-    }));
-    const { error: lineItemErr } = await supabase.from("credit_note_items").insert(itemsToInsert);
-    if (lineItemErr) {
-      console.error("[draftCreditNote] Failed to insert line items:", lineItemErr);
-      return wrapWithActionResult(
-        actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", targetReference: cnNumber, error: `Failed to insert line items: ${lineItemErr.message}` })
-      );
-    }
-  }
-
-  console.log("[draftCreditNote] Successfully created CN:", cnNumber, "for client:", client.company_name);
-
-  const verification = await verifyCreditNote(supabase, newCN.id, {
-    cn_number: cnNumber,
-    lineItemCount: lineItems.length,
+    lineItemCount: result.line_item_count,
   });
 
   return wrapWithActionResult(
@@ -2685,8 +3734,735 @@ async function executeDraftCreditNote(args: any): Promise<string> {
       summary: `Credit Note ${cnNumber} created for ${client.company_name} — R${total.toFixed(2)}`,
       verified: verification.status === "confirmed",
     }),
-    { creditNote: { id: newCN.id, cnNumber, clientName: client.company_name, total: total.toFixed(2) }, verification }
+    { creditNote: { id: result.id, cnNumber, clientName: result.client_name, total: total.toFixed(2) }, verification }
   );
+}
+
+// ============================================================
+// INVOICE STATUS MANAGEMENT TOOLS
+// ============================================================
+
+async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newStatus: string }): Promise<string> {
+  const supabase = getSupabase();
+  try {
+    const allowedStatuses = ["Draft", "Sent", "Overdue"];
+    if (!allowedStatuses.includes(args.newStatus)) {
+      return JSON.stringify({
+        error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}. Use markInvoicePaid to mark as paid, or voidInvoice to cancel.`
+      });
+    }
+
+    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      return JSON.stringify({
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+      });
+    }
+
+    const targetInvoice = resolved.record;
+
+    if (targetInvoice.status === "Cancelled") {
+      return JSON.stringify({
+        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be updated. Create a new invoice instead.`
+      });
+    }
+
+    if (targetInvoice.status === "Paid") {
+      return JSON.stringify({
+        error: `Invoice ${targetInvoice.invoice_number} is already marked as paid. It cannot be changed to '${args.newStatus}'.`
+      });
+    }
+
+    if (targetInvoice.status === args.newStatus) {
+      return JSON.stringify({
+        success: true,
+        message: `Invoice ${targetInvoice.invoice_number} is already '${args.newStatus}'. No change needed.`,
+        invoice_number: targetInvoice.invoice_number,
+        status: targetInvoice.status
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from("invoices")
+      .update({ status: args.newStatus })
+      .eq("id", targetInvoice.id);
+
+    if (updateError) {
+      return JSON.stringify({ error: `Failed to update invoice status: ${updateError.message}` });
+    }
+
+    // Read-after-write verification
+    const { data: verified, error: verifyError } = await supabase
+      .from("invoices")
+      .select("invoice_number, status")
+      .eq("id", targetInvoice.id)
+      .single();
+
+    if (verifyError || verified.status !== args.newStatus) {
+      return JSON.stringify({
+        error: `Update was attempted but verification failed. Please check invoice ${targetInvoice.invoice_number} manually.`
+      });
+    }
+
+    return JSON.stringify({
+      success: true,
+      invoice_number: verified.invoice_number,
+      previous_status: targetInvoice.status,
+      new_status: verified.status,
+      message: `Invoice ${verified.invoice_number} status changed from '${targetInvoice.status}' to '${verified.status}'.`
+    });
+
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+async function executeUpdatePurchaseOrderStatus(args: { poReference: string; newStatus: string }): Promise<string> {
+  const supabase = getSupabase();
+  try {
+    const allowedStatuses = ["Draft", "Sent", "Acknowledged", "Delivered", "Cancelled"];
+    if (!allowedStatuses.includes(args.newStatus)) {
+      return JSON.stringify({
+        error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}.`,
+      });
+    }
+
+    const resolved = await resolvePOForWrite(supabase, args.poReference);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No purchase order found matching '${args.poReference}'. Please check the PO number.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((po: any) => `${po.po_number} (status: ${po.status}, total: R${po.total})`).join(", ");
+      return JSON.stringify({
+        error: `Multiple purchase orders match '${args.poReference}': ${matches}. Please provide the exact PO number.`,
+      });
+    }
+
+    const targetPO = resolved.record;
+
+    if (targetPO.status === "Cancelled") {
+      return JSON.stringify({
+        error: `Purchase order ${targetPO.po_number} is cancelled and cannot be updated. Create a new PO instead.`,
+      });
+    }
+
+    if (targetPO.status === "Delivered" && ["Draft", "Sent"].includes(args.newStatus)) {
+      return JSON.stringify({
+        error: `Purchase order ${targetPO.po_number} is Delivered and cannot be moved back to '${args.newStatus}'.`,
+      });
+    }
+
+    if (targetPO.status === args.newStatus) {
+      return JSON.stringify({
+        success: true,
+        message: `Purchase order ${targetPO.po_number} is already '${args.newStatus}'. No change needed.`,
+        po_number: targetPO.po_number,
+        status: targetPO.status,
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from("purchase_orders")
+      .update({ status: args.newStatus })
+      .eq("id", targetPO.id);
+
+    if (updateError) {
+      return JSON.stringify({ error: `Failed to update purchase order status: ${updateError.message}` });
+    }
+
+    const { data: verified, error: verifyError } = await supabase
+      .from("purchase_orders")
+      .select("po_number, status, supplier_name")
+      .eq("id", targetPO.id)
+      .single();
+
+    if (verifyError || verified.status !== args.newStatus) {
+      return JSON.stringify({
+        error: `Update was attempted but verification failed. Please check purchase order ${targetPO.po_number} manually.`,
+      });
+    }
+
+    return JSON.stringify({
+      success: true,
+      po_number: verified.po_number,
+      previous_status: targetPO.status,
+      new_status: verified.status,
+      supplier_name: verified.supplier_name,
+      message: `Purchase order ${verified.po_number} status changed from '${targetPO.status}' to '${verified.status}'.`,
+    });
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+async function executeUpdateCreditNoteStatus(args: { creditNoteReference: string; newStatus: string }): Promise<string> {
+  const supabase = getSupabase();
+  try {
+    const allowedStatuses = ["Draft", "Sent", "Issued", "Applied", "Cancelled"];
+    if (!allowedStatuses.includes(args.newStatus)) {
+      return JSON.stringify({
+        error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}.`,
+      });
+    }
+
+    const ref = (args.creditNoteReference || "").trim();
+    if (!ref) {
+      return JSON.stringify({ error: "Credit note reference is required." });
+    }
+
+    const resolved = await resolveCreditNoteForWrite(supabase, ref);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No credit note found matching '${ref}'. Please check the credit note number.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((cn: any) => `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`).join(", ");
+      return JSON.stringify({
+        error: `Multiple credit notes match '${ref}': ${matches}. Please provide the exact credit note number.`,
+      });
+    }
+
+    const targetCN = resolved.record;
+    const targetRef = targetCN.cn_number || ref;
+
+    if (targetCN.status === "Applied") {
+      return JSON.stringify({
+        error: `Credit note ${targetRef} is already Applied and cannot be changed.`,
+      });
+    }
+
+    if (targetCN.status === "Cancelled") {
+      return JSON.stringify({
+        error: `Credit note ${targetRef} is cancelled and cannot be updated.`,
+      });
+    }
+
+    if (targetCN.status === args.newStatus) {
+      return JSON.stringify({
+        success: true,
+        message: `Credit note ${targetRef} is already '${args.newStatus}'. No change needed.`,
+        credit_note_reference: targetRef,
+        status: targetCN.status,
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from("credit_notes")
+      .update({ status: args.newStatus })
+      .eq("id", targetCN.id);
+
+    if (updateError) {
+      return JSON.stringify({ error: `Failed to update credit note status: ${updateError.message}` });
+    }
+
+    const { data: verified, error: verifyError } = await supabase
+      .from("credit_notes")
+      .select("cn_number, status, total")
+      .eq("id", targetCN.id)
+      .single();
+
+    if (verifyError || !verified || verified.status !== args.newStatus) {
+      return JSON.stringify({
+        error: `Update was attempted but verification failed. Please check credit note ${targetRef} manually.`,
+      });
+    }
+
+    const verifiedRef = verified.cn_number || targetRef;
+
+    return JSON.stringify({
+      success: true,
+      credit_note_reference: verifiedRef,
+      previous_status: targetCN.status,
+      new_status: verified.status,
+      total: verified.total,
+      message: `Credit note ${verifiedRef} status changed from '${targetCN.status}' to '${verified.status}'.`,
+    });
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+async function executeMarkInvoicePaid(args: { invoiceReference: string }): Promise<string> {
+  const supabase = getSupabase();
+  try {
+    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      return JSON.stringify({
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+      });
+    }
+
+    const targetInvoice = resolved.record;
+
+    if (targetInvoice.status === "Paid") {
+      return JSON.stringify({
+        success: true,
+        message: `Invoice ${targetInvoice.invoice_number} is already marked as Paid.`,
+        invoice_number: targetInvoice.invoice_number,
+        status: "Paid"
+      });
+    }
+
+    if (targetInvoice.status === "Cancelled") {
+      return JSON.stringify({
+        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be marked as paid.`
+      });
+    }
+
+    // Use record_invoice_payment for proper audit trail instead of direct update
+    const remainingBalance = Number(targetInvoice.balance_due) || (Number(targetInvoice.total) - Number(targetInvoice.amount_paid));
+    
+    if (remainingBalance <= 0) {
+      return JSON.stringify({
+        success: true,
+        message: `Invoice ${targetInvoice.invoice_number} already has zero balance.`,
+        invoice_number: targetInvoice.invoice_number,
+        status: targetInvoice.status
+      });
+    }
+
+    const { data: result, error: rpcError } = await supabase.rpc("record_invoice_payment", {
+      p_invoice_id: targetInvoice.id,
+      p_amount: remainingBalance,
+      p_payment_date: new Date().toISOString().split("T")[0],
+      p_payment_method: "EFT",
+      p_reference: "Full settlement",
+      p_notes: "Marked as paid via AI assistant"
+    });
+
+    if (rpcError) {
+      return JSON.stringify({ error: `Failed to mark invoice as paid: ${rpcError.message}` });
+    }
+
+    if (!result || !result.success) {
+      return JSON.stringify({ error: result?.error || "Payment recording failed." });
+    }
+
+    return JSON.stringify({
+      success: true,
+      invoice_number: result.invoice_number,
+      previous_status: result.previous_status,
+      new_status: result.new_status,
+      total: result.invoice_total,
+      amount_paid: result.amount_paid,
+      balance_due: result.balance_due,
+      message: `Invoice ${result.invoice_number} has been marked as Paid. Total: R${result.invoice_total}, Balance due: R${result.balance_due}.`
+    });
+
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+async function executeVoidInvoice(args: { invoiceReference: string }): Promise<string> {
+  const supabase = getSupabase();
+  try {
+    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      return JSON.stringify({
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+      });
+    }
+
+    const targetInvoice = resolved.record;
+
+    if (targetInvoice.status === "Cancelled") {
+      return JSON.stringify({
+        success: true,
+        message: `Invoice ${targetInvoice.invoice_number} is already cancelled.`,
+        invoice_number: targetInvoice.invoice_number,
+        status: "Cancelled"
+      });
+    }
+
+    // Use the hardened void function with proper guards
+    const { data: result, error: rpcError } = await supabase.rpc("void_invoice_with_reversal", {
+      p_invoice_id: targetInvoice.id,
+      p_reason: "Voided via AI assistant"
+    });
+
+    if (rpcError) {
+      return JSON.stringify({ error: `Failed to void invoice: ${rpcError.message}` });
+    }
+
+    if (!result || !result.success) {
+      return JSON.stringify({ error: result?.error || "Invoice voiding failed." });
+    }
+
+    return JSON.stringify({
+      success: true,
+      invoice_number: result.invoice_number,
+      previous_status: result.previous_status,
+      new_status: result.new_status,
+      message: `Invoice ${result.invoice_number} has been voided (status: Cancelled).`
+    });
+
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+// ============================================================
+// STATUS TRANSITION EXECUTORS
+// ============================================================
+
+async function executeMarkInvoiceSent(args: { invoiceReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "invoice", reference: args.invoiceReference, action: "mark_sent" });
+}
+
+async function executeReopenInvoice(args: { invoiceReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "invoice", reference: args.invoiceReference, action: "reopen" });
+}
+
+async function executeMarkQuoteSent(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "mark_sent" });
+}
+
+async function executeAcceptQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "accept" });
+}
+
+async function executeDeclineQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "decline" });
+}
+
+async function executeExpireQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "expire" });
+}
+
+async function executeReopenQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "reopen" });
+}
+
+async function executeRejectQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "reject" });
+}
+
+async function executeIssueQuote(args: { quoteReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "issue" });
+}
+
+async function executeMarkPOSent(args: { poReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "mark_sent" });
+}
+
+async function executeAcknowledgePO(args: { poReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "acknowledge" });
+}
+
+async function executeMarkPODelivered(args: { poReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "mark_delivered" });
+}
+
+async function executeCancelPO(args: { poReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "cancel" });
+}
+
+async function executeIssueCreditNote(args: { cnReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "issue" });
+}
+
+async function executeSendCreditNote(args: { cnReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "send" });
+}
+
+async function executeApplyCreditNote(args: { cnReference: string }): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    const resolved = await resolveCreditNoteForWrite(supabase, args.cnReference);
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No credit note found matching '${args.cnReference}'.` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((cn: any) => `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`).join(", ");
+      return JSON.stringify({ error: `Multiple credit notes match '${args.cnReference}': ${matches}. Provide the exact number.` });
+    }
+
+    const cn = resolved.record;
+
+    if (cn.status !== "Issued") {
+      return JSON.stringify({ error: `Credit note ${cn.cn_number} is in status "${cn.status}" and cannot be applied. Only Issued credit notes can be applied.` });
+    }
+
+    if (!cn.invoice_id) {
+      return JSON.stringify({ error: `Credit note ${cn.cn_number} is not linked to any invoice. Link it to an invoice first.` });
+    }
+
+    // Call the atomic application function
+    const { data: result, error: rpcError } = await supabase.rpc("apply_credit_note_to_invoice", {
+      p_credit_note_id: cn.id,
+    });
+
+    if (rpcError) {
+      return JSON.stringify({ error: rpcError.message });
+    }
+
+    if (!result || !result.success) {
+      return JSON.stringify({ error: result?.error || "Credit note application failed." });
+    }
+
+    // Read-after-write verification
+    const { data: verified } = await supabase
+      .from("credit_notes")
+      .select("cn_number, status")
+      .eq("id", cn.id)
+      .single() as { data: Record<string, any> | null; error: any };
+
+    const isVerified = (verified as any)?.status === "Applied";
+
+    return JSON.stringify({
+      actionStatus: {
+        action: "apply",
+        targetType: "credit_note",
+        targetReference: result.credit_note_number,
+        toolUsed: "applyCreditNote",
+        status: isVerified ? "confirmed" : "could_not_verify",
+        attempted: true,
+        verified: isVerified,
+        summary: `Credit note ${result.credit_note_number} applied to invoice ${result.invoice_number}. Balance: R${Number(result.previous_invoice_balance).toFixed(2)} → R${Number(result.new_invoice_balance).toFixed(2)}.`,
+        error: null,
+        nextStep: "",
+      },
+      credit_note_number: result.credit_note_number,
+      invoice_number: result.invoice_number,
+      credit_note_amount: result.credit_note_amount,
+      previous_invoice_balance: result.previous_invoice_balance,
+      new_invoice_balance: result.new_invoice_balance,
+      previous_invoice_status: result.previous_invoice_status,
+      new_invoice_status: result.new_invoice_status,
+    });
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
+}
+
+async function executeCancelCreditNote(args: { cnReference: string }): Promise<string> {
+  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "cancel" });
+}
+
+async function executeConvertQuoteToInvoice(args: { quoteReference: string; paymentTermsDays?: number }): Promise<string> {
+  const supabase = getSupabase();
+
+  try {
+    // 1. Resolve the quote safely
+    const resolved = await resolveQuoteForWrite(supabase, args.quoteReference);
+
+    if (resolved.kind === "not_found") {
+      return wrapWithActionResult(actionFailed({ 
+        action: "convert_quote_to_invoice", 
+        targetType: "invoice", 
+        toolUsed: "convertQuoteToInvoice", 
+        error: `No quote found matching '${args.quoteReference}'. Please check the quote number.` 
+      }));
+    }
+
+    if (resolved.kind === "ambiguous") {
+      return wrapWithActionResult(actionNeedInfo({ 
+        action: "convert_quote_to_invoice", 
+        targetType: "invoice", 
+        toolUsed: "convertQuoteToInvoice", 
+        missingFields: ["quoteReference"], 
+        nextStep: `Multiple quotes match '${args.quoteReference}': ${resolved.candidates.map((c: any) => `${c.quote_number} (${c.status})`).join("; ")}. Please provide the exact quote number.` 
+      }));
+    }
+
+    const quote = resolved.record;
+
+    // 2. Call atomic DB function — all guards and operations in one transaction
+    const { data: result, error: rpcError } = await supabase.rpc("convert_quote_to_invoice", {
+      p_quote_id: quote.id,
+      p_payment_days: args.paymentTermsDays || null,
+      p_notes: null,
+    });
+
+    if (rpcError) {
+      console.error("[convertQuoteToInvoice] RPC failed:", rpcError);
+      return wrapWithActionResult(actionFailed({ 
+        action: "convert_quote_to_invoice", 
+        targetType: "invoice", 
+        toolUsed: "convertQuoteToInvoice", 
+        error: rpcError.message,
+        nextStep: rpcError.message.includes("already been converted") 
+          ? "This quote has already been converted. Check the invoices list."
+          : rpcError.message.includes("Draft") 
+            ? "Send the quote to the client and mark it as Accepted before converting."
+            : "Please check the quote status and try again."
+      }));
+    }
+
+    if (!result || !result.success) {
+      return wrapWithActionResult(actionFailed({ 
+        action: "convert_quote_to_invoice", 
+        targetType: "invoice", 
+        toolUsed: "convertQuoteToInvoice", 
+        error: result?.error || "Conversion failed." 
+      }));
+    }
+
+    // 3. Verify the invoice was created
+    const { data: verified } = await supabase
+      .from("invoices")
+      .select("invoice_number, status, total, balance_due, quote_id")
+      .eq("id", result.invoice_id)
+      .single();
+
+    const isVerified = verified?.invoice_number === result.invoice_number && verified?.quote_id === result.quote_id;
+
+    console.log("[convertQuoteToInvoice] Converted", result.quote_number, "→", result.invoice_number);
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "convert_quote_to_invoice",
+        targetType: "invoice",
+        targetReference: result.invoice_number,
+        toolUsed: "convertQuoteToInvoice",
+        summary: `Quote ${result.quote_number} converted to Invoice ${result.invoice_number}. Total: R${Number(result.total).toFixed(2)}. Due: ${result.due_date} (${result.payment_terms_days} days). ${result.line_item_count} line item(s) copied.`,
+        verified: isVerified,
+      }),
+      {
+        invoice: {
+          id: result.invoice_id,
+          invoiceNumber: result.invoice_number,
+          quoteNumber: result.quote_number,
+          quoteId: result.quote_id,
+          clientId: result.client_id,
+          clientName: result.client_name,
+          subtotal: Number(result.subtotal).toFixed(2),
+          vatAmount: Number(result.vat_amount).toFixed(2),
+          total: Number(result.total).toFixed(2),
+          dueDate: result.due_date,
+          paymentTermsDays: result.payment_terms_days,
+          lineItemCount: result.line_item_count,
+        },
+      }
+    );
+  } catch (err: any) {
+    console.error("[convertQuoteToInvoice] Unexpected error:", err);
+    return wrapWithActionResult(actionFailed({ 
+      action: "convert_quote_to_invoice", 
+      targetType: "invoice", 
+      toolUsed: "convertQuoteToInvoice", 
+      error: `Unexpected error: ${err.message}` 
+    }));
+  }
+}
+
+// Generic status transition executor using verified rules from lib/office/status-actions
+async function executeDocumentTransition(args: {
+  documentType: "invoice" | "quote" | "purchase_order" | "credit_note";
+  reference: string;
+  action: string;
+}): Promise<string> {
+  const { documentType, reference, action } = args;
+  const supabase = getSupabase();
+
+  const configMap: Record<string, { table: string; refCol: string; label: string }> = {
+    invoice: { table: "invoices", refCol: "invoice_number", label: "Invoice" },
+    quote: { table: "quotes", refCol: "quote_number", label: "Quote" },
+    purchase_order: { table: "purchase_orders", refCol: "po_number", label: "Purchase Order" },
+    credit_note: { table: "credit_notes", refCol: "cn_number", label: "Credit Note" },
+  };
+
+  const config = configMap[documentType];
+  if (!config) return JSON.stringify({ error: `Invalid document type: ${documentType}` });
+
+  try {
+    // 1. Resolve document using the appropriate resolver
+    let resolved: any;
+    if (documentType === "invoice") {
+      resolved = await resolveInvoiceForWrite(supabase, reference);
+    } else if (documentType === "quote") {
+      resolved = await resolveQuoteForWrite(supabase, reference);
+    } else if (documentType === "purchase_order") {
+      resolved = await resolvePOForWrite(supabase, reference);
+    } else if (documentType === "credit_note") {
+      resolved = await resolveCreditNoteForWrite(supabase, reference);
+    } else {
+      return JSON.stringify({ error: `Invalid document type: ${documentType}` });
+    }
+
+    if (resolved.kind === "not_found") {
+      return JSON.stringify({ error: `No ${config.label.toLowerCase()} found matching "${reference}".` });
+    }
+
+    if (resolved.kind === "ambiguous") {
+      const matches = resolved.candidates.map((c: any) => `${c[config.refCol] || c.po_number || c.cn_number || c.quote_number || c.invoice_number} (${c.status})`).join(", ");
+      return JSON.stringify({ error: `Multiple matches for "${reference}": ${matches}. Please be more specific.` });
+    }
+
+    const doc = resolved.record;
+    const currentStatus = doc.status;
+
+    // 2. Validate transition
+    const validation = validateTransition(documentType, currentStatus, action);
+    if (!validation.success) {
+      return wrapWithActionResult(
+        actionFailed({
+          action,
+          targetType: documentType,
+          toolUsed: "transitionDocumentStatus",
+          error: validation.error || `Cannot perform "${action}" on a ${config.label.toLowerCase()} in "${currentStatus}" status.`,
+          nextStep: `The ${config.label.toLowerCase()} is currently "${currentStatus}". Only certain actions are permitted from this state.`
+        })
+      );
+    }
+
+    // 3. Execute update
+    const { error: updateError } = await supabase
+      .from(config.table)
+      .update({ status: validation.newStatus })
+      .eq("id", doc.id);
+
+    if (updateError) return JSON.stringify({ error: `Update failed: ${updateError.message}` });
+
+    // 4. Verify
+    const { data: verified } = await supabase
+      .from(config.table)
+      .select("status")
+      .eq("id", doc.id)
+      .single();
+
+    const isVerified = (verified as any)?.status === validation.newStatus;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action,
+        targetType: documentType,
+        targetReference: doc[config.refCol],
+        toolUsed: "transitionDocumentStatus",
+        summary: `${config.label} ${doc[config.refCol]} transitioned: ${currentStatus} → ${validation.newStatus}.`,
+        verified: isVerified,
+      }),
+      { previous_status: currentStatus, new_status: validation.newStatus, document_number: doc[config.refCol] }
+    );
+
+  } catch (err: any) {
+    return JSON.stringify({ error: `Unexpected error: ${err.message}` });
+  }
 }
 
 function buildAttachmentParts(attachments: AttachmentInput[] | undefined) {
@@ -3017,6 +4793,11 @@ function buildServerToolFallbackMessage(toolName: string, toolResult: string) {
       return `I tried to run ${toolName}, but it failed: ${parsed.error}`;
     }
 
+    if (toolName === "convertQuoteToInvoice" && parsed?.invoice?.invoiceNumber) {
+      const inv = parsed.invoice;
+      return `Quote ${inv.quoteNumber} converted to Invoice ${inv.invoiceNumber}. Total: R${inv.total}. Due: ${inv.dueDate}.`;
+    }
+
     if (toolName === "draftInvoice" || (toolName === "openInvoiceManager" && parsed?.invoice)) {
       const invoice = parsed.invoice;
       return `Invoice ${invoice?.invoiceNumber || "created"} created for ${invoice?.clientName || "the client"} at R${invoice?.total || "0.00"}.`;
@@ -3128,8 +4909,29 @@ async function streamModelResponse(
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  let user: { id: string } | null = null;
+  let hasError = false;
+  let errorMessage: string | null = null;
+  let toolCallsExecuted: string[] = [];
+  let responseText: string | null = null;
+  let userMessage = "";
+  let conversationId: string | null = null;
+
   try {
-    await requireAuthenticatedUser();
+    const authResult = await requireAuthenticatedUser();
+    user = authResult.user;
+
+    const rateLimitResult = await checkRateLimit(createAdminClient(), user.id);
+
+    if (!rateLimitResult.allowed) {
+      hasError = true;
+      errorMessage = rateLimitResult.message || "Rate limit exceeded";
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.message }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const body = await req.json();
     const {
@@ -3141,11 +4943,15 @@ export async function POST(req: NextRequest) {
       activeDocumentSession = null,
       sessionContext = null,
     } = body;
+    userMessage = message || "";
+    conversationId = (body as any).conversationId || null;
     const preferences = parseAssistantPreferences(assistantPreferences);
 
     // Resolve Gemini API key: stored UI key takes priority over environment variable
     const geminiApiKey = await getActiveApiKey("gemini");
     if (!geminiApiKey) {
+      hasError = true;
+      errorMessage = "Gemini API key is not configured";
       return NextResponse.json({ error: "Gemini API key is not configured. Please add your API key in Settings → API Keys." }, { status: 401 });
     }
 
@@ -3182,12 +4988,17 @@ export async function POST(req: NextRequest) {
           if (payload.toolCall && SERVER_SIDE_TOOLS.has(payload.toolCall.name)) {
             const toolName = payload.toolCall.name;
             const toolArgs = payload.toolCall.args || {};
+            toolCallsExecuted.push(toolName);
 
             let toolResult: string;
             try {
               if (toolName === "logTrip") toolResult = await executeLogTrip(toolArgs);
               else if (toolName === "queryBusinessData") toolResult = await executeQueryBusinessData(toolArgs);
               else if (toolName === "createClient") toolResult = await executeCreateClient(toolArgs);
+              else if (toolName === "updateClient") toolResult = await executeUpdateClient(toolArgs);
+              else if (toolName === "addClientCommunication") toolResult = await executeAddClientCommunication(toolArgs);
+              else if (toolName === "createClientContact") toolResult = await executeCreateClientContact(toolArgs);
+              else if (toolName === "updateClientContact") toolResult = await executeUpdateClientContact(toolArgs);
               else if (toolName === "logExpense") toolResult = await executeLogExpense(toolArgs);
               else if (toolName === "recordPayment") toolResult = await executeRecordPayment(toolArgs);
               else if (toolName === "draftQuote") toolResult = await executeDraftQuote(toolArgs);
@@ -3196,6 +5007,30 @@ export async function POST(req: NextRequest) {
               else if (toolName === "draftCreditNote") toolResult = await executeDraftCreditNote(toolArgs);
               else if (toolName === "saveMemory") toolResult = await executeSaveMemory(toolArgs);
               else if (toolName === "logFuelPurchase") toolResult = await executeLogFuelPurchase(toolArgs);
+              else if (toolName === "updateInvoiceStatus") toolResult = await executeUpdateInvoiceStatus(toolArgs);
+              else if (toolName === "updatePurchaseOrderStatus") toolResult = await executeUpdatePurchaseOrderStatus(toolArgs);
+              else if (toolName === "updateCreditNoteStatus") toolResult = await executeUpdateCreditNoteStatus(toolArgs);
+              else if (toolName === "markInvoicePaid") toolResult = await executeMarkInvoicePaid(toolArgs);
+              else if (toolName === "voidInvoice") toolResult = await executeVoidInvoice(toolArgs);
+              else if (toolName === "markInvoiceSent") toolResult = await executeMarkInvoiceSent(toolArgs);
+              else if (toolName === "reopenInvoice") toolResult = await executeReopenInvoice(toolArgs);
+              else if (toolName === "markQuoteSent") toolResult = await executeMarkQuoteSent(toolArgs);
+              else if (toolName === "acceptQuote") toolResult = await executeAcceptQuote(toolArgs);
+              else if (toolName === "declineQuote") toolResult = await executeDeclineQuote(toolArgs);
+              else if (toolName === "expireQuote") toolResult = await executeExpireQuote(toolArgs);
+              else if (toolName === "reopenQuote") toolResult = await executeReopenQuote(toolArgs);
+              else if (toolName === "rejectQuote") toolResult = await executeRejectQuote(toolArgs);
+              else if (toolName === "issueQuote") toolResult = await executeIssueQuote(toolArgs);
+              else if (toolName === "markPOSent") toolResult = await executeMarkPOSent(toolArgs);
+              else if (toolName === "acknowledgePO") toolResult = await executeAcknowledgePO(toolArgs);
+              else if (toolName === "markPODelivered") toolResult = await executeMarkPODelivered(toolArgs);
+              else if (toolName === "cancelPO") toolResult = await executeCancelPO(toolArgs);
+              else if (toolName === "issueCreditNote") toolResult = await executeIssueCreditNote(toolArgs);
+              else if (toolName === "sendCreditNote") toolResult = await executeSendCreditNote(toolArgs);
+              else if (toolName === "applyCreditNote") toolResult = await executeApplyCreditNote(toolArgs);
+              else if (toolName === "cancelCreditNote") toolResult = await executeCancelCreditNote(toolArgs);
+              else if (toolName === "transitionDocumentStatus") toolResult = await executeDocumentTransition(toolArgs);
+              else if (toolName === "convertQuoteToInvoice") toolResult = await executeConvertQuoteToInvoice(toolArgs);
               else toolResult = wrapWithActionResult(
                 actionUnsupported({
                   action: toolName,
@@ -3209,6 +5044,32 @@ export async function POST(req: NextRequest) {
               console.error(`[Tool Execution] Error executing ${toolName}:`, err);
               toolResult = JSON.stringify({ error: err.message || "Tool execution failed" });
             }
+
+            // Log the AI action to the audit trail (fire-and-forget)
+            const toolEndTime = Date.now();
+            const { actionStatus, data: resultData } = parseActionResult(toolResult);
+            const targetInfo = extractTargetInfo(toolName, toolArgs);
+            
+            logAIAction({
+              userId: user?.id,
+              conversationId,
+              userMessage,
+              toolName,
+              toolArgs,
+              targetType: targetInfo.targetType,
+              targetReference: targetInfo.targetReference,
+              actionStatus: actionStatus?.status || (toolResult.includes('"error"') ? "failed" : "confirmed"),
+              attempted: actionStatus?.attempted ?? true,
+              verified: actionStatus?.verified ?? false,
+              verificationDetails: resultData || undefined,
+              errorMessage: actionStatus?.error || (toolResult.includes('"error"') ? (JSON.parse(toolResult).error || null) : null),
+              nextStep: actionStatus?.nextStep,
+              summary: actionStatus?.summary,
+              rawToolResult: resultData,
+              modelName: CHAT_MODEL,
+              latencyMs: toolEndTime - startTime,
+              requestSource: "chat",
+            }).catch(() => {}); // Never let logging fail the request
 
             const followUpContents = [
               ...contents,
@@ -3255,6 +5116,8 @@ export async function POST(req: NextRequest) {
             ? await synthesizeSpeech(ai, fullText, preferences.languagePreference)
             : null;
 
+          responseText = fullText;
+
           controller.enqueue(encoder.encode(encodeEvent({
             type: "done",
             text: fullText,
@@ -3266,6 +5129,8 @@ export async function POST(req: NextRequest) {
           })));
           controller.close();
         } catch (streamError: any) {
+          hasError = true;
+          errorMessage = streamError.message || "Streaming failed";
           controller.enqueue(encoder.encode(encodeEvent({ type: "error", error: streamError.message || "Streaming failed" })));
           controller.close();
         }
@@ -3285,7 +5150,30 @@ export async function POST(req: NextRequest) {
     if (isAuthError(error)) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
+    hasError = true;
+    errorMessage = error.message || "Internal Server Error";
     console.error("Gemini API Error:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  } finally {
+    if (user?.id) {
+      const endTime = Date.now();
+      const supabaseAdmin = createAdminClient();
+      supabaseAdmin
+        .from("ai_usage_logs")
+        .insert({
+          user_id: user.id,
+          model_used: CHAT_MODEL,
+          tool_calls: toolCallsExecuted,
+          input_message_length: userMessage.length,
+          output_message_length: responseText?.length || 0,
+          conversation_id: conversationId || null,
+          success: !hasError,
+          error_message: errorMessage || null,
+          response_time_ms: endTime - startTime,
+        })
+        .then(({ error }) => {
+          if (error) console.error("Usage log insert failed:", error);
+        });
+    }
   }
 }

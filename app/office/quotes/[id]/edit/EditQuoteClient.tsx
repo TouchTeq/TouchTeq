@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { createClient } from '@/lib/supabase/client';
 import DraftActionDock from '@/components/office/DraftActionDock';
 import { useAiDraft } from '@/components/office/AiDraftContext';
 import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
@@ -26,7 +25,6 @@ import { DatePicker } from '@/components/ui/DatePicker';
 
 export default function EditQuoteClient({ quote, initialLineItems, clients }: any) {
   const router = useRouter();
-  const supabase = createClient();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,37 +158,30 @@ export default function EditQuoteClient({ quote, initialLineItems, clients }: an
     setError(null);
 
     try {
-      // 1. Update Quote
-      const { error: quoteError } = await supabase
-        .from('quotes')
-        .update({
-          client_id: selectedClient.id,
-          issue_date: formData.issue_date,
-          expiry_date: formData.expiry_date,
-          subtotal,
-          vat_amount: vatAmount,
-          total,
-          status: formData.status,
-          notes: formData.notes,
-          internal_notes: formData.internal_notes
-        })
-        .eq('id', quote.id);
-
-      if (quoteError) throw quoteError;
-
-      // 2. Refresh Line Items (Delete and Re-insert is simplest for this scale)
-      await supabase.from('quote_line_items').delete().eq('quote_id', quote.id);
-
-      const itemsToInsert = lineItems.map(item => ({
-        quote_id: quote.id,
+      const itemsJson = lineItems.map(item => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        line_total: item.line_total
       }));
 
-      const { error: itemsError } = await supabase.from('quote_line_items').insert(itemsToInsert);
-      if (itemsError) throw itemsError;
+      const response = await fetch(`/api/office/quotes/${quote.id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: selectedClient.id,
+          issue_date: formData.issue_date,
+          expiry_date: formData.expiry_date,
+          status: formData.status,
+          notes: formData.notes,
+          internal_notes: formData.internal_notes,
+          line_items: itemsJson,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Quotation update failed');
+      }
 
       router.push(`/office/quotes/${quote.id}`);
       router.refresh();

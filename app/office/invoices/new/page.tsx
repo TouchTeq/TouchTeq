@@ -348,49 +348,32 @@ function NewInvoiceContent() {
     setError(null);
 
     try {
-      // 1. Insert Invoice
-      const { data: invoice, error: invError } = await supabase
-        .from('invoices')
-        .insert([{
-          client_id: selectedClient.id,
-          invoice_number: invoiceNumber,
-          issue_date: formData.issue_date,
-          due_date: formData.due_date,
-          subtotal,
-          vat_amount: vatAmount,
-          total,
-          status: formData.status,
-          notes: formData.notes,
-          internal_notes: formData.internal_notes,
-          amount_paid: 0,
-          is_recurring: isRecurring,
-          recurring_frequency: isRecurring ? recurringFrequency : null,
-          recurring_start_date: isRecurring ? recurringStartDate : null,
-          recurring_end_date: isRecurring && recurringEndDate ? recurringEndDate : null,
-          recurring_auto_send: isRecurring ? recurringAutoSend : false,
-          recurring_next_date: isRecurring ? recurringStartDate : null
-        }])
-        .select()
-        .single();
-
-      if (invError) throw invError;
-
-      // 2. Insert Line Items
-      const itemsToInsert = lineItems.map(item => ({
-        invoice_id: invoice.id,
+      // Atomic creation: header + line items in one DB transaction
+      const itemsJson = lineItems.map(item => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        qty_type: item.qty_type || 'qty'
+        qty_type: item.qty_type || 'qty',
       }));
 
-      const { error: itemsError } = await supabase
-        .from('invoice_line_items')
-        .insert(itemsToInsert);
+      const { data: result, error: rpcError } = await supabase.rpc('create_invoice_with_items', {
+        p_client_id: selectedClient.id,
+        p_line_items: itemsJson,
+        p_notes: formData.notes || null,
+        p_internal_notes: formData.internal_notes || null,
+        p_is_recurring: isRecurring,
+        p_recurring_freq: isRecurring ? recurringFrequency : null,
+        p_issue_date: formData.issue_date,
+        p_due_date: formData.due_date,
+        p_status: formData.status,
+        p_recurring_start_date: isRecurring ? recurringStartDate : null,
+        p_recurring_end_date: isRecurring && recurringEndDate ? recurringEndDate : null,
+        p_recurring_auto_send: isRecurring ? recurringAutoSend : false,
+      });
 
-      if (itemsError) throw itemsError;
+      if (rpcError || !result) throw new Error(rpcError?.message || 'Invoice creation failed');
 
-      router.push(`/office/invoices/${invoice.id}`);
+      router.push(`/office/invoices/${result.id}`);
       router.refresh();
     } catch (err: any) {
       console.error(err);

@@ -15,6 +15,7 @@ import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 import { 
   validateName, 
   validateCompanyName, 
@@ -301,6 +302,28 @@ export default function ContactPage() {
           question: faq.q,
           answer: faq.a,
         }))}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+        address={{
+          streetAddress: '787 16th Rd',
+          addressLocality: 'Midrand',
+          addressRegion: 'Gauteng',
+          postalCode: '1685',
+          addressCountry: 'ZA'
+        }}
+        contactPoint={{
+          telephone: '+27-72-552-2110',
+          contactType: 'Sales and Technical Support',
+          areaServed: ['ZA', 'MZ', 'BW', 'NA', 'ZW'],
+          availableLanguage: ['English']
+        }}
+        sameAs={[
+          'https://www.linkedin.com/company/touch-teq-engineering'
+        ]}
       />
       <Header />
       

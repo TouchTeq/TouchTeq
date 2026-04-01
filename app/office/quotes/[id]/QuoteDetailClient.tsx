@@ -27,6 +27,7 @@ import { pickPreferredRecipient } from '@/lib/clients/contactPreference';
 import QuoteRenderer from '@/components/office/QuoteRenderer';
 import { generateQuotePdfBlob } from '@/lib/quotes/quote-pdf';
 import { blobToBase64 } from '@/lib/invoices/invoice-pdf';
+import { convertQuoteToInvoice } from '@/lib/quotes/quoteActions';
 
 export default function QuoteDetailClient({ quote, lineItems, businessProfile }: any) {
   const router = useRouter();
@@ -169,46 +170,26 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
 
   const handleConvertToInvoice = async () => {
     setLoading('convert');
+    setError(null);
     try {
-      // Note: This logic would usually happen in a Server Action or API for safety, 
-      // but for this MVP conversion, we'll implement it as described.
-      const { data: invoice, error: invError } = await supabase
-        .from('invoices')
-        .insert([{
-          client_id: quote.client_id,
-          invoice_number: quote.quote_number.replace('QT', 'INV'), // Simple mapping for now
-          issue_date: new Date().toISOString().split('T')[0],
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          subtotal: quote.subtotal,
-          vat_amount: quote.vat_amount,
-          amount_paid: 0,
-          status: 'Draft'
-        }])
-        .select()
-        .single();
+      const result = await convertQuoteToInvoice(quote.id);
+      
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#F97316', '#22C55E', '#FFFFFF']
+      });
 
-      if (invError) throw invError;
-
-      // Copy line items
-      const invoiceItems = lineItems.map((item: any) => ({
-        invoice_id: invoice.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        line_total: item.line_total
-      }));
-
-      await supabase.from('invoice_line_items').insert(invoiceItems);
-
-      // Update quote
-      await supabase
-        .from('quotes')
-        .update({ status: 'Converted', converted_to_invoice: true, invoice_id: invoice.id })
-        .eq('id', quote.id);
-
-      router.push(`/office/invoices/${invoice.id}`);
+      toast.success({ 
+        title: 'Quote Converted', 
+        message: `Quote ${result.quoteNumber} converted to Invoice ${result.invoiceNumber}.` 
+      });
+      
+      router.push(`/office/invoices/${result.invoiceId}`);
     } catch (err: any) {
       setError(err.message);
+      toast.error({ title: 'Conversion Failed', message: err.message });
     } finally {
       setLoading(null);
     }
@@ -294,18 +275,20 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
             </>
           )}
 
-          {quote.status === 'Accepted' && !quote.converted_to_invoice && (
+          {(quote.status === 'Accepted' || quote.status === 'Sent' || quote.status === 'Issued') && !quote.converted_invoice_id && (
             <button
               onClick={handleConvertToInvoice}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-orange-500 text-white hover:bg-orange-600 rounded shadow-lg shadow-orange-500/20 transition-all"
+              disabled={loading === 'convert'}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-orange-500 text-white hover:bg-orange-600 rounded shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50"
             >
-              <Receipt size={14} /> Convert to Invoice
+              {loading === 'convert' ? <Loader2 className="animate-spin" size={14} /> : <Receipt size={14} />}
+              Convert to Invoice
             </button>
           )}
 
-          {quote.converted_to_invoice && (
+          {quote.converted_invoice_id && (
             <Link
-              href={`/office/invoices/${quote.invoice_id}`}
+              href={`/office/invoices/${quote.converted_invoice_id}`}
               className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-purple-500 text-white hover:bg-purple-600 rounded transition-all"
             >
               <ExternalLink size={14} /> View Invoice

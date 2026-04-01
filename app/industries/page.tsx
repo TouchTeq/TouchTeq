@@ -13,6 +13,9 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const industries = [
   {
@@ -283,6 +286,24 @@ export default function IndustriesPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Industries', url: 'https://touchteq.co.za/industries' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({
+          question: faq.q,
+          answer: faq.a
+        }))}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
       
       {/* Hero Section */}

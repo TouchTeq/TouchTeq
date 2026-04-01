@@ -326,42 +326,25 @@ function NewQuoteContent() {
     setError(null);
 
     try {
-      // 1. Insert Quote
-      const { data: quote, error: quoteError } = await supabase
-        .from('quotes')
-        .insert([{
-          client_id: selectedClient.id,
-          quote_number: quoteNumber,
-          issue_date: formData.issue_date,
-          expiry_date: formData.expiry_date,
-          subtotal,
-          vat_amount: vatAmount,
-          total,
-          status: formData.status,
-          notes: formData.notes,
-          internal_notes: formData.internal_notes
-        }])
-        .select()
-        .single();
-
-      if (quoteError) throw quoteError;
-
-      // 2. Insert Line Items
-      const itemsToInsert = lineItems.map(item => ({
-        quote_id: quote.id,
+      const itemsJson = lineItems.map(item => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        line_total: item.quantity * item.unit_price
       }));
 
-      const { error: itemsError } = await supabase
-        .from('quote_line_items')
-        .insert(itemsToInsert);
+      const { data: result, error: rpcError } = await supabase.rpc('create_quote_with_items', {
+        p_client_id: selectedClient.id,
+        p_line_items: itemsJson,
+        p_notes: formData.notes || null,
+        p_internal_notes: formData.internal_notes || null,
+        p_issue_date: formData.issue_date,
+        p_expiry_date: formData.expiry_date,
+        p_status: formData.status,
+      });
 
-      if (itemsError) throw itemsError;
+      if (rpcError || !result) throw new Error(rpcError?.message || 'Quotation creation failed');
 
-      router.push(`/office/quotes/${quote.id}`);
+      router.push(`/office/quotes/${result.id}`);
       router.refresh();
     } catch (err: any) {
       console.error(err);

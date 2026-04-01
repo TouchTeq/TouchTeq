@@ -15,6 +15,10 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const services = [
   {
@@ -171,6 +175,34 @@ export default function HazardousAreaClassificationPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Services', url: 'https://touchteq.co.za/#services' },
+          { name: 'Hazardous Area Classification', url: 'https://touchteq.co.za/services/hazardous-area-classification' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({ question: faq.q, answer: faq.a }))}
+      />
+      <ServiceJsonLd 
+        name="Hazardous Area Classification & Zoning"
+        description="Professional Hazardous Area Classification (HAC) studies and zoning services. Compliance with SANS 10108 and IEC 60079 for industrial facilities in Southern Africa."
+        url="https://touchteq.co.za/services/hazardous-area-classification"
+        serviceType={[
+          'Area Classification', 
+          'Explosive Atmosphere Risk Assessment', 
+          'Zoning Drawings', 
+          'Compliance Auditing',
+          'Ex Equipment Selection'
+        ]}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
       
       {/* Hero Section */}
@@ -178,7 +210,7 @@ export default function HazardousAreaClassificationPage() {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://picsum.photos/seed/hazardous-area/1920/1080"
+            src="/HAC.jpg"
             alt="Hazardous Area Classification"
             fill
             className="object-cover opacity-30"

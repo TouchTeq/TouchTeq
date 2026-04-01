@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock, ShieldCheck, Activity, Wrench, Cpu, Package,
   ChevronRight, ArrowRight, CheckCircle2, Factory,
-  Droplets, HardHat, ZapOff, Microscope, Plus, Minus,
-  Info, AlertTriangle, ShieldAlert, Flame, BookOpen,
-  ClipboardCheck, History, Search, PhoneCall, ArrowUpRight
+  Droplets, HardHat, ZapOff, Plus, Minus,
+  Search, PhoneCall
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,6 +13,10 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import FAQJsonLd from '@/components/seo/FAQJsonLd';
+import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 
 const services = [
   {
@@ -135,6 +138,35 @@ export default function MaintenanceAndSupportPage() {
 
   return (
     <main className="bg-white min-h-screen font-sans">
+      <BreadcrumbJsonLd 
+        items={[
+          { name: 'Home', url: 'https://touchteq.co.za' },
+          { name: 'Services', url: 'https://touchteq.co.za/#services' },
+          { name: 'Maintenance & Support', url: 'https://touchteq.co.za/services/maintenance-and-support' }
+        ]}
+      />
+      <FAQJsonLd 
+        faqs={faqs.map(faq => ({ question: faq.q, answer: faq.a }))}
+      />
+      <ServiceJsonLd 
+        name="Industrial Maintenance & 24/7 Support"
+        description="Scheduled preventative maintenance and rapid emergency response for fire and gas, electrical, and control systems in industrial facilities."
+        url="https://touchteq.co.za/services/maintenance-and-support"
+        serviceType={[
+          'Preventative Maintenance', 
+          'Emergency Callout', 
+          'System Health Checks', 
+          'Calibration',
+          'PLC Support',
+          'Spare Parts Management'
+        ]}
+      />
+      <OrganizationJsonLd 
+        name="Touch Teq Engineering"
+        url="https://touchteq.co.za"
+        logo="https://touchteq.co.za/logo.png"
+        description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
+      />
       <Header />
 
       {/* Hero Section */}
@@ -142,7 +174,7 @@ export default function MaintenanceAndSupportPage() {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://picsum.photos/seed/industrial-maintenance/1920/1080"
+            src="/Infrastructure.jpeg"
             alt="Industrial Maintenance & Support"
             fill
             className="object-cover opacity-30"

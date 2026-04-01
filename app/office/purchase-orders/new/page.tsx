@@ -133,55 +133,54 @@ export default function NewPurchaseOrderPage() {
     setError(null);
 
     try {
-      // Get next PO number via RPC
-      const { data: poNumber, error: poNumError } = await supabase.rpc('generate_po_number');
-      if (poNumError) throw poNumError;
-
-      const { data: po, error: poError } = await supabase
-        .from('purchase_orders')
-        .insert({
-          po_number: poNumber,
-          supplier_name: formData.supplier_name,
-          supplier_contact: formData.supplier_contact,
-          supplier_email: formData.supplier_email,
-          date_raised: formData.date_raised,
-          delivery_date: formData.delivery_date || null,
-          status: sendToSupplier ? 'Sent' : formData.status,
-          linked_quote_id: formData.linked_quote_id || null,
-          linked_invoice_id: formData.linked_invoice_id || null,
-          notes: formData.notes,
-          subtotal: totals.subtotal,
-          vat_amount: totals.vat_amount,
-          total: totals.total
-        })
-        .select()
-        .single();
-
-      if (poError) throw poError;
-
-      // Insert line items
-      const itemsToInsert = lineItems
+      const itemsJson = lineItems
         .filter(item => item.description.trim())
         .map(item => ({
-          purchase_order_id: po.id,
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          line_total: item.total
         }));
 
-      const { error: itemsError } = await supabase
-        .from('purchase_order_items')
-        .insert(itemsToInsert);
+      const newStatus = sendToSupplier ? 'Sent' : formData.status;
 
-      if (itemsError) throw itemsError;
+      const { data: result, error: rpcError } = await supabase.rpc('create_purchase_order_with_items', {
+        p_supplier_name: formData.supplier_name,
+        p_line_items: itemsJson,
+        p_notes: formData.notes || null,
+        p_date_raised: formData.date_raised,
+        p_status: newStatus,
+        p_supplier_contact: formData.supplier_contact || null,
+        p_supplier_email: formData.supplier_email || null,
+        p_delivery_date: formData.delivery_date || null,
+        p_linked_quote_id: formData.linked_quote_id || null,
+        p_linked_invoice_id: formData.linked_invoice_id || null,
+      });
+
+      if (rpcError || !result) throw new Error(rpcError?.message || 'Purchase order creation failed');
+
+      const poNumber = result.document_number;
 
       if (sendToSupplier && formData.supplier_email) {
         try {
-          // Generate PDF
           const fullPO = {
-            ...po,
-            purchase_order_items: itemsToInsert
+            id: result.id,
+            po_number: poNumber,
+            supplier_name: result.supplier_name,
+            supplier_contact: formData.supplier_contact,
+            supplier_email: formData.supplier_email,
+            date_raised: formData.date_raised,
+            delivery_date: formData.delivery_date,
+            status: newStatus,
+            notes: formData.notes,
+            subtotal: result.subtotal,
+            vat_amount: result.vat_amount,
+            total: result.total,
+            purchase_order_items: itemsJson.map((item: any) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              line_total: item.quantity * item.unit_price,
+            })),
           };
           const blob = await pdf(<PurchaseOrderPDF po={fullPO} />).toBlob();
           const reader = new FileReader();
@@ -194,11 +193,10 @@ export default function NewPurchaseOrderPage() {
           reader.readAsDataURL(blob);
           const base64 = await base64Promise;
 
-          // Send Email
           await sendDocumentEmail({
             supabase,
             documentType: 'purchase-order',
-            documentId: po.id,
+            documentId: result.id,
             attachmentBase64: base64,
             recipientEmail: formData.supplier_email,
             recipientName: formData.supplier_contact || formData.supplier_name
@@ -212,7 +210,7 @@ export default function NewPurchaseOrderPage() {
       }
 
       toast.success({ title: 'Saved', message: `Purchase Order ${poNumber} created successfully.` });
-      router.push(`/office/purchase-orders/${po.id}`);
+      router.push(`/office/purchase-orders/${result.id}`);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to save purchase order.');

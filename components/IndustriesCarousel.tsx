@@ -221,7 +221,7 @@ export default function IndustriesCarousel() {
                       <div className="absolute inset-0 z-10 bg-black/10 transition-colors group-hover/image:bg-transparent" />
                       <Image
                         src={industry.image}
-                        alt={industry.title}
+                        alt={`${industry.title} - ${industry.categories} engineering services - Touch Teq`}
                         fill
                         className="object-cover transition-transform duration-700 group-hover/image:scale-105"
                         referrerPolicy="no-referrer"
