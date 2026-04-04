@@ -287,7 +287,7 @@ export default function ContactSection() {
                 </div>
 
                 <div className="pt-4">
-                  <Link href="/contact" className="text-orange-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                  <Link href="/contact#request-quote" className="text-orange-500 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
                     <span>View Full Contact Details</span>
                     <ArrowUpRight size={16} />
                   </Link>

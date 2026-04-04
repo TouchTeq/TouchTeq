@@ -139,7 +139,7 @@ export default function TermsPage() {
                 </div>
               </div>
               <Link
-                href="/contact"
+                href="/contact#request-quote"
                 className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2"
               >
                 Contact Us

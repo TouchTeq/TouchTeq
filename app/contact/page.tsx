@@ -93,6 +93,8 @@ export default function ContactPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const serviceRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     companyName: '',
@@ -111,6 +113,41 @@ export default function ContactPage() {
   // Initialize page load time on mount
   useEffect(() => {
     pageLoadTime.current = Date.now();
+  }, []);
+
+  // Scroll to form when arriving with #request-quote hash
+  useEffect(() => {
+    if (window.location.hash === '#request-quote') {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('request-quote');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Click outside to close service dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (serviceRef.current && !serviceRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Click outside to close timeline dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (timelineRef.current && !timelineRef.current.contains(event.target as Node)) {
+        setIsTimelineOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const validateField = (field: string, value: string) => {
@@ -740,7 +777,7 @@ export default function ContactPage() {
                   transition={{ delay: 0.5 }}
                   className="grid grid-cols-1 md:grid-cols-2 gap-6"
                 >
-                  <div className="space-y-2 relative">
+                  <div className="space-y-2 relative" ref={serviceRef}>
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Service Required *</label>
                     <button
                       type="button"
@@ -774,7 +811,7 @@ export default function ContactPage() {
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2" ref={timelineRef}>
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Estimated Timeline</label>
                     <div className="relative">
                       <button

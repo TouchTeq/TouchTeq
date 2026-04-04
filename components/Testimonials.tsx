@@ -63,6 +63,7 @@ export default function Testimonials() {
                 src="/wcs.jpg"
                 alt="Touch Teq project delivery"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 referrerPolicy="no-referrer"
               />

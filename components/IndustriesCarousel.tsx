@@ -87,8 +87,9 @@ export default function IndustriesCarousel() {
       }
     };
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    const observer = new ResizeObserver(updateWidth);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   // Handle infinite loop jump
@@ -137,14 +138,14 @@ export default function IndustriesCarousel() {
   const slideWidth = containerWidth > 1024 ? 58 : 85;
   const gap = containerWidth > 1024 ? 4 : 4;
 
-  const onDragEnd = (event: any, info: any) => {
+  const onDragEnd = useCallback((_event: any, info: any) => {
     const threshold = 50;
     if (info.offset.x < -threshold) {
       nextSlide();
     } else if (info.offset.x > threshold) {
       prevSlide();
     }
-  };
+  }, [nextSlide, prevSlide]);
 
   return (
     <section id="industries" className="py-20 md:py-32 bg-white overflow-hidden">
@@ -289,7 +290,7 @@ export default function IndustriesCarousel() {
 
             {/* CTA Button on the right - positioned on top of the orange card */}
             <Link
-              href="/contact"
+              href="/contact#request-quote"
               className="bg-white text-[#1A2B4C] hover:text-[#ff6900] hover:bg-slate-50 transition-all duration-300 flex items-center group rounded-sm overflow-hidden shadow-2xl"
             >
               <span className="px-8 py-4 font-black text-xs md:text-sm uppercase tracking-[0.2em]">

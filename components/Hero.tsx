@@ -81,7 +81,7 @@ export default function Hero() {
             className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 mb-16"
           >
             <Link 
-              href="/contact"
+              href="/contact#request-quote"
               className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto"
             >
               <span className="px-6 md:px-8 py-4 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">

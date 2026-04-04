@@ -25,11 +25,12 @@ export default function Footer() {
         <div className="container mx-auto px-4 md:px-8">
           <nav className="flex flex-wrap justify-center md:justify-between gap-6 md:gap-4">
             {[
-              { name: 'Company', href: '/about' },
-              { name: 'Services', href: '#services' },
-              { name: 'Industries', href: '#industries' },
-              { name: 'Case Studies', href: '#projects' },
+              { name: 'Home', href: '/' },
+              { name: 'About Us', href: '/about' },
+              { name: 'Services', href: '/#services' },
+              { name: 'Industries', href: '/industries' },
               { name: 'Insights', href: '/insights' },
+              { name: 'Free Resources', href: '/downloads' },
               { name: 'Contact Us', href: '/contact' }
             ].map((link) => (
               <Link
@@ -193,12 +194,11 @@ export default function Footer() {
               </ul>
               <div className="relative w-32 h-32 bg-white p-2 rounded-sm shadow-xl">
                 <Image
-                  src="https://picsum.photos/seed/bee-logo/200/200"
+                  src="/bbbee.jpeg"
                   alt="B-BBEE Level 1"
                   width={128}
                   height={128}
                   className="object-contain"
-                  referrerPolicy="no-referrer"
                 />
                 <div className="absolute -bottom-2 -right-2 bg-orange-500 text-white text-[8px] font-black uppercase px-2 py-1">
                   Level 1

@@ -1,6 +1,7 @@
 'use client';
 
-import { Plus, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, Plus, ToggleLeft, ToggleRight, Trash2, Users } from 'lucide-react';
 
 export const CONTACT_TYPES = ['Technical', 'Finance', 'General'] as const;
 export type ContactType = (typeof CONTACT_TYPES)[number];
@@ -69,6 +70,8 @@ export default function ClientContactsEditor({
   value: ClientContactDraft[];
   onChange: (next: ClientContactDraft[]) => void;
 }) {
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
   const addContact = () => {
     const next: ClientContactDraft[] = [
       ...value,
@@ -90,7 +93,7 @@ export default function ClientContactsEditor({
 
   const removeContact = (localId: string) => {
     const next = value.filter((c) => c.localId !== localId);
-    onChange(normalizePrimary(next.length === 0 ? createDefaultContacts() : next));
+    onChange(next);
   };
 
   const update = (localId: string, patch: Partial<ClientContactDraft>) => {
@@ -107,7 +110,10 @@ export default function ClientContactsEditor({
   };
 
   return (
-    <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+    <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
+      {openDropdownId && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setOpenDropdownId(null)} onWheel={(e) => e.stopPropagation()} />
+      )}
       <div className="flex items-center justify-between gap-4 mb-8 border-b border-slate-800/50 pb-4">
         <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Contacts</h2>
         <button
@@ -120,6 +126,20 @@ export default function ClientContactsEditor({
       </div>
 
       <div className="grid grid-cols-1 gap-6">
+        {value.length === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-slate-600 font-black uppercase tracking-widest text-[10px] mb-6">
+              No contacts added yet
+            </p>
+            <button
+              type="button"
+              onClick={addContact}
+              className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-500 hover:bg-orange-500/20 px-6 py-3 rounded-sm font-black uppercase tracking-widest text-[10px] transition-colors"
+            >
+              <Plus size={14} /> Add Contact
+            </button>
+          </div>
+        )}
         {value.map((c, idx) => (
           <div key={c.localId} className="bg-[#0B0F19]/60 border border-slate-800 rounded-xl p-6 relative">
             <div className="flex items-start justify-between gap-4 mb-6">
@@ -153,18 +173,48 @@ export default function ClientContactsEditor({
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">
                   Contact Type *
                 </label>
-                <select
-                  value={c.contact_type}
-                  onChange={(e) => update(c.localId, { contact_type: e.target.value as ContactType })}
-                  className="w-full bg-[#151B28] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-bold uppercase tracking-widest text-xs rounded-sm"
-                  required
-                >
-                  {CONTACT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setOpenDropdownId(openDropdownId === c.localId ? null : c.localId)}
+                    className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+                      openDropdownId === c.localId ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users size={14} className="text-slate-500" />
+                      <span className="text-white">{c.contact_type}</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 transition-transform ${openDropdownId === c.localId ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {openDropdownId === c.localId && (
+                    <div 
+                      className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1"
+                      onWheel={(e) => e.stopPropagation()}
+                    >
+                      {CONTACT_TYPES.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => {
+                            update(c.localId, { contact_type: t });
+                            setOpenDropdownId(null);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
+                            c.contact_type === t
+                              ? 'text-orange-500 bg-[#0B0F19]'
+                              : 'text-slate-300'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">

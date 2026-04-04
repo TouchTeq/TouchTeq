@@ -28,6 +28,8 @@ import QuoteRenderer from '@/components/office/QuoteRenderer';
 import { generateQuotePdfBlob } from '@/lib/quotes/quote-pdf';
 import { blobToBase64 } from '@/lib/invoices/invoice-pdf';
 import { convertQuoteToInvoice } from '@/lib/quotes/quoteActions';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { getWhatsAppQuoteMessage } from '@/lib/whatsapp/utils';
 
 export default function QuoteDetailClient({ quote, lineItems, businessProfile }: any) {
   const router = useRouter();
@@ -257,6 +259,19 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
           >
             <Send size={14} /> Send Email
           </button>
+
+          {quote.clients?.phone && (
+            <WhatsAppButton
+              phoneNumber={quote.clients.phone}
+              message={getWhatsAppQuoteMessage(
+                quote.clients?.company_name || '',
+                quote.quote_number,
+                quote.total
+              )}
+              size="sm"
+              className="!text-xs"
+            />
+          )}
 
           {quote.status === 'Sent' && (
             <>

@@ -216,7 +216,7 @@ export default function FireAndGasPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-wrap gap-4"
             >
-              <Link href="#contact" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">
                   Request a Consultation
                 </span>
@@ -367,7 +367,7 @@ export default function FireAndGasPage() {
                 <p className="text-slate-300 text-sm leading-relaxed mb-6">
                   A detector is only as good as its placement. We use advanced mapping software to ensure zero blind spots in your facility, accounting for wind patterns, obstruction, and gas buoyancy.
                 </p>
-                <Link href="#contact" className="inline-flex items-center text-orange-500 font-black text-xs uppercase tracking-[0.2em] hover:text-white transition-colors">
+                <Link href="/contact#request-quote" className="inline-flex items-center text-orange-500 font-black text-xs uppercase tracking-[0.2em] hover:text-white transition-colors">
                   Learn about our mapping process <ArrowRight size={16} className="ml-2" />
                 </Link>
               </div>
@@ -568,7 +568,7 @@ export default function FireAndGasPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-6"
             >
-              <Link href="/contact" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">
                   REQUEST A CONSULTATION
                 </span>

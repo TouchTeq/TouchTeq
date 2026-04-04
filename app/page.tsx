@@ -65,6 +65,7 @@ export default function Home() {
               src="/f-bg.jpg"
               alt="Industrial Background"
               fill
+              sizes="100vw"
               className="object-cover opacity-30"
               priority
             />
@@ -110,7 +111,7 @@ export default function Home() {
                 className="flex flex-col sm:flex-row gap-6"
               >
                 <Link 
-                  href="/contact"
+                  href="/contact#request-quote"
                   className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto"
                 >
                   <span className="px-6 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">

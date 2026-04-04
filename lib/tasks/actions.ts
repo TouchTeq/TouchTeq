@@ -36,13 +36,14 @@ export async function getTasks(filters?: {
   search?: string;
 }): Promise<Task[]> {
   const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
 
   let query = supabase
     .from("tasks")
-    .select(`
-      *,
-      client:clients(company_name)
-    `)
+    .select("*")
+    .eq("user_id", user.id)
     .order("due_date", { ascending: true, nullsFirst: false })
     .order("priority", { ascending: false })
     .order("created_at", { ascending: false });
@@ -76,23 +77,55 @@ export async function getTasks(filters?: {
     return [];
   }
 
-  return (data || []) as Task[];
+  const tasks = (data || []) as Task[];
+
+  const clientIds = [...new Set(tasks.filter(t => t.client_id).map(t => t.client_id as string))];
+  if (clientIds.length > 0) {
+    const { data: clients } = await supabase
+      .from("clients")
+      .select("id, company_name")
+      .in("id", clientIds);
+
+    const clientMap = new Map((clients || []).map(c => [c.id, c.company_name]));
+    return tasks.map(task => ({
+      ...task,
+      client: task.client_id && clientMap.has(task.client_id)
+        ? { company_name: clientMap.get(task.client_id)! }
+        : null,
+    }));
+  }
+
+  return tasks;
 }
 
 export async function getTaskById(taskId: string): Promise<Task | null> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
     .from("tasks")
-    .select(`
-      *,
-      client:clients(company_name)
-    `)
+    .select("*")
     .eq("id", taskId)
+    .eq("user_id", user.id)
     .single();
 
   if (error) return null;
-  return data as Task;
+
+  const task = data as Task;
+
+  if (task.client_id) {
+    const { data: client } = await supabase
+      .from("clients")
+      .select("company_name")
+      .eq("id", task.client_id)
+      .single();
+
+    task.client = client ? { company_name: client.company_name } : null;
+  }
+
+  return task;
 }
 
 export async function createTask(task: {
@@ -113,9 +146,13 @@ export async function createTask(task: {
 }): Promise<{ success: boolean; task?: Task; error?: string }> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
   const { data, error } = await supabase
     .from("tasks")
     .insert({
+      user_id: user.id,
       title: task.title,
       description: task.description || null,
       status: "todo",
@@ -160,6 +197,9 @@ export async function updateTask(
 ): Promise<{ success: boolean; task?: Task; error?: string }> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
   const finalUpdates: any = { ...updates };
   if (updates.status === "done") {
     finalUpdates.completed_at = new Date().toISOString();
@@ -172,6 +212,7 @@ export async function updateTask(
     .from("tasks")
     .update(finalUpdates)
     .eq("id", taskId)
+    .eq("user_id", user.id)
     .select()
     .single();
 
@@ -186,10 +227,14 @@ export async function updateTask(
 export async function deleteTask(taskId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
   const { error } = await supabase
     .from("tasks")
     .delete()
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("user_id", user.id);
 
   if (error) {
     return { success: false, error: error.message };
@@ -212,9 +257,13 @@ export async function getTaskStats(): Promise<{
   const today = new Date().toISOString().split("T")[0];
   const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { total: 0, todo: 0, inProgress: 0, done: 0, overdue: 0, dueToday: 0, dueThisWeek: 0 };
+
   const { data: allTasks } = await supabase
     .from("tasks")
-    .select("id, status, due_date");
+    .select("id, status, due_date")
+    .eq("user_id", user.id);
 
   const tasks = allTasks || [];
 

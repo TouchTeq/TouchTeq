@@ -39,12 +39,13 @@ export async function getNotes(filters?: {
 }): Promise<Note[]> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   let query = supabase
     .from("notes")
-    .select(`
-      *,
-      client:clients(company_name)
-    `)
+    .select("*")
+    .eq("user_id", user.id)
     .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(filters?.limit || 50);
@@ -68,24 +69,59 @@ export async function getNotes(filters?: {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching notes:", error);
+    console.error("Error fetching notes:", error.message || error);
     return [];
   }
 
-  return (data || []) as Note[];
+  const notes = (data || []) as Note[];
+
+  const clientIds = [...new Set(notes.filter(n => n.client_id).map(n => n.client_id as string))];
+  if (clientIds.length > 0) {
+    const { data: clients } = await supabase
+      .from("clients")
+      .select("id, company_name")
+      .in("id", clientIds);
+
+    const clientMap = new Map((clients || []).map(c => [c.id, c.company_name]));
+    return notes.map(note => ({
+      ...note,
+      client: note.client_id && clientMap.has(note.client_id)
+        ? { company_name: clientMap.get(note.client_id)! }
+        : null,
+    }));
+  }
+
+  return notes;
 }
 
 export async function getNoteById(noteId: string): Promise<Note | null> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
     .from("notes")
-    .select(`*, client:clients(company_name)`)
+    .select("*")
     .eq("id", noteId)
+    .eq("user_id", user.id)
     .single();
 
   if (error) return null;
-  return data as Note;
+
+  const note = data as Note;
+
+  if (note.client_id) {
+    const { data: client } = await supabase
+      .from("clients")
+      .select("company_name")
+      .eq("id", note.client_id)
+      .single();
+
+    note.client = client ? { company_name: client.company_name } : null;
+  }
+
+  return note;
 }
 
 export async function createNote(note: {
@@ -110,9 +146,13 @@ export async function createNote(note: {
 }): Promise<{ success: boolean; note?: Note; error?: string }> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
   const { data, error } = await supabase
     .from("notes")
     .insert({
+      user_id: user.id,
       title: note.title || null,
       content: note.content,
       note_type: note.note_type || "general",
@@ -160,10 +200,14 @@ export async function updateNote(
 ): Promise<{ success: boolean; note?: Note; error?: string }> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
   const { data, error } = await supabase
     .from("notes")
     .update(updates)
     .eq("id", noteId)
+    .eq("user_id", user.id)
     .select()
     .single();
 
@@ -178,7 +222,10 @@ export async function updateNote(
 export async function deleteNote(noteId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
-  const { error } = await supabase.from("notes").delete().eq("id", noteId);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  const { error } = await supabase.from("notes").delete().eq("id", noteId).eq("user_id", user.id);
 
   if (error) {
     return { success: false, error: error.message };

@@ -650,16 +650,17 @@ export default function NotesPage() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => setShowModal(false)}
+            onWheel={(e) => e.stopPropagation()}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#151B28] border border-slate-800/50 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="bg-[#151B28] border border-slate-800/50 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
+              <div className="flex items-center justify-between p-6 border-b border-slate-800/50 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-black uppercase tracking-tight text-white">
                     {editingNote ? 'Edit Note' : 'New Note'}
@@ -677,7 +678,7 @@ export default function NotesPage() {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 space-y-5">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
                 {/* Note Type Selector */}
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
@@ -1015,7 +1016,7 @@ export default function NotesPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-800/50">
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-800/50 flex-shrink-0 bg-[#151B28]">
                 <button
                   onClick={() => setShowModal(false)}
                   className="px-5 py-2.5 bg-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-slate-700 transition-colors"

@@ -32,6 +32,8 @@ import confetti from 'canvas-confetti';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { pickPreferredRecipient } from '@/lib/clients/contactPreference';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { getWhatsAppInvoiceMessage } from '@/lib/whatsapp/utils';
 
 export default function InvoiceManagement({ invoice, initialPayments, lineItems, businessProfile, reminderLogs }: any) {
   const router = useRouter();
@@ -308,6 +310,19 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
           >
             <Send size={14} /> Send Email
           </button>
+
+          {invoice.clients?.phone && (
+            <WhatsAppButton
+              phoneNumber={invoice.clients.phone}
+              message={getWhatsAppInvoiceMessage(
+                invoice.clients?.company_name || '',
+                invoice.invoice_number,
+                invoice.total
+              )}
+              size="sm"
+              className="!text-xs"
+            />
+          )}
 
           {invoice.status !== 'Paid' && (
             <>

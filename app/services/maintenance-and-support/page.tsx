@@ -177,6 +177,7 @@ export default function MaintenanceAndSupportPage() {
             src="/Infrastructure.jpeg"
             alt="Industrial Maintenance & Support"
             fill
+            sizes="100vw"
             className="object-cover opacity-30"
             priority
             referrerPolicy="no-referrer"
@@ -220,7 +221,7 @@ export default function MaintenanceAndSupportPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-wrap gap-4"
             >
-              <Link href="#contact" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">
                   Request a Maintenance Audit
                 </span>
@@ -332,6 +333,7 @@ export default function MaintenanceAndSupportPage() {
                   src="/detector-maintenance.jpeg"
                   alt="Instrument Calibration"
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover object-[center_65%]"
                   referrerPolicy="no-referrer"
                 />
@@ -441,6 +443,7 @@ export default function MaintenanceAndSupportPage() {
                   src="/expertise-site-consultation.jpeg"
                   alt="Engineer at Refinery"
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover object-[center_65%]"
                   referrerPolicy="no-referrer"
                 />
@@ -511,6 +514,7 @@ export default function MaintenanceAndSupportPage() {
             src="/f-bg.jpg"
             alt="Industrial Background"
             fill
+            sizes="100vw"
             className="object-cover opacity-30"
             referrerPolicy="no-referrer"
           />
@@ -555,7 +559,7 @@ export default function MaintenanceAndSupportPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-6"
             >
-              <Link href="/contact" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">
                   REQUEST A MAINTENANCE AUDIT
                 </span>

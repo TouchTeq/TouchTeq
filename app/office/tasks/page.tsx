@@ -21,6 +21,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { TimePicker } from '@/components/ui/TimePicker';
 import {
   getTasks,
   updateTask,
@@ -70,16 +72,16 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, todo: 0, inProgress: 0, done: 0, overdue: 0, dueToday: 0, dueThisWeek: 0 });
   const [clients, setClients] = useState<any[]>([]);
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  
+
   // Form state
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -92,11 +94,16 @@ export default function TasksPage() {
   const [formTags, setFormTags] = useState<string[]>([]);
   const [formNotes, setFormNotes] = useState('');
   const [formTagInput, setFormTagInput] = useState('');
-  
+
   // Client search
   const [clientSearch, setClientSearch] = useState('');
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const clientRef = useRef<HTMLDivElement>(null);
+
+  // Custom dropdown open states
+  const [priorityOpen, setPriorityOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const supabase = createClient();
 
@@ -406,9 +413,8 @@ export default function TasksPage() {
                     <div className="flex-1 min-w-0">
                       <button
                         onClick={() => openEditModal(task)}
-                        className={`text-left font-bold text-sm truncate hover:text-orange-500 transition-colors ${
-                          task.status === 'done' ? 'line-through text-slate-500' : 'text-white'
-                        }`}
+                        className={`text-left font-bold text-sm truncate hover:text-orange-500 transition-colors ${task.status === 'done' ? 'line-through text-slate-500' : 'text-white'
+                          }`}
                       >
                         {task.title}
                       </button>
@@ -423,9 +429,8 @@ export default function TasksPage() {
                     </div>
 
                     {/* Due Date */}
-                    <div className={`flex-shrink-0 flex items-center gap-1.5 text-xs ${
-                      overdue ? 'text-red-400' : task.due_date ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
+                    <div className={`flex-shrink-0 flex items-center gap-1.5 text-xs ${overdue ? 'text-red-400' : task.due_date ? 'text-slate-400' : 'text-slate-600'
+                      }`}>
                       <CalendarIcon size={14} />
                       <span className="font-bold text-[11px] uppercase tracking-wide">
                         {task.due_date ? formatDate(task.due_date) : 'No date'}
@@ -483,7 +488,8 @@ export default function TasksPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#151B28] border border-slate-800/50 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onWheel={(e) => e.stopPropagation()}
+              className="bg-[#151B28] border border-slate-800/50 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
@@ -498,8 +504,22 @@ export default function TasksPage() {
                 </button>
               </div>
 
+              {/* Dropdown backdrops for click-outside */}
+              {(priorityOpen || statusOpen || categoryOpen) && (
+                <div className="fixed inset-0 z-[99]" onClick={() => { setPriorityOpen(false); setStatusOpen(false); setCategoryOpen(false); }} />
+              )}
+
               {/* Modal Body */}
-              <div className="p-6 space-y-5">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable', touchAction: 'pan-y', maxHeight: 'calc(90vh - 130px)', overscrollBehavior: 'contain' }} onWheel={(e) => {
+                e.stopPropagation();
+                const container = e.currentTarget;
+                const { scrollTop, scrollHeight, clientHeight } = container;
+                const deltaY = e.deltaY;
+
+                if ((scrollTop === 0 && deltaY < 0) || (scrollTop + clientHeight === scrollHeight && deltaY > 0)) {
+                  e.preventDefault();
+                }
+              }}>
                 {/* Title */}
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
@@ -536,16 +556,31 @@ export default function TasksPage() {
                       Priority
                     </label>
                     <div className="relative">
-                      <select
-                        value={formPriority}
-                        onChange={(e) => setFormPriority(e.target.value)}
-                        className="w-full appearance-none bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => setPriorityOpen(!priorityOpen)}
+                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${priorityOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'}`}
                       >
-                        {PRIORITIES.map(p => (
-                          <option key={p} value={p}>{PRIORITY_COLORS[p].label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                        <div className="flex items-center gap-2">
+                          <Flag size={14} className={`${PRIORITY_COLORS[formPriority]?.text || 'text-slate-400'}`} />
+                          <span className="text-white">{PRIORITY_COLORS[formPriority]?.label || 'Medium'}</span>
+                        </div>
+                        <ChevronDown size={14} className={`text-slate-500 transition-transform ${priorityOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {priorityOpen && (
+                        <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                          {PRIORITIES.map(p => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => { setFormPriority(p); setPriorityOpen(false); }}
+                              className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${formPriority === p ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'}`}
+                            >
+                              {PRIORITY_COLORS[p].label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -553,16 +588,28 @@ export default function TasksPage() {
                       Status
                     </label>
                     <div className="relative">
-                      <select
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value)}
-                        className="w-full appearance-none bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => setStatusOpen(!statusOpen)}
+                        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${statusOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'}`}
                       >
-                        {STATUSES.map(s => (
-                          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                        <span className="text-white">{STATUS_LABELS[formStatus]}</span>
+                        <ChevronDown size={14} className={`text-slate-500 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {statusOpen && (
+                        <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                          {STATUSES.map(s => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => { setFormStatus(s); setStatusOpen(false); }}
+                              className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${formStatus === s ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'}`}
+                            >
+                              {STATUS_LABELS[s]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -570,25 +617,19 @@ export default function TasksPage() {
                 {/* Due Date & Time Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
+                    <DatePicker
+                      label="Due Date"
                       value={formDueDate}
-                      onChange={(e) => setFormDueDate(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white"
+                      onChange={(val) => setFormDueDate(val)}
+                      placeholder="Select date"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
-                      Due Time (optional)
-                    </label>
-                    <input
-                      type="time"
+                    <TimePicker
+                      label="Due Time (optional)"
                       value={formDueTime}
-                      onChange={(e) => setFormDueTime(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white"
+                      onChange={(val) => setFormDueTime(val)}
+                      placeholder="Select time"
                     />
                   </div>
                 </div>
@@ -599,17 +640,38 @@ export default function TasksPage() {
                     Category
                   </label>
                   <div className="relative">
-                    <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full appearance-none bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => setCategoryOpen(!categoryOpen)}
+                      className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${categoryOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'}`}
                     >
-                      <option value="">Select category...</option>
-                      {CATEGORIES.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                      <div className="flex items-center gap-2">
+                        <Tag size={14} className="text-slate-500" />
+                        <span className="text-white">{formCategory || 'Select category...'}</span>
+                      </div>
+                      <ChevronDown size={14} className={`text-slate-500 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {categoryOpen && (
+                      <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1 max-h-60 overflow-y-auto">
+                        <button
+                          type="button"
+                          onClick={() => { setFormCategory(''); setCategoryOpen(false); }}
+                          className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${!formCategory ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-500'}`}
+                        >
+                          — No Category —
+                        </button>
+                        {CATEGORIES.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => { setFormCategory(c); setCategoryOpen(false); }}
+                            className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${formCategory === c ? 'text-orange-500 bg-[#0B0F19]' : 'text-slate-300'}`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

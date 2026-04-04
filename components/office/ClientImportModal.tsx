@@ -334,8 +334,31 @@ export default function ClientImportModal({
       }
 
       if (toImport.length > 0) {
-        const { error: insertErr } = await supabase.from('clients').insert(toImport);
+        const { data: insertedClients, error: insertErr } = await supabase
+          .from('clients')
+          .insert(toImport)
+          .select('id, company_name, contact_person, phone');
         if (insertErr) throw insertErr;
+
+        const contactRows = (insertedClients || [])
+          .filter((c: any) => {
+            const name = c.contact_person?.trim();
+            return name && name !== '' && name.toUpperCase() !== 'N/A';
+          })
+          .map((c: any) => ({
+            client_id: c.id,
+            contact_type: 'General',
+            full_name: c.contact_person.trim(),
+            cell_number: c.phone?.trim() || null,
+            is_primary: true,
+          }));
+
+        if (contactRows.length > 0) {
+          const { error: contactErr } = await supabase.from('client_contacts').insert(contactRows);
+          if (contactErr) {
+            console.error('Failed to create contact records:', contactErr);
+          }
+        }
       }
 
       const missingEmail = toImport.filter(r => r.email_missing).length;

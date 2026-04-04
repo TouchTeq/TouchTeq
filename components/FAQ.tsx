@@ -179,7 +179,7 @@ export default function FAQ() {
               className="mt-12"
             >
               <Link
-                href="/contact"
+                href="/contact#request-quote"
                 className="group inline-flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
               >
                 <span className="px-8 py-4 flex items-center text-white font-black text-sm uppercase tracking-widest">

@@ -187,7 +187,7 @@ export default function ServicesSection() {
                 className="shrink-0"
               >
                 <Link 
-                  href="#contact"
+                  href="/contact#request-quote"
                   className="bg-[#1A2B4C] text-white px-8 py-4 rounded-md font-black text-xs md:text-sm uppercase tracking-widest transition-all shadow-xl hover:shadow-black/20 flex items-center space-x-2"
                 >
                   <span>Start Consultation</span>

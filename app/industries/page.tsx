@@ -1,21 +1,20 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Flame, Factory, Pickaxe, Fuel, Zap, Settings, Pill, 
-  Wheat, Droplets, Network, ChevronRight, ArrowRight, 
-  CheckCircle2, Globe, ShieldCheck, Clock, Award,
-  MapPin, Phone, Mail, ArrowUpRight, Plus, Minus
+import { motion } from 'motion/react';
+import {
+  Flame, Factory, Pickaxe, Fuel, Zap, Settings, Pill,
+  Wheat, Droplets, Network, ChevronRight, ArrowRight,
+  CheckCircle2, Globe, ShieldCheck, Phone,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import FAQJsonLd from '@/components/seo/FAQJsonLd';
 import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
+import IndustriesFaqAccordion from '@/components/IndustriesFaqAccordion';
 
 const industries = [
   {
@@ -282,8 +281,6 @@ const faqs = [
 ];
 
 export default function IndustriesPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
   return (
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
@@ -349,7 +346,7 @@ export default function IndustriesPage() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-6"
             >
-              <Link href="#contact" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">
                   Discuss Your Requirements
                 </span>
@@ -484,10 +481,11 @@ export default function IndustriesPage() {
                 {/* Image */}
                 <div className="w-full lg:w-[450px] shrink-0">
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-[3/4]">
-                    <Image 
+                    <Image
                       src={industry.image || `https://picsum.photos/seed/${industry.id}/600/800`}
                       alt={industry.title}
                       fill
+                      sizes="(max-width: 1024px) 100vw, 450px"
                       className="object-cover w-full h-full"
                       referrerPolicy="no-referrer"
                     />
@@ -665,40 +663,7 @@ export default function IndustriesPage() {
               </motion.h2>
             </div>
 
-            <div className="space-y-4">
-              {faqs.map((faq, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border border-slate-100 rounded-2xl overflow-hidden"
-                >
-                  <button 
-                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                    className="w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 transition-colors"
-                  >
-                    <span className={`font-black text-sm md:text-base uppercase tracking-normal transition-colors ${openFaq === index ? 'text-orange-500' : 'text-[#1A2B4C] hover:text-orange-500'}`}>{faq.q}</span>
-                    {openFaq === index ? <Minus className="text-orange-500" /> : <Plus className="text-orange-500" />}
-                  </button>
-                  <AnimatePresence>
-                    {openFaq === index && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-6 pt-0 text-slate-500 text-sm md:text-base leading-relaxed font-medium border-t border-slate-50">
-                          {faq.a}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))}
-            </div>
+            <IndustriesFaqAccordion faqs={faqs} />
           </div>
         </div>
       </section>
@@ -710,6 +675,7 @@ export default function IndustriesPage() {
             src="/f-bg.jpg"
             alt="Industrial Background"
             fill
+            sizes="100vw"
             className="object-cover opacity-30"
             referrerPolicy="no-referrer"
           />
@@ -754,7 +720,7 @@ export default function IndustriesPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-6"
             >
-              <Link href="/contact" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
+              <Link href="/contact#request-quote" className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto">
                 <span className="px-6 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">
                   REQUEST A CONSULTATION
                 </span>

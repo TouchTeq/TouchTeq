@@ -30,12 +30,15 @@ export interface CalendarEvent {
 export async function createCalendarEvent(formData: FormData) {
   const supabase = await createClient();
   
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "Not authenticated" };
 
   const title = formData.get("title") as string;
   const start_date = formData.get("start_date") as string;
-  const event_type = formData.get("event_type") as string || "appointment";
+  const event_type = (formData.get("event_type") as string) || "appointment";
+  
+  if (!title) return { error: "Title is required" };
+  if (!start_date) return { error: "Start date is required" };
   
   const eventData: Record<string, unknown> = {
     user_id: user.id,
@@ -52,11 +55,11 @@ export async function createCalendarEvent(formData: FormData) {
 
   for (const field of fields) {
     const value = formData.get(field);
-    if (value) {
+    if (value !== null && value !== "") {
       if (field === "all_day" || field === "is_recurring") {
         eventData[field] = value === "true";
       } else if (field === "client_id" || field === "task_id") {
-        eventData[field] = value || null;
+        eventData[field] = value === "" ? null : value;
       } else {
         eventData[field] = value;
       }
@@ -69,7 +72,10 @@ export async function createCalendarEvent(formData: FormData) {
     .select()
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("Calendar event insert error:", error);
+    return { error: error.message };
+  }
 
   revalidatePath("/office/calendar");
   return { data };
@@ -129,11 +135,13 @@ export async function updateCalendarEvent(id: string, formData: FormData) {
 
   for (const field of fields) {
     const value = formData.get(field);
-    if (value !== null && value !== "") {
+    if (value !== null) {
       if (field === "all_day" || field === "is_recurring") {
         updateData[field] = value === "true";
       } else if (field === "client_id" || field === "task_id") {
-        updateData[field] = value || null;
+        updateData[field] = value === "" ? null : value;
+      } else if (value === "") {
+        updateData[field] = null;
       } else {
         updateData[field] = value;
       }

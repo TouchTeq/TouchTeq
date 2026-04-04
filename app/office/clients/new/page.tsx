@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Save, 
-  Building2, 
-  MapPin, 
-  FileText, 
-  Check, 
+import {
+  ArrowLeft,
+  Save,
+  Building2,
+  MapPin,
+  FileText,
+  Check,
   AlertCircle,
   ToggleLeft,
   ToggleRight,
   Tag,
   Wallet,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
@@ -26,6 +27,7 @@ export default function NewClientPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sameAsPhysical, setSameAsPhysical] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [contacts, setContacts] = useState<ClientContactDraft[]>(createDefaultContacts());
 
   const [formData, setFormData] = useState({
@@ -125,8 +127,11 @@ export default function NewClientPage() {
 
   return (
     <div className="w-full space-y-8">
+      {categoryOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setCategoryOpen(false)} onWheel={(e) => e.stopPropagation()} />
+      )}
       {/* Breadcrumbs / Back Link */}
-      <Link 
+      <Link
         href="/office/clients"
         className="flex items-center gap-2 text-slate-500 hover:text-orange-500 font-bold uppercase tracking-widest text-[10px] transition-colors"
       >
@@ -139,7 +144,7 @@ export default function NewClientPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <Building2 className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Basic Information</h2>
@@ -148,23 +153,24 @@ export default function NewClientPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Company Name *</label>
-              <input 
+              <input
                 name="company_name"
                 required
                 value={formData.company_name}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm"
+                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white transition-all"
                 placeholder="Touch Teqniques (Pty) Ltd"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">VAT Registration Number</label>
-              <input 
+              <input
+                type="text"
                 name="vat_number"
                 value={formData.vat_number}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm"
+                className="w-full bg-[#0B0F19] border border-slate-700 hover:border-slate-600 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white placeholder:text-slate-600 transition-all"
                 placeholder="4000123456"
               />
             </div>
@@ -174,18 +180,55 @@ export default function NewClientPage() {
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
                 <Tag size={11} /> Category
               </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm"
-              >
-                <option value="">— No Category —</option>
-                <option value="Service Support">Service Support</option>
-                <option value="Projects">Projects</option>
-                <option value="Back up Power Supply">Back up Power Supply</option>
-                <option value="Software Support">Software Support</option>
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCategoryOpen(!categoryOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+                    categoryOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} className="text-slate-500" />
+                    <span className="text-white">{formData.category || 'No Category'}</span>
+                  </div>
+                  <ChevronDown
+                    size={14}
+                    className={`text-slate-500 transition-transform ${categoryOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {categoryOpen && (
+                  <div 
+                    className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1 max-h-60 overflow-y-auto"
+                    onWheel={(e) => e.stopPropagation()}
+                  >
+                    {[
+                      { value: '', label: 'No Category' },
+                      { value: 'Service Support', label: 'Service Support' },
+                      { value: 'Projects', label: 'Projects' },
+                      { value: 'Back up Power Supply', label: 'Back up Power Supply' },
+                      { value: 'Software Support', label: 'Software Support' },
+                      { value: 'Supplier', label: 'Supplier' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, category: opt.value }));
+                          setCategoryOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
+                          formData.category === opt.value
+                            ? 'text-orange-500 bg-[#0B0F19]'
+                            : 'text-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Opening Balance */}
@@ -199,7 +242,7 @@ export default function NewClientPage() {
                 name="opening_balance"
                 value={formData.opening_balance}
                 onChange={(e) => setFormData(prev => ({ ...prev, opening_balance: parseFloat(e.target.value) || 0 }))}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm"
+                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white transition-all"
               />
               <p className="text-[10px] text-slate-600 ml-1">Supports negative values. Leave at 0 if not applicable.</p>
             </div>
@@ -209,7 +252,7 @@ export default function NewClientPage() {
         <ClientContactsEditor value={contacts} onChange={setContacts} />
 
         {/* Addresses */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <MapPin className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Location Details</h2>
@@ -218,7 +261,7 @@ export default function NewClientPage() {
           <div className="space-y-8">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Physical Address</label>
-              <textarea 
+              <textarea
                 name="physical_address"
                 rows={3}
                 value={formData.physical_address}
@@ -231,7 +274,7 @@ export default function NewClientPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Postal Address</label>
-                <button 
+                <button
                   type="button"
                   onClick={toggleSameAsPhysical}
                   className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors"
@@ -242,13 +285,13 @@ export default function NewClientPage() {
                   Same as Physical
                 </button>
               </div>
-              <textarea 
+              <textarea
                 name="postal_address"
                 rows={3}
                 disabled={sameAsPhysical}
                 value={formData.postal_address}
                 onChange={handleInputChange}
-                className={`w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm resize-none ${sameAsPhysical ? 'opacity-50' : ''}`}
+                className={`w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white transition-all resize-none ${sameAsPhysical ? 'opacity-50' : ''}`}
                 placeholder="PO Box 456, Secunda, 2302"
               />
             </div>
@@ -256,7 +299,7 @@ export default function NewClientPage() {
         </div>
 
         {/* Additional */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <FileText className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Notes & Status</h2>
@@ -265,19 +308,19 @@ export default function NewClientPage() {
           <div className="space-y-8">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Internal Notes</label>
-              <textarea 
+              <textarea
                 name="notes"
                 rows={4}
                 value={formData.notes}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm resize-none"
+                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none rounded-lg py-3 px-4 text-sm text-white transition-all resize-none"
                 placeholder="Key B2B partner, long-term contractor..."
               />
             </div>
 
             <div className="flex items-center gap-4 p-4 bg-[#0B0F19] rounded-lg border border-slate-800/50 w-fit">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Status:</span>
-              <button 
+              <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
                 className="flex items-center gap-2 group"
@@ -300,7 +343,7 @@ export default function NewClientPage() {
 
         {/* Error Message */}
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 flex items-center gap-3 font-bold text-sm"
@@ -312,7 +355,7 @@ export default function NewClientPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-4 pt-6 pb-20">
-          <Link 
+          <Link
             href="/office/clients"
             className="px-8 py-4 text-slate-500 hover:text-white font-black text-xs uppercase tracking-[0.2em] transition-colors"
           >
@@ -321,7 +364,7 @@ export default function NewClientPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-3 bg-orange-500 hover:bg-orange-600 transition-all rounded-sm overflow-hidden shadow-xl shadow-orange-500/20 py-4 px-10 disabled:opacity-50"
+            className="flex items-center gap-3 bg-orange-500 hover:bg-orange-600 transition-all rounded-lg overflow-hidden shadow-xl shadow-orange-500/20 py-3 px-6 disabled:opacity-50"
           >
             <Save size={18} className="text-white" />
             <span className="text-white font-black text-sm uppercase tracking-[0.2em]">

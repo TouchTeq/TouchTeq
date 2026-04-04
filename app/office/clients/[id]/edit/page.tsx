@@ -15,11 +15,12 @@ import {
   Tag,
   Wallet,
   MailX,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { createClient } from '@/lib/supabase/client';
-import ClientContactsEditor, { createDefaultContacts, type ClientContactDraft } from '@/components/office/ClientContactsEditor';
+import ClientContactsEditor, { type ClientContactDraft } from '@/components/office/ClientContactsEditor';
 
 export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -30,7 +31,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sameAsPhysical, setSameAsPhysical] = useState(false);
-  const [contacts, setContacts] = useState<ClientContactDraft[]>(createDefaultContacts());
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [contacts, setContacts] = useState<ClientContactDraft[]>([]);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -87,8 +89,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               is_primary: !!c.is_primary,
             }))
           );
-        } else if (!contactsError) {
-          setContacts(createDefaultContacts());
         }
       } catch (err: any) {
         setError("Failed to load client data.");
@@ -160,8 +160,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         setSaving(false);
         return;
       }
-      if (!contacts.length || contacts.some((c) => !c.full_name.trim())) {
-        setError('Please complete all contact cards (Contact Type and Full Name are required).');
+      if (contacts.length > 0 && contacts.some((c) => !c.full_name.trim())) {
+        setError('Please complete all contact cards (Contact Type and Full Name are required), or remove empty ones.');
         setSaving(false);
         return;
       }
@@ -195,7 +195,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="w-full space-y-8">
-      {/* Breadcrumbs / Back Link */}
+      {categoryOpen && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setCategoryOpen(false)} onWheel={(e) => e.stopPropagation()} />
+      )}
       <Link 
         href={`/office/clients/${id}`}
         className="flex items-center gap-2 text-slate-500 hover:text-orange-500 font-bold uppercase tracking-widest text-[10px] transition-colors"
@@ -209,7 +211,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <Building2 className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Basic Information</h2>
@@ -242,18 +244,55 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
                 <Tag size={11} /> Category
               </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-sm"
-              >
-                <option value="">— No Category —</option>
-                <option value="Service Support">Service Support</option>
-                <option value="Projects">Projects</option>
-                <option value="Back up Power Supply">Back up Power Supply</option>
-                <option value="Software Support">Software Support</option>
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCategoryOpen(!categoryOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+                    categoryOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} className="text-slate-500" />
+                    <span className="text-white">{formData.category || 'No Category'}</span>
+                  </div>
+                  <ChevronDown
+                    size={14}
+                    className={`text-slate-500 transition-transform ${categoryOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {categoryOpen && (
+                  <div 
+                    className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1 max-h-60 overflow-y-auto"
+                    onWheel={(e) => e.stopPropagation()}
+                  >
+                    {[
+                      { value: '', label: 'No Category' },
+                      { value: 'Service Support', label: 'Service Support' },
+                      { value: 'Projects', label: 'Projects' },
+                      { value: 'Back up Power Supply', label: 'Back up Power Supply' },
+                      { value: 'Software Support', label: 'Software Support' },
+                      { value: 'Supplier', label: 'Supplier' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, category: opt.value }));
+                          setCategoryOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm ${
+                          formData.category === opt.value
+                            ? 'text-orange-500 bg-[#0B0F19]'
+                            : 'text-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Opening Balance */}
@@ -295,7 +334,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         <ClientContactsEditor value={contacts} onChange={setContacts} />
 
         {/* Addresses */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <MapPin className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Location Details</h2>
@@ -340,7 +379,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Additional */}
-        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-hidden shadow-2xl p-8">
+        <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl p-8">
           <div className="flex items-center gap-3 mb-8 border-b border-slate-800/50 pb-4">
             <FileText className="text-orange-500" size={20} />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Notes & Status</h2>

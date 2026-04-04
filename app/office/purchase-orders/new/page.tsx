@@ -60,6 +60,10 @@ export default function NewPurchaseOrderPage() {
 
   const [quotes, setQuotes] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [supplierId, setSupplierId] = useState<string | null>(null);
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [supplierResults, setSupplierResults] = useState<any[]>([]);
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -80,6 +84,53 @@ export default function NewPurchaseOrderPage() {
     }
     fetchData();
   }, []);
+
+  // Supplier search effect
+  useEffect(() => {
+    if (supplierSearch.trim().length < 2) {
+      setSupplierResults([]);
+      setShowSupplierDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, company_name, contact_person, email, phone')
+        .or(`category.eq.Supplier,category.is.null`)
+        .ilike('company_name', `%${supplierSearch}%`)
+        .eq('is_active', true)
+        .limit(8);
+
+      setSupplierResults(data || []);
+      setShowSupplierDropdown(true);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [supplierSearch]);
+
+  const selectSupplier = (supplier: any) => {
+    setSupplierId(supplier.id);
+    setFormData(prev => ({
+      ...prev,
+      supplier_name: supplier.company_name,
+      supplier_contact: supplier.contact_person || '',
+      supplier_email: supplier.email || '',
+    }));
+    setSupplierSearch(supplier.company_name);
+    setShowSupplierDropdown(false);
+  };
+
+  const clearSupplier = () => {
+    setSupplierId(null);
+    setFormData(prev => ({
+      ...prev,
+      supplier_name: '',
+      supplier_contact: '',
+      supplier_email: '',
+    }));
+    setSupplierSearch('');
+  };
 
   const handleFieldChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -154,6 +205,7 @@ export default function NewPurchaseOrderPage() {
         p_delivery_date: formData.delivery_date || null,
         p_linked_quote_id: formData.linked_quote_id || null,
         p_linked_invoice_id: formData.linked_invoice_id || null,
+        p_supplier_id: supplierId || null,
       });
 
       if (rpcError || !result) throw new Error(rpcError?.message || 'Purchase order creation failed');
@@ -264,7 +316,49 @@ export default function NewPurchaseOrderPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Supplier Details */}
           <div className="bg-[#151B28] border border-slate-800/50 p-6 rounded-xl">
-            <h2 className="text-xs font-black uppercase text-slate-500 mb-4">Supplier Details</h2>
+            <h2 className="text-xs font-black uppercase text-slate-500 mb-4 flex items-center gap-2">
+              Supplier Details
+              {supplierId && (
+                <button
+                  type="button"
+                  onClick={clearSupplier}
+                  className="text-[9px] font-bold text-orange-500 hover:text-white uppercase tracking-widest"
+                >
+                  × Clear
+                </button>
+              )}
+            </h2>
+            {/* Supplier Search */}
+            <div className="mb-4 relative">
+              <label className="text-[10px] font-black uppercase text-slate-500">Search Existing Supplier</label>
+              <input
+                type="text"
+                value={supplierSearch}
+                onChange={(e) => {
+                  setSupplierSearch(e.target.value);
+                  if (supplierId) { setSupplierId(null); }
+                }}
+                onFocus={() => { if (supplierResults.length > 0) setShowSupplierDropdown(true); }}
+                onBlur={() => setTimeout(() => setShowSupplierDropdown(false), 200)}
+                placeholder="Type to search suppliers..."
+                className="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-4 py-2 text-white text-sm mt-1"
+              />
+              {showSupplierDropdown && supplierResults.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-[#0B0F19] border border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                  {supplierResults.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onMouseDown={() => selectSupplier(s)}
+                      className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-800 flex items-center justify-between"
+                    >
+                      <span>{s.company_name}</span>
+                      {s.email && <span className="text-[10px] text-slate-500">{s.email}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">Supplier Name *</label>

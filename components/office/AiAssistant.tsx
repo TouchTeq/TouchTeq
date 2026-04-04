@@ -211,14 +211,9 @@ const CANCELLATION_PHRASES = ["no", "cancel", "stop", "don't", "nope", "negative
 
 // Tools that the AI should execute directly without showing a confirmation button
 const DIRECT_ACTION_TOOLS = new Set([
-  'addLineItem',
-  'removeLineItem',
-  'updateLineItem',
-  'updateDocumentField',
-  'saveDocument',
-  'closeDocument',
   'navigateTo',
   'openExistingDocument',
+  'openWhatsApp',
 ]);
 
 const NAVIGATION_ROUTES: Record<string, string> = {
@@ -2506,6 +2501,90 @@ export default function AiAssistant({ mode = 'floating' }: AiAssistantProps) {
             router.push(route);
             appendAssistantMessage(`Opening ${docType} ${ref} now.`);
           });
+        return true;
+      }
+
+      case 'openWhatsApp': {
+        const clientName = String(args.clientName || '');
+        if (!clientName) {
+          appendAssistantMessage("Please specify which client you'd like to WhatsApp.");
+          return true;
+        }
+
+        const messageType = String(args.messageType || 'general');
+        const invoiceRef = String(args.invoiceReference || '');
+        const quoteRef = String(args.quoteReference || '');
+
+        const { getWhatsAppUrl, getWhatsAppGeneralMessage, getWhatsAppInvoiceMessage, getWhatsAppQuoteMessage, getWhatsAppPaymentReminderMessage } = await import('@/lib/whatsapp/utils');
+
+        const { data: clients } = await supabase
+          .from('clients')
+          .select('id, company_name, phone')
+          .ilike('company_name', `%${clientName}%`)
+          .limit(5);
+
+        if (!clients || clients.length === 0) {
+          appendAssistantMessage(`No client found matching "${clientName}". Please check the name and try again.`);
+          return true;
+        }
+
+        let client: any;
+        if (clients.length === 1) {
+          client = clients[0];
+        } else {
+          const exact = clients.find((c: any) => c.company_name.toLowerCase() === clientName.toLowerCase());
+          if (exact) {
+            client = exact;
+          } else {
+            const matchList = clients.map((c: any) => c.company_name).join(', ');
+            appendAssistantMessage(`Multiple clients match "${clientName}": ${matchList}. Please be more specific.`);
+            return true;
+          }
+        }
+
+        if (!client.phone) {
+          appendAssistantMessage(`No phone number on file for ${client.company_name}. Please add one in the client profile.`);
+          return true;
+        }
+
+        let message = '';
+        if (messageType === 'invoice' && invoiceRef) {
+          const { data: inv } = await supabase
+            .from('invoices')
+            .select('invoice_number, total')
+            .ilike('invoice_number', invoiceRef)
+            .single();
+          if (inv) {
+            message = getWhatsAppInvoiceMessage(client.company_name, inv.invoice_number, inv.total);
+          }
+        } else if (messageType === 'quote' && quoteRef) {
+          const { data: qt } = await supabase
+            .from('quotes')
+            .select('quote_number, total')
+            .ilike('quote_number', quoteRef)
+            .single();
+          if (qt) {
+            message = getWhatsAppQuoteMessage(client.company_name, qt.quote_number, qt.total);
+          }
+        } else if (messageType === 'payment_reminder' && invoiceRef) {
+          const { data: inv } = await supabase
+            .from('invoices')
+            .select('invoice_number, total, due_date')
+            .ilike('invoice_number', invoiceRef)
+            .single();
+          if (inv) {
+            const daysOverdue = Math.ceil((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
+            message = getWhatsAppPaymentReminderMessage(client.company_name, inv.invoice_number, inv.total, daysOverdue);
+          }
+        }
+
+        if (!message) {
+          message = getWhatsAppGeneralMessage(client.company_name);
+        }
+
+        const url = getWhatsAppUrl(client.phone, message);
+        window.open(url, '_blank');
+        appendAssistantMessage(`Opening WhatsApp chat with ${client.company_name} (${client.phone}).`);
         return true;
       }
 

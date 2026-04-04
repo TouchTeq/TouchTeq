@@ -33,6 +33,8 @@ import { ClientCommunicationsLog } from '@/components/office/ClientCommunication
 import { ClientDetailPageHeader } from './HeaderActions';
 import SettleOpeningBalanceButton from './SettleOpeningBalanceButton';
 import { getNotes } from '@/lib/notes/actions';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { getWhatsAppGeneralMessage } from '@/lib/whatsapp/utils';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-ZA', {
@@ -316,6 +318,14 @@ export default async function ClientDetailPage({
                         >
                           <PhoneCall size={16} />
                         </a>
+                      )}
+                      {(c.cell_number || c.landline_number) && (
+                        <WhatsAppButton
+                          phoneNumber={c.cell_number || c.landline_number || ''}
+                          message={getWhatsAppGeneralMessage(c.full_name)}
+                          size="icon"
+                          className="!p-2 !h-8 !w-8 !rounded-lg !border-green-500/30"
+                        />
                       )}
                     </div>
                   </div>

@@ -263,6 +263,11 @@ export function extractTargetInfo(
     createCalendarEvent: { type: "calendar_event", refField: "title" },
     queryCalendarEvents: { type: "calendar_event_query", refField: "startDate" },
     updateCalendarEvent: { type: "calendar_event", refField: "eventIdentifier" },
+    createReminder: { type: "reminder", refField: "title" },
+    queryReminders: { type: "reminder_query", refField: "status" },
+    updateReminder: { type: "reminder", refField: "reminderIdentifier" },
+    queryAgenda: { type: "agenda", refField: "date" },
+    convertNoteToTasks: { type: "note", refField: "noteIdentifier" },
   };
   
   const config = toolTypeMap[toolName];

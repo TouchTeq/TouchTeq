@@ -221,7 +221,7 @@ export default function Header() {
                 <Search size={18} />
               </motion.button>
               <Link 
-                href="/contact" 
+                href="/contact#request-quote" 
                 className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 whitespace-nowrap flex-shrink-0"
               >
                 Request a Consultation
@@ -308,7 +308,7 @@ export default function Header() {
               className="mt-auto mb-12 space-y-8"
             >
               <Link 
-                href="/contact"
+                href="/contact#request-quote"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full bg-orange-500 text-white text-center py-4 rounded-xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20"
               >

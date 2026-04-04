@@ -15,15 +15,7 @@ import { decryptValue } from '@/lib/encryption';
 if (typeof process !== 'undefined' && process.env) {
   const encKey = process.env.ENCRYPTION_KEY;
   if (!encKey || encKey.length < 32) {
-    console.error('[STARTUP WARNING] ENCRYPTION_KEY is missing or too short. BYOK feature will not work.');
-  }
-}
-
-// Startup validation: warn if ENCRYPTION_KEY is missing or invalid
-if (typeof process !== 'undefined' && process.env) {
-  const encKey = process.env.ENCRYPTION_KEY;
-  if (!encKey || encKey.length < 32) {
-    console.error('[STARTUP WARNING] ENCRYPTION_KEY is missing or too short. BYOK feature will not work.');
+    console.warn('[STARTUP] ENCRYPTION_KEY not configured. BYOK feature disabled.');
   }
 }
 

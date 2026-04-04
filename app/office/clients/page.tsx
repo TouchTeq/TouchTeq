@@ -88,13 +88,16 @@ export default async function ClientsPage({
   // ── Stats ──────────────────────────────────────────────────────────────────
   const activeCount = clientsData?.filter((c: any) => c.is_active).length || 0;
 
+  // Get correct total outstanding from the same source as dashboard
+  const totalOutstanding = outstandingSummary?.reduce((sum, c) => sum + (c.total_outstanding || 0), 0) || 0;
+
+  // Get overdue amounts from invoices (overdue is only for actual invoices, not opening balances)
   const { data: allInvoices } = await supabase
     .from('invoices')
     .select('balance_due, due_date, status')
     .neq('status', 'Paid');
 
   const now = new Date();
-  const totalOutstanding = allInvoices?.reduce((s: number, i: any) => s + (i.balance_due || 0), 0) || 0;
   const totalOverdue = allInvoices
     ?.filter((i: any) => new Date(i.due_date) < now)
     .reduce((s: number, i: any) => s + (i.balance_due || 0), 0) || 0;

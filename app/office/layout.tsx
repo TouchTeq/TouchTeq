@@ -93,7 +93,6 @@ const navGroups: NavGroup[] = [
     defaultExpanded: true,
     items: [
       { name: 'Timeline', href: '/office/timeline', icon: Activity },
-      { name: 'Reminders', href: '/office/reminders', icon: Bell },
       { name: 'Activity', href: '/office/activity', icon: Clock },
       { name: 'Reports', href: '/office/reports', icon: BarChart3 },
       { name: 'Cash Flow', href: '/office/cash-flow', icon: Wallet },
@@ -525,7 +524,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
       // Fetch overdue invoices with client info to filter out orphaned invoices
       const { data, error } = await supabase
         .from('invoices')
-        .select('*, clients(id)')
+        .select('id, clients(id)')
         .eq('status', 'Overdue');
 
       if (!isMounted) return;

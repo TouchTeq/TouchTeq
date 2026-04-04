@@ -1,3 +1,5 @@
+'use server';
+
 import { revalidatePath } from 'next/cache';
 import { requireAuthenticatedUser } from '@/lib/auth/require-user';
 import { syncInvoiceStatusesWithClient, syncQuoteStatusesWithClient } from '@/lib/office/maintenance';
@@ -239,13 +241,13 @@ const TRANSITION_MAP: Record<DocumentType, Record<string, TransitionRule[]>> = {
 // PUBLIC API
 // ============================================================
 
-export function getValidActions(docType: DocumentType, currentStatus: string): TransitionRule[] {
+export async function getValidActions(docType: DocumentType, currentStatus: string): Promise<TransitionRule[]> {
   const transitions = TRANSITION_MAP[docType]?.[currentStatus];
   if (!transitions) return [];
   return transitions;
 }
 
-export function validateTransition(
+export async function validateTransition(
   docType: DocumentType,
   currentStatus: string,
   action: string,
@@ -297,13 +299,13 @@ export function validateTransition(
   };
 }
 
-export function getAllowedStatuses(docType: DocumentType): string[] {
+export async function getAllowedStatuses(docType: DocumentType): Promise<string[]> {
   const map = TRANSITION_MAP[docType];
   if (!map) return [];
   return Object.keys(map);
 }
 
-export function describeAction(docType: DocumentType, action: string): TransitionRule | undefined {
+export async function describeAction(docType: DocumentType, action: string): Promise<TransitionRule | undefined> {
   const map = TRANSITION_MAP[docType];
   if (!map) return undefined;
   for (const rules of Object.values(map)) {

@@ -52,11 +52,20 @@ async function verifyInvoice(supabase: any, invoiceId: string, expected: {
   client_id: string;
   lineItemCount: number;
 }): Promise<VerificationResult> {
-  const { data: invoice, error } = await supabase
-    .from("invoices")
-    .select("id, invoice_number, client_id, subtotal, vat_amount, total, status")
-    .eq("id", invoiceId)
-    .maybeSingle();
+  const [
+    { data: invoice, error },
+    { count, error: countErr },
+  ] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("id, invoice_number, client_id, subtotal, vat_amount, total, status")
+      .eq("id", invoiceId)
+      .maybeSingle(),
+    supabase
+      .from("invoice_line_items")
+      .select("id", { count: "exact", head: true })
+      .eq("invoice_id", invoiceId),
+  ]);
 
   if (error || !invoice) {
     return verifyResult(false, { reason: "Invoice row not found after insert", error: error?.message });
@@ -71,11 +80,6 @@ async function verifyInvoice(supabase: any, invoiceId: string, expected: {
   if (!invoice.subtotal || !invoice.total) {
     return verifyResult(false, { reason: "Missing totals", subtotal: invoice.subtotal, total: invoice.total });
   }
-
-  const { count, error: countErr } = await supabase
-    .from("invoice_line_items")
-    .select("id", { count: "exact", head: true })
-    .eq("invoice_id", invoiceId);
 
   if (countErr) {
     return verifyResult(false, { reason: "Could not count line items", error: countErr.message });
@@ -98,11 +102,20 @@ async function verifyQuote(supabase: any, quoteId: string, expected: {
   quote_number: string;
   lineItemCount: number;
 }): Promise<VerificationResult> {
-  const { data: quote, error } = await supabase
-    .from("quotes")
-    .select("id, quote_number, client_id, subtotal, total, status")
-    .eq("id", quoteId)
-    .maybeSingle();
+  const [
+    { data: quote, error },
+    { count, error: countErr },
+  ] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select("id, quote_number, client_id, subtotal, total, status")
+      .eq("id", quoteId)
+      .maybeSingle(),
+    supabase
+      .from("quote_line_items")
+      .select("id", { count: "exact", head: true })
+      .eq("quote_id", quoteId),
+  ]);
 
   if (error || !quote) {
     return verifyResult(false, { reason: "Quote row not found after insert", error: error?.message });
@@ -111,11 +124,6 @@ async function verifyQuote(supabase: any, quoteId: string, expected: {
   if (quote.quote_number !== expected.quote_number) {
     return verifyResult(false, { reason: "quote_number mismatch", expected: expected.quote_number, actual: quote.quote_number });
   }
-
-  const { count, error: countErr } = await supabase
-    .from("quote_line_items")
-    .select("id", { count: "exact", head: true })
-    .eq("quote_id", quoteId);
 
   if (countErr) {
     return verifyResult(false, { reason: "Could not count quote line items", error: countErr.message });
@@ -137,11 +145,20 @@ async function verifyPurchaseOrder(supabase: any, poId: string, expected: {
   po_number: string;
   lineItemCount: number;
 }): Promise<VerificationResult> {
-  const { data: po, error } = await supabase
-    .from("purchase_orders")
-    .select("id, po_number, supplier_name, total, status")
-    .eq("id", poId)
-    .maybeSingle();
+  const [
+    { data: po, error },
+    { count, error: countErr },
+  ] = await Promise.all([
+    supabase
+      .from("purchase_orders")
+      .select("id, po_number, supplier_name, total, status")
+      .eq("id", poId)
+      .maybeSingle(),
+    supabase
+      .from("purchase_order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("purchase_order_id", poId),
+  ]);
 
   if (error || !po) {
     return verifyResult(false, { reason: "PO row not found after insert", error: error?.message });
@@ -150,11 +167,6 @@ async function verifyPurchaseOrder(supabase: any, poId: string, expected: {
   if (po.po_number !== expected.po_number) {
     return verifyResult(false, { reason: "po_number mismatch", expected: expected.po_number, actual: po.po_number });
   }
-
-  const { count, error: countErr } = await supabase
-    .from("purchase_order_items")
-    .select("id", { count: "exact", head: true })
-    .eq("purchase_order_id", poId);
 
   if (countErr) {
     return verifyResult(false, { reason: "Could not count PO line items", error: countErr.message });
@@ -176,11 +188,20 @@ async function verifyCreditNote(supabase: any, cnId: string, expected: {
   cn_number: string;
   lineItemCount: number;
 }): Promise<VerificationResult> {
-  const { data: cn, error } = await supabase
-    .from("credit_notes")
-    .select("id, cn_number, client_id, total, status")
-    .eq("id", cnId)
-    .maybeSingle();
+  const [
+    { data: cn, error },
+    { count, error: countErr },
+  ] = await Promise.all([
+    supabase
+      .from("credit_notes")
+      .select("id, cn_number, client_id, total, status")
+      .eq("id", cnId)
+      .maybeSingle(),
+    supabase
+      .from("credit_note_items")
+      .select("id", { count: "exact", head: true })
+      .eq("credit_note_id", cnId),
+  ]);
 
   if (error || !cn) {
     return verifyResult(false, { reason: "Credit note row not found after insert", error: error?.message });
@@ -189,11 +210,6 @@ async function verifyCreditNote(supabase: any, cnId: string, expected: {
   if (cn.cn_number !== expected.cn_number) {
     return verifyResult(false, { reason: "cn_number mismatch", expected: expected.cn_number, actual: cn.cn_number });
   }
-
-  const { count, error: countErr } = await supabase
-    .from("credit_note_items")
-    .select("id", { count: "exact", head: true })
-    .eq("credit_note_id", cnId);
 
   if (countErr) {
     return verifyResult(false, { reason: "Could not count CN line items", error: countErr.message });
@@ -2223,6 +2239,203 @@ const tools = [
           required: ["eventIdentifier"]
         },
       },
+      {
+        name: "createReminder",
+        description: "Creates a new reminder or follow-up. Use this when the user asks to set a reminder, be reminded about something, follow up on something, or says 'remind me to...', 'don't forget to...', 'I need to follow up on...'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "The reminder title — what needs to be reminded."
+            },
+            description: {
+              type: "string",
+              description: "Optional longer description with additional details."
+            },
+            reminderType: {
+              type: "string",
+              enum: ["task", "follow_up", "meeting", "call", "custom"],
+              description: "Type of reminder. Default to 'custom' if not specified."
+            },
+            reminderAt: {
+              type: "string",
+              description: "When the reminder should trigger in ISO 8601 format. Interpret natural language: 'tomorrow at 9am', 'next Friday at 2pm', 'in 30 minutes'."
+            },
+            clientName: {
+              type: "string",
+              description: "Client name to link the reminder to, if applicable. Will be looked up by name."
+            },
+            isRecurring: {
+              type: "boolean",
+              description: "Whether this is a recurring reminder. Default false."
+            },
+            recurringFrequency: {
+              type: "string",
+              enum: ["daily", "weekly", "monthly", "yearly"],
+              description: "If recurring, how often."
+            }
+          },
+          required: ["title", "reminderAt"]
+        },
+      },
+      {
+        name: "queryReminders",
+        description: "Queries reminders for a specific date range or searches for pending/due reminders. Use this when the user asks 'what reminders do I have', 'show my follow-ups', 'what's due today', 'what am I forgetting', or 'any overdue reminders'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+              enum: ["pending", "completed", "cancelled", "all"],
+              description: "Filter by status. Default to 'pending'."
+            },
+            startDate: {
+              type: "string",
+              description: "Start date in YYYY-MM-DD format."
+            },
+            endDate: {
+              type: "string",
+              description: "End date in YYYY-MM-DD format."
+            },
+            reminderType: {
+              type: "string",
+              enum: ["task", "follow_up", "meeting", "call", "custom"],
+              description: "Filter by reminder type."
+            },
+            clientName: {
+              type: "string",
+              description: "Filter reminders by client name."
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of reminders to return. Default 20."
+            }
+          },
+          required: []
+        },
+      },
+      {
+        name: "updateReminder",
+        description: "Updates an existing reminder. Use this when the user asks to change a reminder's time, reschedule it, or mark it complete.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            reminderIdentifier: {
+              type: "string",
+              description: "The reminder title that identifies the reminder. Will be searched by title."
+            },
+            title: {
+              type: "string",
+              description: "New reminder title."
+            },
+            description: {
+              type: "string",
+              description: "New description."
+            },
+            reminderAt: {
+              type: "string",
+              description: "New reminder time in ISO 8601 format."
+            },
+            reminderType: {
+              type: "string",
+              enum: ["task", "follow_up", "meeting", "call", "custom"],
+              description: "New reminder type."
+            },
+            status: {
+              type: "string",
+              enum: ["pending", "completed", "cancelled"],
+              description: "New status. Use 'completed' to mark as done, 'cancelled' to cancel."
+            },
+            snoozeMinutes: {
+              type: "number",
+              description: "Snooze the reminder by this many minutes."
+            }
+          },
+          required: ["reminderIdentifier"]
+        },
+      },
+      {
+        name: "queryAgenda",
+        description: "Queries today's agenda combining tasks due today, overdue tasks, calendar events, and pending reminders. Use this when the user asks 'What's on my agenda today?', 'What's my day look like?', 'Morning briefing', 'What do I have today?', or 'What do I need to do today?'.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            date: {
+              type: "string",
+              description: "Date to query in YYYY-MM-DD format. Defaults to today."
+            },
+            includeOverdue: {
+              type: "boolean",
+              description: "Include overdue items. Default true."
+            },
+            includeReminders: {
+              type: "boolean",
+              description: "Include reminders. Default true."
+            },
+            includeCalendar: {
+              type: "boolean",
+              description: "Include calendar events. Default true."
+            }
+          },
+          required: []
+        },
+      },
+      {
+        name: "convertNoteToTasks",
+        description: "Converts a note into one or more tasks. Use this when the user asks to 'convert this note to tasks', 'create tasks from this note', 'turn this note into a to-do list', or when the user mentions action items in a note that should become tasks.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            noteIdentifier: {
+              type: "string",
+              description: "The note title or content that identifies the note to convert. Search by title or content."
+            },
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+                  dueDate: { type: "string", description: "YYYY-MM-DD" },
+                  category: { type: "string" }
+                },
+                required: ["title"]
+              },
+              description: "List of tasks to create from the note. Parse action items and specific tasks mentioned in the note."
+            }
+          },
+          required: ["noteIdentifier", "tasks"]
+        },
+      },
+      {
+        name: "openWhatsApp",
+        description: "Opens a WhatsApp click-to-chat with a client or contact. Use this when the user says 'WhatsApp [client]', 'send a WhatsApp to [client]', 'message [client] on WhatsApp', or 'WhatsApp about the overdue invoice'. Does not execute server-side — the client handles opening the URL.",
+        parametersJsonSchema: {
+          type: "object",
+          properties: {
+            clientName: {
+              type: "string",
+              description: "The client company name to WhatsApp."
+            },
+            messageType: {
+              type: "string",
+              enum: ["general", "invoice", "quote", "payment_reminder"],
+              description: "Type of pre-filled message. 'general' opens with a greeting, 'invoice' includes invoice details, 'quote' includes quote details, 'payment_reminder' includes overdue info."
+            },
+            invoiceReference: {
+              type: "string",
+              description: "Invoice number if messageType is 'invoice' or 'payment_reminder' (e.g., 'INV-0001')."
+            },
+            quoteReference: {
+              type: "string",
+              description: "Quote number if messageType is 'quote' (e.g., 'QT-0001')."
+            }
+          },
+          required: ["clientName"],
+        },
+      },
     ],
   },
 ];
@@ -2233,7 +2446,7 @@ const tools = [
 
 // Tools that execute server-side and return data for a follow-up AI call
 // Tools that execute server-side and return data for a follow-up AI call
-const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice", "createTask", "updateTask", "completeTask", "queryTasks", "deleteTask", "createNote", "searchNotes", "logCallNote", "createCalendarEvent", "queryCalendarEvents", "updateCalendarEvent"]);
+const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice", "createTask", "updateTask", "completeTask", "queryTasks", "deleteTask", "createNote", "searchNotes", "logCallNote", "createCalendarEvent", "queryCalendarEvents", "updateCalendarEvent", "createReminder", "queryReminders", "updateReminder", "queryAgenda", "convertNoteToTasks"]);
 
 async function executeLogTrip(args: any): Promise<string> {
   const supabase = getSupabase();
@@ -2433,12 +2646,13 @@ async function executeQueryBusinessData(args: any): Promise<string> {
   try {
     switch (args.queryType) {
       case "revenue_summary": {
-        const { data: invoices } = await supabase
-          .from("invoices")
-          .select("total, amount_paid, balance_due, status, due_date")
-          .order("created_at", { ascending: false });
-
-        const { data: credits } = await supabase.from("credit_notes").select("total").neq("status", "Cancelled");
+        const [{ data: invoices }, { data: credits }] = await Promise.all([
+          supabase
+            .from("invoices")
+            .select("total, amount_paid, balance_due, status, due_date")
+            .order("created_at", { ascending: false }),
+          supabase.from("credit_notes").select("total").neq("status", "Cancelled"),
+        ]);
 
         const all = invoices || [];
         const allCredits = credits || [];
@@ -5994,6 +6208,574 @@ async function executeUpdateCalendarEvent(args: {
   }
 }
 
+async function executeCreateReminder(args: {
+  title: string;
+  description?: string;
+  reminderType?: string;
+  reminderAt: string;
+  clientName?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: string;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+    let clientId: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(1);
+      if (clients && clients.length > 0) {
+        clientId = clients[0].id;
+      }
+    }
+
+    const reminderAt = new Date(args.reminderAt);
+    if (isNaN(reminderAt.getTime())) {
+      return wrapWithActionResult(actionFailed({
+        action: "create_reminder",
+        targetType: "reminder",
+        toolUsed: "createReminder",
+        error: "Invalid reminder date/time format",
+        nextStep: "Please provide a valid date/time."
+      }));
+    }
+
+    const { data: reminder, error } = await supabase
+      .from("reminders")
+      .insert({
+        user_id: user.id,
+        title: args.title,
+        description: args.description || null,
+        reminder_type: args.reminderType || "custom",
+        reminder_at: reminderAt.toISOString(),
+        client_id: clientId,
+        is_recurring: args.isRecurring || false,
+        recurring_frequency: args.recurringFrequency || null,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "create_reminder",
+        targetType: "reminder",
+        toolUsed: "createReminder",
+        error: `Failed to create reminder: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    let message = `Reminder created: "${args.title}"`;
+    message += ` at ${reminderAt.toLocaleString()}`;
+    if (args.clientName) message += ` for ${args.clientName}`;
+    if (args.isRecurring) message += ` (${args.recurringFrequency})`;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "create_reminder",
+        targetType: "reminder",
+        targetReference: args.title,
+        toolUsed: "createReminder",
+        summary: message,
+        verified: true,
+      }),
+      {
+        reminder: {
+          id: reminder.id,
+          title: reminder.title,
+          reminder_at: reminder.reminder_at,
+          reminder_type: reminder.reminder_type,
+          status: reminder.status,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "create_reminder",
+      targetType: "reminder",
+      toolUsed: "createReminder",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeQueryReminders(args: {
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  reminderType?: string;
+  clientName?: string;
+  limit?: number;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+    let clientId: string | null = null;
+
+    if (args.clientName) {
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id")
+        .ilike("company_name", `%${args.clientName}%`)
+        .limit(1);
+      if (clients && clients.length > 0) {
+        clientId = clients[0].id;
+      }
+    }
+
+    const now = new Date().toISOString();
+    const today = new Date().toISOString().split("T")[0];
+
+    let query = supabase
+      .from("reminders")
+      .select("id, title, description, reminder_at, status, reminder_type, client_id, clients(company_name)")
+      .eq("user_id", user.id)
+      .order("reminder_at", { ascending: true })
+      .limit(args.limit || 20);
+
+    if (args.status && args.status !== "all") {
+      query = query.eq("status", args.status);
+    } else {
+      query = query.eq("status", "pending");
+    }
+
+    if (args.reminderType) {
+      query = query.eq("reminder_type", args.reminderType);
+    }
+    if (clientId) {
+      query = query.eq("client_id", clientId);
+    }
+
+    const { data: reminders, error } = await query;
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "query_reminders",
+        targetType: "reminder_query",
+        toolUsed: "queryReminders",
+        error: `Failed to query reminders: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    const pending = reminders?.filter(r => r.status === "pending" && r.reminder_at >= now) || [];
+    const overdue = reminders?.filter(r => r.status === "pending" && r.reminder_at < now) || [];
+
+    const formattedReminders = (reminders || []).map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      reminder_at: r.reminder_at,
+      status: r.status,
+      reminder_type: r.reminder_type,
+      client_name: r.clients?.company_name || null,
+      is_overdue: r.status === "pending" && r.reminder_at < now,
+    }));
+
+    const filterDesc = args.clientName
+      ? `for client "${args.clientName}"`
+      : args.reminderType
+        ? `of type "${args.reminderType}"`
+        : args.status && args.status !== "all"
+          ? `with status "${args.status}"`
+          : "";
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "query_reminders",
+        targetType: "reminder_query",
+        targetReference: args.status || "pending",
+        toolUsed: "queryReminders",
+        summary: `Found ${formattedReminders.length} reminders (${pending.length} pending, ${overdue.length} overdue) ${filterDesc}`,
+        verified: true,
+      }),
+      {
+        reminders: formattedReminders,
+        count: formattedReminders.length,
+        pending_count: pending.length,
+        overdue_count: overdue.length,
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "query_reminders",
+      targetType: "reminder_query",
+      toolUsed: "queryReminders",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeUpdateReminder(args: {
+  reminderIdentifier: string;
+  title?: string;
+  description?: string;
+  reminderAt?: string;
+  reminderType?: string;
+  status?: string;
+  snoozeMinutes?: number;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+
+    const { data: existing } = await supabase
+      .from("reminders")
+      .select("id, title")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.reminderIdentifier}%`)
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_reminder",
+        targetType: "reminder",
+        toolUsed: "updateReminder",
+        error: `No reminder found matching "${args.reminderIdentifier}"`,
+        nextStep: "Try using the exact reminder title or check the spelling."
+      }));
+    }
+
+    const reminderId = existing[0].id;
+    const updateData: any = {};
+
+    if (args.title) updateData.title = args.title;
+    if (args.description !== undefined) updateData.description = args.description;
+    if (args.reminderAt) {
+      const reminderAt = new Date(args.reminderAt);
+      if (!isNaN(reminderAt.getTime())) {
+        updateData.reminder_at = reminderAt.toISOString();
+      }
+    }
+    if (args.reminderType) updateData.reminder_type = args.reminderType;
+    if (args.status) {
+      updateData.status = args.status;
+      if (args.status === "completed") {
+        updateData.completed_at = new Date().toISOString();
+      }
+    }
+    if (args.snoozeMinutes) {
+      const snoozeTime = new Date(Date.now() + args.snoozeMinutes * 60 * 1000);
+      updateData.snoozed_until = snoozeTime.toISOString();
+    }
+
+    const { data: reminder, error } = await supabase
+      .from("reminders")
+      .update(updateData)
+      .eq("id", reminderId)
+      .select()
+      .single();
+
+    if (error) {
+      return wrapWithActionResult(actionFailed({
+        action: "update_reminder",
+        targetType: "reminder",
+        toolUsed: "updateReminder",
+        error: `Failed to update reminder: ${error.message}`,
+        nextStep: "Please try again."
+      }));
+    }
+
+    let actionDesc = "updated";
+    if (args.status === "completed") actionDesc = "completed";
+    else if (args.status === "cancelled") actionDesc = "cancelled";
+    else if (args.snoozeMinutes) actionDesc = `snoozed for ${args.snoozeMinutes} minutes`;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "update_reminder",
+        targetType: "reminder",
+        targetReference: reminder.title,
+        toolUsed: "updateReminder",
+        summary: `Reminder "${reminder.title}" ${actionDesc}`,
+        verified: true,
+      }),
+      {
+        reminder: {
+          id: reminder.id,
+          title: reminder.title,
+          status: reminder.status,
+          reminder_at: reminder.reminder_at,
+        },
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "update_reminder",
+      targetType: "reminder",
+      toolUsed: "updateReminder",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeQueryAgenda(args: {
+  date?: string;
+  includeOverdue?: boolean;
+  includeReminders?: boolean;
+  includeCalendar?: boolean;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+    const targetDate = args.date ? new Date(args.date) : new Date();
+    const today = targetDate.toISOString().split("T")[0];
+    const tomorrow = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    
+    const result: any = {
+      date: today,
+      tasks: { today: [], overdue: [] },
+      calendar_events: [],
+      reminders: { pending: [], overdue: [] },
+    };
+
+    const includeOverdue = args.includeOverdue !== false;
+    const includeReminders = args.includeReminders !== false;
+    const includeCalendar = args.includeCalendar !== false;
+
+    if (args.includeOverdue !== false) {
+      const { data: overdueTasks } = await supabase
+        .from("tasks")
+        .select("id, title, status, priority, due_date, client:clients(company_name)")
+        .eq("user_id", user.id)
+        .eq("status", "todo")
+        .lt("due_date", today)
+        .order("due_date", { ascending: false })
+        .limit(10);
+      
+      if (overdueTasks) {
+        result.tasks.overdue = overdueTasks.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          due_date: t.due_date,
+          priority: t.priority,
+          client_name: t.clients?.company_name || null,
+        }));
+      }
+    }
+
+    const { data: todayTasks } = await supabase
+      .from("tasks")
+      .select("id, title, status, priority, due_date, client:clients(company_name)")
+      .eq("user_id", user.id)
+      .eq("status", "todo")
+      .eq("due_date", today)
+      .order("priority", { ascending: false })
+      .limit(20);
+
+    if (todayTasks) {
+      result.tasks.today = todayTasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        due_date: t.due_date,
+        priority: t.priority,
+        client_name: t.clients?.company_name || null,
+      }));
+    }
+
+    if (includeCalendar) {
+      const { data: events } = await supabase
+        .from("calendar_events")
+        .select("id, title, start_date, start_time, event_type, location, client:clients(company_name)")
+        .eq("user_id", user.id)
+        .eq("start_date", today)
+        .eq("status", "scheduled")
+        .order("start_time", { ascending: true });
+
+      if (events) {
+        result.calendar_events = events.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          start_time: e.start_time,
+          event_type: e.event_type,
+          location: e.location,
+          client_name: e.clients?.company_name || null,
+        }));
+      }
+    }
+
+    if (includeReminders) {
+      const now = new Date().toISOString();
+      
+      const { data: pendingReminders } = await supabase
+        .from("reminders")
+        .select("id, title, reminder_at, reminder_type, client:clients(company_name)")
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .gte("reminder_at", today + "T00:00:00")
+        .lt("reminder_at", tomorrow + "T00:00:00")
+        .order("reminder_at", { ascending: true });
+
+      if (pendingReminders) {
+        result.reminders.pending = pendingReminders.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          reminder_at: r.reminder_at,
+          reminder_type: r.reminder_type,
+          client_name: r.clients?.company_name || null,
+        }));
+      }
+
+      if (includeOverdue) {
+        const { data: overdueReminders } = await supabase
+          .from("reminders")
+          .select("id, title, reminder_at, reminder_type, client:clients(company_name)")
+          .eq("user_id", user.id)
+          .eq("status", "pending")
+          .lt("reminder_at", now)
+          .order("reminder_at", { ascending: false })
+          .limit(10);
+
+        if (overdueReminders) {
+          result.reminders.overdue = overdueReminders.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            reminder_at: r.reminder_at,
+            reminder_type: r.reminder_type,
+            client_name: r.clients?.company_name || null,
+          }));
+        }
+      }
+    }
+
+    const totalItems = result.tasks.today.length + result.tasks.overdue.length + result.calendar_events.length + result.reminders.pending.length + result.reminders.overdue.length;
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "query_agenda",
+        targetType: "agenda",
+        targetReference: today,
+        toolUsed: "queryAgenda",
+        summary: `Found ${totalItems} items on your agenda for ${today}: ${result.tasks.today.length} tasks due today, ${result.tasks.overdue.length} overdue, ${result.calendar_events.length} events, ${result.reminders.pending.length} reminders`,
+        verified: true,
+      }),
+      result
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "query_agenda",
+      targetType: "agenda",
+      toolUsed: "queryAgenda",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
+async function executeConvertNoteToTasks(args: {
+  noteIdentifier: string;
+  tasks: Array<{
+    title: string;
+    priority?: string;
+    dueDate?: string;
+    category?: string;
+  }>;
+}, user: { id: string }) {
+  try {
+    const supabase = getSupabase();
+
+    let noteData: any = null;
+
+    const { data: noteByTitle } = await supabase
+      .from("notes")
+      .select("id, title, content, client_id, note_type")
+      .eq("user_id", user.id)
+      .ilike("title", `%${args.noteIdentifier}%`)
+      .limit(1);
+
+    if (noteByTitle && noteByTitle.length > 0) {
+      noteData = noteByTitle[0];
+    } else {
+      const { data: noteByContent } = await supabase
+        .from("notes")
+        .select("id, title, content, client_id, note_type")
+        .eq("user_id", user.id)
+        .ilike("content", `%${args.noteIdentifier}%`)
+        .limit(1);
+      
+      if (noteByContent && noteByContent.length > 0) {
+        noteData = noteByContent[0];
+      }
+    }
+
+    if (!noteData) {
+      return wrapWithActionResult(actionFailed({
+        action: "convert_note_to_tasks",
+        targetType: "note",
+        toolUsed: "convertNoteToTasks",
+        error: `No note found matching "${args.noteIdentifier}"`,
+        nextStep: "Try using the exact note title or search for a keyword in the note content."
+      }));
+    }
+
+    const createdTasks: any[] = [];
+
+    for (const taskInput of args.tasks) {
+      const { data: task, error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: user.id,
+          title: taskInput.title,
+          status: "todo",
+          priority: taskInput.priority || "medium",
+          due_date: taskInput.dueDate || null,
+          category: taskInput.category || null,
+          client_id: noteData.client_id,
+          description: `Created from note: ${noteData.title}`,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return wrapWithActionResult(actionFailed({
+          action: "convert_note_to_tasks",
+          targetType: "task",
+          toolUsed: "convertNoteToTasks",
+          error: `Failed to create task "${taskInput.title}": ${error.message}`,
+          nextStep: "Please try again."
+        }));
+      }
+
+      createdTasks.push({
+        id: task.id,
+        title: task.title,
+        priority: task.priority,
+        due_date: task.due_date,
+      });
+    }
+
+    return wrapWithActionResult(
+      actionSuccess({
+        action: "convert_note_to_tasks",
+        targetType: "note",
+        targetReference: noteData.title,
+        toolUsed: "convertNoteToTasks",
+        summary: `Created ${createdTasks.length} task(s) from note "${noteData.title}"`,
+        verified: true,
+      }),
+      {
+        note: {
+          id: noteData.id,
+          title: noteData.title,
+        },
+        tasks: createdTasks,
+      }
+    );
+  } catch (err: any) {
+    return wrapWithActionResult(actionFailed({
+      action: "convert_note_to_tasks",
+      targetType: "note",
+      toolUsed: "convertNoteToTasks",
+      error: `Unexpected error: ${err.message}`,
+      nextStep: "Please try again."
+    }));
+  }
+}
+
 // Generic status transition executor using verified rules from lib/office/status-actions
 async function executeDocumentTransition(args: {
   documentType: "invoice" | "quote" | "purchase_order" | "credit_note";
@@ -6041,7 +6823,7 @@ async function executeDocumentTransition(args: {
     const currentStatus = doc.status;
 
     // 2. Validate transition
-    const validation = validateTransition(documentType, currentStatus, action);
+    const validation = await validateTransition(documentType, currentStatus, action);
     if (!validation.success) {
       return wrapWithActionResult(
         actionFailed({
@@ -6685,6 +7467,11 @@ export async function POST(req: NextRequest) {
               else if (toolName === "createCalendarEvent") toolResult = await executeCreateCalendarEvent(toolArgs, user);
               else if (toolName === "queryCalendarEvents") toolResult = await executeQueryCalendarEvents(toolArgs, user);
               else if (toolName === "updateCalendarEvent") toolResult = await executeUpdateCalendarEvent(toolArgs, user);
+              else if (toolName === "createReminder") toolResult = await executeCreateReminder(toolArgs, user);
+              else if (toolName === "queryReminders") toolResult = await executeQueryReminders(toolArgs, user);
+              else if (toolName === "updateReminder") toolResult = await executeUpdateReminder(toolArgs, user);
+              else if (toolName === "queryAgenda") toolResult = await executeQueryAgenda(toolArgs, user);
+              else if (toolName === "convertNoteToTasks") toolResult = await executeConvertNoteToTasks(toolArgs, user);
               else toolResult = wrapWithActionResult(
                 actionUnsupported({
                   action: toolName,
