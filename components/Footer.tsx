@@ -232,12 +232,6 @@ export default function Footer() {
               >
                 Terms of Service
               </Link>
-              <Link
-                href="#"
-                className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors"
-              >
-                Site Map
-              </Link>
             </div>
           </div>
         </div>

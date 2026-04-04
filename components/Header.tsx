@@ -100,7 +100,7 @@ export default function Header() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center text-[10px] md:text-xs h-full">
-          <div className="flex items-center space-x-4 md:space-x-6 -ml-[10%]">
+          <div className="flex items-center space-x-4 md:space-x-6">
             <a href="tel:+27725522110" className="flex items-center hover:text-orange-400 transition-colors">
               <Phone size={12} className="mr-1.5 text-orange-400" />
               <span className="hidden xs:inline">24/7 Emergency Support</span>
@@ -115,7 +115,7 @@ export default function Header() {
               91 Sir George Grey St, Horison, Roodepoort, 1724
             </div>
           </div>
-          <div className="flex items-center space-x-3 md:space-x-4 ml-auto -mr-[7%]">
+          <div className="flex items-center space-x-3 md:space-x-4 ml-auto">
             <div className="flex items-center space-x-2 md:space-x-3 border-r border-white/20 pr-3 md:pr-4">
               <a href="https://www.linkedin.com/company/touch-teqniques-engineering-services/" target="_blank" rel="noopener noreferrer" className="hover:text-orange-400 transition-colors">
                 LinkedIn
@@ -127,19 +127,15 @@ export default function Header() {
                 X
               </a>
             </div>
-            <div className="flex items-center cursor-pointer hover:text-orange-400 transition-colors">
-              <span className="mr-1 uppercase tracking-wider">EN</span>
-              <ChevronDown size={12} />
-            </div>
           </div>
         </div>
       </div>
 
       {/* Main Navigation */}
       <nav className={`transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-3' : 'bg-white/90 backdrop-blur-sm py-4'} border-b border-slate-200 h-20 md:h-24`}>
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex justify-between items-center h-full">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-full">
+          {/* LEFT — Logo */}
+          <Link href="/" className="flex items-center space-x-2 group flex-shrink-0 mr-8 -ml-[6%]">
             <Image 
               src="/TT-logo-orange-trans.png" 
               alt="Touch Teq Engineering" 
@@ -154,8 +150,8 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden lg:flex items-center gap-8 ml-12">
+          {/* CENTER — Desktop Nav Links */}
+          <div className="hidden lg:flex items-center gap-8 xl:gap-10 mx-auto">
             {navItems.map((item) => (
               <div key={item.name} className="relative group/item flex items-center h-full">
                 {item.dropdown ? (
@@ -212,21 +208,23 @@ export default function Header() {
                 )}
               </div>
             ))}
-            <div className="flex items-center space-x-4 ml-8">
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors flex-shrink-0"
-              >
-                <Search size={18} />
-              </motion.button>
-              <Link 
-                href="/contact#request-quote" 
-                className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 whitespace-nowrap flex-shrink-0"
-              >
-                Request a Consultation
-              </Link>
-            </div>
+          </div>
+
+          {/* RIGHT — Search + CTA */}
+          <div className="hidden lg:flex items-center space-x-4 ml-8 flex-shrink-0">
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors flex-shrink-0"
+            >
+              <Search size={18} />
+            </motion.button>
+            <Link 
+              href="/contact#request-quote" 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 whitespace-nowrap flex-shrink-0"
+            >
+              Request a Consultation
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}

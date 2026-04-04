@@ -3,7 +3,8 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import LenisProvider from '@/components/LenisProvider';
 import CustomCursor from '@/components/CustomCursor';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
+import ConditionalGA4 from '@/components/ConditionalGA4';
 import JsonLd from '@/components/seo/JsonLd';
 
 const inter = Inter({
@@ -189,10 +190,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <LenisProvider>
           <CustomCursor />
           {children}
+          <CookieConsentBanner />
         </LenisProvider>
-        {process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID} />
-        )}
+        <ConditionalGA4 />
       </body>
     </html>
   );
