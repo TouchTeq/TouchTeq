@@ -1014,9 +1014,9 @@ export default function ContactPage() {
       <section className="py-24 bg-[#1A2B4C] relative overflow-hidden">
         {/* Animated Background Element */}
         <motion.div 
-          animate={{ opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.1),transparent_70%)]"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.15),transparent_70%)]"
         ></motion.div>
         
         <div className="container mx-auto px-4 md:px-8 relative z-10">
@@ -1043,17 +1043,17 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-12">
                   <div className="space-y-2">
                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">EMERGENCY LINE</p>
-                    <a href="tel:+27725522110" className="text-white text-2xl font-black hover:text-orange-500 transition-colors">+27 72 552 2110</a>
+                    <a href="tel:+27725522110" className="text-white text-[36px] font-black hover:text-orange-500 transition-colors">+27 72 552 2110</a>
                   </div>
                   <div className="space-y-2">
                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">AVAILABILITY</p>
-                    <p className="text-orange-500 text-2xl font-black">24/7/365</p>
+                    <p className="text-orange-500 text-[36px] font-black">24/7/365</p>
                   </div>
                 </div>
               </div>
               
               <div className="w-full lg:w-1/3 aspect-square relative">
-                <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-[100px] animate-pulse"></div>
+                <div className="absolute inset-0 bg-orange-500/40 rounded-full blur-[100px]" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
                 <div className="relative w-full h-full border border-orange-500/20 rounded-[3rem] flex items-center justify-center bg-white/5 backdrop-blur-xl">
                   <div className="text-center p-12">
                     <ShieldCheck size={80} className="text-orange-500 mx-auto mb-8" />
