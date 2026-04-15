@@ -100,7 +100,7 @@ export default function QuotesTableClient({ quotes }: Props) {
         ...rows.map((q) =>
           [
             csvEscape(q.quote_number),
-            csvEscape(q.clients?.company_name),
+            csvEscape(q.clients?.company_name ?? q.quick_client_name ?? ''),
             csvEscape(q.issue_date),
             csvEscape(q.expiry_date),
             csvEscape(q.status),
@@ -280,14 +280,20 @@ export default function QuotesTableClient({ quotes }: Props) {
                       </Link>
                     </td>
                     <td className="px-6 py-5">
-                      <Link
-                        href={`/office/clients/${quote.client_id}`}
-                        className="text-slate-200 text-sm font-bold hover:text-orange-400 transition-colors flex items-center gap-2"
-                      >
-                        {quote.clients?.company_name}
-                        <ExternalLink size={12} className="opacity-0 group-hover:opacity-100" />
-                      </Link>
-                      <p className="text-slate-500 text-xs">{quote.clients?.contact_person}</p>
+                      <>
+                        <Link
+                          href={quote.client_id ? `/office/clients/${quote.client_id}` : '#'}
+                          className={`text-slate-200 text-sm font-bold hover:text-orange-400 transition-colors flex items-center gap-2 ${!quote.client_id ? 'cursor-default' : ''}`}
+                        >
+                          {quote.clients?.company_name ?? quote.quick_client_name ?? '—'}
+                          <ExternalLink size={12} className="opacity-0 group-hover:opacity-100" />
+                        </Link>
+                        {(quote.clients?.contact_person || (quote.quick_client_name && quote.quick_client_email)) && (
+                          <p className="text-slate-500 text-xs">
+                            {quote.clients?.contact_person ?? (quote.quick_client_email || '')}
+                          </p>
+                        )}
+                      </>
                     </td>
                     <td className="px-6 py-5 text-slate-400 text-xs font-medium">
                       {format(new Date(quote.issue_date), 'dd MMM yyyy')}

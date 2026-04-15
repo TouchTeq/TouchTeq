@@ -313,7 +313,16 @@ When you call a write tool (draftInvoice, draftQuote, draftCreditNote, recordPay
 1. If an exact match is found, the action proceeds automatically.
 2. If a single fuzzy match is found (e.g. user said "Sasol" and only "Sasol Secunda Pty Ltd" exists), the action proceeds automatically.
 3. If MULTIPLE matches are found, the tool returns a "need_info" status with a list of candidates. You MUST present the options to the user and ask them to clarify. NEVER silently pick the first match.
-4. If NO match is found, the tool returns a "failed" status. Inform the user and suggest creating the record first.
+4. If NO match is found for draftInvoice, the system uses **Quick Client mode** — the invoice is created with the provided name but no client database link. The summary will include a note asking if the user wants to save the client. Do NOT block or refuse to create the invoice.
+5. If NO match is found for other tools (draftQuote, draftCreditNote, etc.), the tool returns a "failed" status. Inform the user and suggest creating the client first.
+
+### Quick Client Mode (Invoices)
+When creating an invoice via draftInvoice and the client is NOT found in the database:
+- The invoice is still created successfully using the name provided — it is NOT blocked.
+- The system stores the client name in internal notes as a "Quick Client".
+- Your response MUST include: "Client not found in database — creating invoice with quick client details. Would you like me to save [name] to your client database?"
+- If the user says yes, call createClient() to add them properly.
+- Purchase orders always work with any supplier name — they do not require a database match.
 
 Example when disambiguation is needed:
 "I found 3 clients matching 'Sasol':

@@ -15,7 +15,8 @@ import {
   X,
   Search,
   Lock,
-  ChevronDown
+  ChevronDown,
+  Link2
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -23,15 +24,57 @@ import DraftActionDock from '@/components/office/DraftActionDock';
 import { useAiDraft } from '@/components/office/AiDraftContext';
 import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { createClient } from '@/lib/supabase/client';
 
 export default function EditInvoiceClient({ initialInvoice, initialLineItems, initialClients }: any) {
   const router = useRouter();
+  const supabase = createClient();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Client search modal
+  const [showClientSearch, setShowClientSearch] = useState(false);
+  const [clientSearchResults, setClientSearchResults] = useState<any[]>([]);
+  const [clientSearchLoading, setClientSearchLoading] = useState(false);
+
+  // Parse quick client data from initial invoice or from internal_notes workaround pattern
+  const parseQuickClientFromNotes = (notes: string) => {
+    const match = notes.match(/Quick Client:\s*(.+?),\s*Contact:\s*(.+?),\s*Address:\s*(.+)/);
+    if (match) {
+      return {
+        quick_client_name: match[1].trim(),
+        quick_client_email: match[2].trim(),
+        quick_client_address: match[3].trim().replace(/\s*\(Not saved to client database\)/, '').trim()
+      };
+    }
+    return null;
+  };
+
+  // Check for quick client in internal_notes and extract it
+  const existingNotesQuickClient = parseQuickClientFromNotes(initialInvoice.internal_notes || '');
+  const hasQuickClientInNotes = !!existingNotesQuickClient;
+
+  const initialQuickClientName = initialInvoice.quick_client_name || existingNotesQuickClient?.quick_client_name || '';
+  const initialQuickClientEmail = initialInvoice.quick_client_email || existingNotesQuickClient?.quick_client_email || '';
+  const initialQuickClientAddress = initialInvoice.quick_client_address || existingNotesQuickClient?.quick_client_address || '';
+
+  const isQuickClient = !initialInvoice.client_id && (initialQuickClientName || '');
+  const [useQuickClient, setUseQuickClient] = useState(isQuickClient);
   const [selectedClient, setSelectedClient] = useState(initialInvoice.clients);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [quickClientData, setQuickClientData] = useState({
+    quick_client_name: initialQuickClientName,
+    quick_client_email: initialQuickClientEmail,
+    quick_client_address: initialQuickClientAddress
+  });
+
+  // Store original internal_notes to detect if we need to clean it up
+  const [originalInternalNotes, setOriginalInternalNotes] = useState(initialInvoice.internal_notes || '');
+
+  const displayName = selectedClient?.company_name ?? quickClientData.quick_client_name ?? 'Quick Client';
+
   const [formData, setFormData] = useState({
     issue_date: initialInvoice.issue_date,
     due_date: initialInvoice.due_date,
@@ -120,6 +163,45 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
     }
   }, [documentData]);
 
+  // Client search function
+  const searchClients = useCallback(async (query: string) => {
+    if (!query || query.trim().length < 2) {
+      setClientSearchResults([]);
+      return;
+    }
+    setClientSearchLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, company_name, contact_person, email, phone')
+        .ilike('company_name', `%${query}%`)
+        .order('company_name')
+        .limit(20);
+      
+      if (error) throw error;
+      setClientSearchResults(data || []);
+    } catch (err) {
+      console.error('Client search error:', err);
+      setClientSearchResults([]);
+    } finally {
+      setClientSearchLoading(false);
+    }
+  }, [supabase]);
+
+  const handleLinkClient = (client: any) => {
+    setSelectedClient(client);
+    setUseQuickClient(false);
+    setQuickClientData({ quick_client_name: '', quick_client_email: '', quick_client_address: '' });
+    setShowClientSearch(false);
+    setClientSearchResults([]);
+  };
+
+  const handleUnlinkClient = () => {
+    setSelectedClient(null);
+    setUseQuickClient(true);
+    setShowClientSearch(false);
+  };
+
   const subtotal = useMemo(() => {
     return lineItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
   }, [lineItems]);
@@ -154,6 +236,13 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
     updateField(field, value);
   };
 
+  // Clean internal_notes when saving - remove "Quick Client:" pattern
+  const cleanInternalNotes = (notes: string) => {
+    if (!notes) return '';
+    // Remove the "Quick Client: Name, Contact: X, Address: Y (Not saved to client database)" pattern
+    return notes.replace(/Quick Client:\s*[^,]+,\s*Contact:\s*[^,]+,\s*Address:\s*[^(]+\([^)]+\)\s*/g, '').trim();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -167,18 +256,24 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
         qty_type: item.qty_type || 'qty',
       }));
 
+      // Clean internal_notes if it contains quick client workaround pattern
+      const cleanedInternalNotes = cleanInternalNotes(formData.internal_notes);
+
       const response = await fetch(`/api/office/invoices/${initialInvoice.id}/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: selectedClient.id,
+          client_id: selectedClient?.id ?? null,
           issue_date: formData.issue_date,
           due_date: formData.due_date,
           status: formData.status,
           notes: formData.notes,
-          internal_notes: formData.internal_notes,
+          internal_notes: cleanedInternalNotes,
           reference: formData.reference,
           line_items: itemsJson,
+          quick_client_name: useQuickClient ? quickClientData.quick_client_name : null,
+          quick_client_email: useQuickClient ? quickClientData.quick_client_email : null,
+          quick_client_address: useQuickClient ? quickClientData.quick_client_address : null,
         }),
       });
 
@@ -259,19 +354,90 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
               <Building2 className="text-orange-500" size={18} />
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Client Details</h2>
             </div>
-            <div className="p-8">
-               <div className="flex items-center justify-between bg-[#0B0F19] p-6 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center gap-6">
-                    <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 italic font-black text-xl">
-                      {selectedClient.company_name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-black text-white uppercase tracking-tight text-lg">{selectedClient.company_name}</p>
-                      <p className="text-slate-400 font-bold text-xs mt-1">{selectedClient.contact_person} • {selectedClient.email}</p>
-                    </div>
-                  </div>
-                </div>
-            </div>
+<div className="p-8">
+               {useQuickClient || !selectedClient ? (
+                 <div className="space-y-6">
+                   <div className="flex items-center justify-between bg-[#0B0F19] p-6 rounded-lg border border-orange-500/20">
+                     <div className="flex items-center gap-6">
+                       <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 italic font-black text-xl">
+                         {(displayName || '?').charAt(0)}
+                       </div>
+                       <div>
+                         <p className="font-black text-white uppercase tracking-tight text-lg">
+                           {displayName}
+                         </p>
+                         <p className="text-slate-500 font-bold text-xs mt-1 uppercase tracking-widest">Quick Client — no database record</p>
+                       </div>
+                     </div>
+<button
+                        type="button"
+                        onClick={() => {
+                          if (selectedClient) {
+                            // Already linked - show option to unlink or change
+                            setShowClientSearch(true);
+                            searchClients('');
+                          } else {
+                            setShowClientSearch(true);
+                            searchClients('');
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-orange-500 hover:text-white border border-orange-500/30 hover:bg-orange-500/20 rounded transition-all"
+                      >
+                        <Link2 size={14} /> Link to existing client
+                      </button>
+                   </div>
+
+                   <div className="space-y-4">
+                     <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Client Name (Quick Client)</label>
+                       <input
+                         type="text"
+                         value={quickClientData.quick_client_name}
+                         onChange={(e) => setQuickClientData(prev => ({ ...prev, quick_client_name: e.target.value }))}
+                         className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-sm font-medium outline-none focus:border-orange-500"
+                         placeholder="Enter client name"
+                       />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email (Optional)</label>
+                         <input
+                           type="email"
+                           value={quickClientData.quick_client_email}
+                           onChange={(e) => setQuickClientData(prev => ({ ...prev, quick_client_email: e.target.value }))}
+                           className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-sm font-medium outline-none focus:border-orange-500"
+                           placeholder="client@email.com"
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Address (Optional)</label>
+                         <input
+                           type="text"
+                           value={quickClientData.quick_client_address}
+                           onChange={(e) => setQuickClientData(prev => ({ ...prev, quick_client_address: e.target.value }))}
+                           className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-sm font-medium outline-none focus:border-orange-500"
+                           placeholder="Client address"
+                         />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               ) : (
+                 <div className="flex items-center justify-between bg-[#0B0F19] p-6 rounded-lg border border-orange-500/20">
+                   <div className="flex items-center gap-6">
+                     <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 italic font-black text-xl">
+                       {(selectedClient?.company_name ?? '?').charAt(0)}
+                     </div>
+                     <div>
+                       <p className="font-black text-white uppercase tracking-tight text-lg">
+                         {selectedClient.company_name}
+                       </p>
+                       <p className="text-slate-400 font-bold text-xs mt-1">{selectedClient.contact_person} • {selectedClient.email}</p>
+                     </div>
+                   </div>
+                 </div>
+               )}
+             </div>
           </div>
 
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
@@ -431,6 +597,76 @@ export default function EditInvoiceClient({ initialInvoice, initialLineItems, in
           {error && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center">{error}</p>}
         </div>
       </form>
+
+      {/* Client Search Modal */}
+      {showClientSearch && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowClientSearch(false)} />
+          <div className="bg-[#151B28] border border-slate-800 w-full max-w-lg rounded-xl overflow-hidden shadow-2xl relative z-10">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+              <h3 className="text-white font-black uppercase tracking-widest text-xs">Link to Existing Client</h3>
+              <button onClick={() => setShowClientSearch(false)} className="text-slate-500 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="relative">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Search by company name..."
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    searchClients(e.target.value);
+                  }}
+                  className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 pl-12 text-white text-sm font-medium outline-none focus:border-orange-500"
+                />
+              </div>
+              
+              {selectedClient && (
+                <div className="flex items-center justify-between bg-[#0B0F19] p-4 rounded-lg border border-green-500/30">
+                  <div>
+                    <p className="text-white font-bold text-sm">{selectedClient.company_name}</p>
+                    <p className="text-slate-500 text-xs">{selectedClient.contact_person}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleUnlinkClient}
+                    className="px-3 py-1 text-xs font-black uppercase text-red-500 hover:text-red-400"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              )}
+
+              <div className="max-h-80 overflow-y-auto space-y-2">
+                {clientSearchLoading ? (
+                  <div className="text-center py-8">
+                    <div className="border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin w-6 h-6 mx-auto" />
+                  </div>
+                ) : clientSearchResults.length > 0 ? (
+                  clientSearchResults.map((client) => (
+                    <button
+                      key={client.id}
+                      type="button"
+                      onClick={() => handleLinkClient(client)}
+                      className="w-full text-left bg-[#0B0F19] p-4 rounded-lg border border-slate-800 hover:border-orange-500/50 transition-all"
+                    >
+                      <p className="text-white font-bold text-sm">{client.company_name}</p>
+                      <p className="text-slate-500 text-xs">{client.contact_person} • {client.email}</p>
+                    </button>
+                  ))
+                ) : searchTerm.length >= 2 ? (
+                  <p className="text-slate-500 text-xs text-center py-4">No clients found</p>
+                ) : (
+                  <p className="text-slate-500 text-xs text-center py-4">Type to search clients</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DraftActionDock
         backHref={`/office/invoices/${initialInvoice.id}`}

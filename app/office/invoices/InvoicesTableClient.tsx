@@ -111,7 +111,7 @@ export default function InvoicesTableClient({ invoices }: Props) {
         ...rows.map((inv) =>
           [
             csvEscape(inv.invoice_number),
-            csvEscape(inv.clients?.company_name),
+            csvEscape(inv.clients?.company_name ?? inv.quick_client_name ?? ''),
             csvEscape(inv.issue_date),
             csvEscape(inv.due_date),
             csvEscape(inv.status),
@@ -302,13 +302,19 @@ export default function InvoicesTableClient({ invoices }: Props) {
                       {inv.status === 'Paid' && <div className="mt-1 h-0.5 w-8 bg-green-500/50 rounded-full" />}
                     </td>
                     <td className="px-6 py-5">
-                      <Link
-                        href={`/office/clients/${inv.client_id}`}
-                        className="text-slate-200 text-sm font-bold hover:text-orange-400 transition-colors flex items-center gap-2"
-                      >
-                        {inv.clients?.company_name}
-                      </Link>
-                      <p className="text-slate-500 text-[10px] font-medium mt-0.5">{inv.clients?.contact_person}</p>
+                      <>
+                        <Link
+                          href={inv.client_id ? `/office/clients/${inv.client_id}` : '#'}
+                          className={`text-slate-200 text-sm font-bold hover:text-orange-400 transition-colors flex items-center gap-2 ${!inv.client_id ? 'cursor-default' : ''}`}
+                        >
+                          {inv.clients?.company_name ?? inv.quick_client_name ?? '—'}
+                        </Link>
+                        {(inv.clients?.contact_person || (inv.quick_client_name && inv.quick_client_email)) && (
+                          <p className="text-slate-500 text-[10px] font-medium mt-0.5">
+                            {inv.clients?.contact_person ?? (inv.quick_client_email || '')}
+                          </p>
+                        )}
+                      </>
                     </td>
                     <td className="px-6 py-5 space-y-1">
                       <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">

@@ -64,4 +64,4 @@ False alarms in optical flame detectors are rarely random. They follow predictab
 
 The fixes are usually straightforward once you identify the root cause. The harder part is building the maintenance records and alarm review discipline to catch problems early, before they become habitual.
 
-*This article is a general technical overview. Detector selection, placement, and configuration should be carried out by qualified fire and gas engineers with site-specific knowledge.*
+*This article is a general overview for plant operators and maintenance personnel. For site-specific flame detector selection, placement optimisation, or false alarm diagnostic support, consult a qualified fire and gas engineer with relevant process industry experience.*

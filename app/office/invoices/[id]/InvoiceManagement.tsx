@@ -64,6 +64,15 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
 
     (async () => {
       try {
+        if (!invoice.client_id) {
+          if (!cancelled) {
+            setRecipientEmail(invoice.quick_client_email || null);
+            setRecipientName(invoice.quick_client_name || 'Quick Client');
+            setRecipientMatched('none');
+          }
+          return;
+        }
+
         const { data } = await supabase
           .from('client_contacts')
           .select('contact_type, full_name, email, is_primary')
@@ -80,8 +89,8 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
         }
       } catch {
         if (!cancelled) {
-          setRecipientEmail(invoice.clients?.email || null);
-          setRecipientName(invoice.clients?.contact_person || null);
+          setRecipientEmail(invoice.clients?.email || invoice.quick_client_email || null);
+          setRecipientName(invoice.clients?.contact_person || invoice.quick_client_name || null);
           setRecipientMatched('none');
         }
       }
@@ -109,14 +118,18 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
     }).format(val).replace('ZAR', 'R');
   };
 
-  const handleDownloadPDF = async () => {
-    setLoading('pdf');
-    try {
-      const blob = await pdf(<InvoicePDF invoice={invoice} lineItems={lineItems} businessProfile={businessProfile} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `TouchTeq-${invoice.invoice_number}-${invoice.clients.company_name.replace(/\s+/g, '')}.pdf`;
+  const clientName = invoice.clients?.company_name ?? invoice.quick_client_name ?? 'N/A';
+      const clientContact = invoice.clients?.contact_person ?? invoice.quick_client_email ?? 'N/A';
+      const clientAddress = invoice.clients?.physical_address ?? invoice.quick_client_address ?? 'N/A';
+
+    const handleDownloadPDF = async () => {
+      setLoading('pdf');
+      try {
+        const blob = await pdf(<InvoicePDF invoice={invoice} lineItems={lineItems} businessProfile={businessProfile} />).toBlob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `TouchTeq-${invoice.invoice_number}-${clientName.replace(/\s+/g, '')}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -311,11 +324,11 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
             <Send size={14} /> Send Email
           </button>
 
-          {invoice.clients?.phone && (
+          {(invoice.clients?.phone || invoice.quick_client_phone) && (
             <WhatsAppButton
-              phoneNumber={invoice.clients.phone}
+              phoneNumber={invoice.clients?.phone || invoice.quick_client_phone || ''}
               message={getWhatsAppInvoiceMessage(
-                invoice.clients?.company_name || '',
+                clientName,
                 invoice.invoice_number,
                 invoice.total
               )}
@@ -414,9 +427,9 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
                 <div className="space-y-1">
-                  <p className="font-black text-sm uppercase">{invoice.clients?.company_name || 'N/A'}</p>
-                  <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients?.contact_person || 'N/A'}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients?.physical_address || 'N/A'}</p>
+                  <p className="font-black text-sm uppercase">{clientName}</p>
+                  <p className="text-xs font-bold text-slate-700">Attn: {clientContact}</p>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{clientAddress}</p>
                   {invoice.clients?.vat_number && <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients.vat_number}</p>}
                 </div>
               </div>
@@ -568,9 +581,9 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
                   <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{invoice.clients?.company_name || 'N/A'}</p>
-                    <p className="text-xs font-bold text-slate-700">Attn: {invoice.clients?.contact_person || 'N/A'}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{invoice.clients?.physical_address || 'N/A'}</p>
+                    <p className="font-black text-sm uppercase">{clientName}</p>
+                    <p className="text-xs font-bold text-slate-700">Attn: {clientContact}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{clientAddress}</p>
                   </div>
                 </div>
               </div>
@@ -883,14 +896,14 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
                 <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
                   <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Recipient</p>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-white font-bold">{recipientName || invoice.clients?.contact_person || 'N/A'}</p>
+                    <p className="text-white font-bold">{recipientName || clientContact}</p>
                     {recipientMatched !== 'none' && (
                       <span className="px-2 py-1 rounded bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-widest">
                         {recipientMatched}
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-400 text-xs">{recipientEmail || invoice.clients?.email || 'N/A'}</p>
+                  <p className="text-slate-400 text-xs">{recipientEmail || invoice.clients?.email || invoice.quick_client_email || 'N/A'}</p>
                 </div>
                 <textarea rows={4} value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="w-full bg-[#0B0F19] border border-slate-800 rounded p-4 text-white text-xs outline-none resize-none" placeholder="Add a personal message..." />
                 <button onClick={handleSendEmail} disabled={loading === 'email'} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs rounded-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50">

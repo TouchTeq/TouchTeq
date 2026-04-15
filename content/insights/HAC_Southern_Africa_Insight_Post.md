@@ -98,4 +98,4 @@ A HAC study that was accurate five years ago may not reflect what's happening on
 
 All of this traces back to the zone map. If the classification is wrong or outdated, the rest falls apart.
 
-*This article is a general overview for plant operators and managers. For site-specific classification, equipment selection, or compliance work, consult a qualified engineer familiar with SANS 10108 and the regulatory framework for your facility.*
+*This article is a general overview for engineering and operations teams. For site-specific hazardous area classification studies, zone drawings, or equipment selection guidance, consult a qualified engineer with experience in SANS 10108, IEC 60079, and relevant process industry standards.*

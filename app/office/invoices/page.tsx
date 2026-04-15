@@ -51,7 +51,7 @@ export default async function InvoicesPage({
     recurringInvoices = recurringData || [];
   }
 
-  // 1. Build Query
+  // 1. Build Query - use LEFT JOIN to include quick client invoices (client_id IS NULL)
   let query = supabase
     .from('invoices')
     .select(`
@@ -84,8 +84,8 @@ export default async function InvoicesPage({
 
   const { data: invoicesRaw } = await query.order('created_at', { ascending: false });
 
-  // Filter out invoices where the client has been deleted (orphaned invoices)
-  const invoices = invoicesRaw?.filter(inv => inv.clients !== null) || [];
+  // Include quick client invoices (client_id can be NULL with quick_client_name populated)
+  const invoices = invoicesRaw || [];
 
   // Fetch credit notes if on credit-notes tab
   let creditNotes: any[] = [];

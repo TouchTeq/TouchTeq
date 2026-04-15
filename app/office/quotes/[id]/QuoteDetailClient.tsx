@@ -45,6 +45,10 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
   const toast = useOfficeToast();
   const supabase = createClient();
 
+  const clientName = quote.clients?.company_name ?? quote.quick_client_name ?? 'N/A';
+  const clientContact = quote.clients?.contact_person ?? quote.quick_client_email ?? '';
+  const clientAddress = quote.clients?.physical_address ?? quote.quick_client_address ?? '';
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowPreviewModal(false); };
     window.addEventListener('keydown', onKey);
@@ -57,6 +61,15 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
 
     (async () => {
       try {
+        if (!quote.client_id) {
+          if (!cancelled) {
+            setRecipientEmail(quote.quick_client_email || null);
+            setRecipientName(quote.quick_client_name || 'Quick Client');
+            setRecipientMatched('none');
+          }
+          return;
+        }
+
         const { data } = await supabase
           .from('client_contacts')
           .select('contact_type, full_name, email, is_primary')
@@ -73,8 +86,8 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
         }
       } catch {
         if (!cancelled) {
-          setRecipientEmail(quote.clients?.email || null);
-          setRecipientName(quote.clients?.contact_person || null);
+          setRecipientEmail(quote.clients?.email || quote.quick_client_email || null);
+          setRecipientName(quote.clients?.contact_person || quote.quick_client_name || null);
           setRecipientMatched('none');
         }
       }
@@ -260,11 +273,11 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
             <Send size={14} /> Send Email
           </button>
 
-          {quote.clients?.phone && (
+          {(quote.clients?.phone || quote.quick_client_phone) && (
             <WhatsAppButton
-              phoneNumber={quote.clients.phone}
+              phoneNumber={quote.clients?.phone || quote.quick_client_phone || ''}
               message={getWhatsAppQuoteMessage(
-                quote.clients?.company_name || '',
+                clientName,
                 quote.quote_number,
                 quote.total
               )}
@@ -372,9 +385,9 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2">For:</h3>
               <div className="space-y-1">
-                <p className="font-black text-sm uppercase">{quote.clients?.company_name || 'N/A'}</p>
-                <p className="text-xs font-bold text-slate-700">Attn: {quote.clients?.contact_person || 'N/A'}</p>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{quote.clients?.physical_address || 'N/A'}</p>
+                <p className="font-black text-sm uppercase">{clientName}</p>
+                <p className="text-xs font-bold text-slate-700">Attn: {clientContact || 'N/A'}</p>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">{clientAddress || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -487,14 +500,14 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                 <div className="bg-[#0B0F19] p-4 rounded-lg border border-slate-800">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Recipient</p>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-white font-bold">{recipientName || quote.clients?.contact_person}</p>
+                    <p className="text-white font-bold">{recipientName || clientContact || 'N/A'}</p>
                     {recipientMatched !== 'none' && (
                       <span className="px-2 py-1 rounded bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-widest">
                         {recipientMatched}
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-400 text-xs font-medium">{recipientEmail || quote.clients?.email}</p>
+                  <p className="text-slate-400 text-xs font-medium">{recipientEmail || quote.clients?.email || quote.quick_client_email || 'N/A'}</p>
                 </div>
 
                 <div className="space-y-2">

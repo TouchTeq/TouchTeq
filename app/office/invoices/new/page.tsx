@@ -1,51 +1,68 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Plus, 
-  Trash2, 
-  Save, 
-  ArrowLeft, 
-  Building2, 
-  User, 
-  Mail, 
-  Calendar, 
-  Receipt, 
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Plus,
+  Trash2,
+  Save,
+  ArrowLeft,
+  Building2,
+  User,
+  Mail,
+  Calendar,
+  Receipt,
   AlertCircle,
   Search,
   X,
   Hash,
   FileText,
   ChevronDown,
-  Loader2
-} from 'lucide-react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'motion/react';
-import { format, addDays } from 'date-fns';
-import { createClient } from '@/lib/supabase/client';
-import DraftActionDock from '@/components/office/DraftActionDock';
-import { useOfficeToast } from '@/components/office/OfficeToastContext';
-import { useAiDraft } from '@/components/office/AiDraftContext';
-import { useActiveDocument } from '@/components/office/ActiveDocumentContext';
-import { matchClient, sanitizeClientNameAi } from '@/lib/clients/clientMatching';
-import { DatePicker } from '@/components/ui/DatePicker';
+  Loader2,
+} from "lucide-react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
+import { format, addDays } from "date-fns";
+import { createClient } from "@/lib/supabase/client";
+import DraftActionDock from "@/components/office/DraftActionDock";
+import { useOfficeToast } from "@/components/office/OfficeToastContext";
+import { useAiDraft } from "@/components/office/AiDraftContext";
+import { useActiveDocument } from "@/components/office/ActiveDocumentContext";
+import {
+  matchClient,
+  sanitizeClientNameAi,
+} from "@/lib/clients/clientMatching";
+import { DatePicker } from "@/components/ui/DatePicker";
+import QuickClientForm, {
+  QuickClientData,
+  EMPTY_QUICK_CLIENT,
+  ClientModeToggle,
+} from "@/components/office/quick-client/QuickClientForm";
 
 type LineItem = {
   description: string;
   quantity: number;
   unit_price: number;
   total: number;
-  qty_type: 'qty' | 'hrs';
+  qty_type: "qty" | "hrs";
 };
 
 export default function NewInvoicePage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-orange-500" size={32} />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin text-orange-500" size={32} />
+        </div>
+      }
+    >
       <NewInvoiceContent />
     </Suspense>
   );
@@ -64,45 +81,63 @@ function NewInvoiceContent() {
   // Data
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState('INV-....');
+  const [invoiceNumber, setInvoiceNumber] = useState("INV-....");
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const clientSearchRef = useRef<HTMLDivElement>(null);
-  
+  const [clientMode, setClientMode] = useState<"existing" | "quick">(
+    "existing",
+  );
+  const [quickClient, setQuickClient] = useState<QuickClientData>({
+    ...EMPTY_QUICK_CLIENT,
+  });
+
   // Close client search dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (clientSearchRef.current && !clientSearchRef.current.contains(event.target as Node)) {
-        setSearchTerm('');
+      if (
+        clientSearchRef.current &&
+        !clientSearchRef.current.contains(event.target as Node)
+      ) {
+        setSearchTerm("");
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
+  // When switching back to existing mode, clear quick client data
+  useEffect(() => {
+    if (clientMode === "existing") {
+      setQuickClient({ ...EMPTY_QUICK_CLIENT });
+    }
+  }, [clientMode]);
+
   const [paymentTermsDays, setPaymentTermsDays] = useState(30);
   const [includeVat, setIncludeVat] = useState(true);
 
   // Form State
   const [formData, setFormData] = useState({
-    issue_date: format(new Date(), 'yyyy-MM-dd'),
-    due_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
-    reference: '',
-    notes: '',
-    internal_notes: '',
-    status: 'Draft'
+    issue_date: format(new Date(), "yyyy-MM-dd"),
+    due_date: format(addDays(new Date(), 30), "yyyy-MM-dd"),
+    reference: "",
+    notes: "",
+    internal_notes: "",
+    status: "Draft",
   });
   const [statusOpen, setStatusOpen] = useState(false);
-  
+
   // Recurring State
   const [isRecurring, setIsRecurring] = useState(false);
-  const [recurringFrequency, setRecurringFrequency] = useState('monthly');
-  const [recurringStartDate, setRecurringStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [recurringEndDate, setRecurringEndDate] = useState('');
+  const [recurringFrequency, setRecurringFrequency] = useState("monthly");
+  const [recurringStartDate, setRecurringStartDate] = useState(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [recurringEndDate, setRecurringEndDate] = useState("");
   const [recurringAutoSend, setRecurringAutoSend] = useState(false);
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: '', quantity: 1, unit_price: 0, total: 0, qty_type: 'qty' }
+    { description: "", quantity: 1, unit_price: 0, total: 0, qty_type: "qty" },
   ]);
 
   const descriptionRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
@@ -110,8 +145,8 @@ function NewInvoiceContent() {
   useEffect(() => {
     descriptionRefs.current.forEach((textarea, idx) => {
       if (textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
       }
     });
   }, [lineItems]);
@@ -121,79 +156,115 @@ function NewInvoiceContent() {
     async function init() {
       // Fetch Clients
       const { data: clientsData } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('is_active', true)
-        .order('company_name');
+        .from("clients")
+        .select("*")
+        .eq("is_active", true)
+        .order("company_name");
       setClients(clientsData || []);
       setFetchingClients(false);
 
       const { data: profileData } = await supabase
-        .from('business_profile')
-        .select('document_settings')
+        .from("business_profile")
+        .select("document_settings")
         .single();
       const documentSettings = profileData?.document_settings || {};
-      const configuredTerms = Number(documentSettings.default_payment_terms_days ?? documentSettings.invoice_payment_terms_days);
-      const nextTerms = Number.isFinite(configuredTerms) ? Math.max(1, Math.min(365, configuredTerms)) : 30;
+      const configuredTerms = Number(
+        documentSettings.default_payment_terms_days ??
+          documentSettings.invoice_payment_terms_days,
+      );
+      const nextTerms = Number.isFinite(configuredTerms)
+        ? Math.max(1, Math.min(365, configuredTerms))
+        : 30;
       setPaymentTermsDays(nextTerms);
       setIncludeVat(documentSettings.always_include_vat !== false);
       setFormData((prev) => ({
         ...prev,
-        due_date: format(addDays(new Date(`${prev.issue_date}T00:00:00`), nextTerms), 'yyyy-MM-dd'),
+        due_date: format(
+          addDays(new Date(`${prev.issue_date}T00:00:00`), nextTerms),
+          "yyyy-MM-dd",
+        ),
       }));
 
       // Get invoice number from DB sequence (concurrency-safe)
-      const { data: invoiceNumber, error: numError } = await supabase.rpc('generate_invoice_number');
+      const { data: invoiceNumber, error: numError } = await supabase.rpc(
+        "generate_invoice_number",
+      );
       if (numError) {
-        console.error('Failed to generate invoice number:', numError);
+        console.error("Failed to generate invoice number:", numError);
       }
-      const generatedNumber = invoiceNumber || 'INV-0001';
+      const generatedNumber = invoiceNumber || "INV-0001";
       setInvoiceNumber(generatedNumber);
     }
     init();
   }, [supabase]);
 
   const { draft, clearAiDraft } = useAiDraft();
-  const { registerDocumentSession, clearDocumentSession, updateField, addLineItem, removeLineItem, updateLineItem, documentData } = useActiveDocument();
+  const {
+    registerDocumentSession,
+    clearDocumentSession,
+    updateField,
+    addLineItem,
+    removeLineItem,
+    updateLineItem,
+    documentData,
+  } = useActiveDocument();
 
   // Handle AI Assistant Draft
   useEffect(() => {
-    if (draft && draft.type === 'invoice' && !fetchingClients) {
-      const { clientName, lineItems: aiLineItems, invoiceDate, dueDate, notes } = draft.data;
-      const nextLineItems = (aiLineItems && aiLineItems.length > 0)
-        ? aiLineItems.map((item: any) => ({
-            description: item.description || '',
-            quantity: item.quantity || 1,
-            unit_price: item.unitPrice || 0,
-            total: (item.quantity || 1) * (item.unitPrice || 0)
-          }))
-        : lineItems;
-      
+    if (draft && draft.type === "invoice" && !fetchingClients) {
+      const {
+        clientName,
+        lineItems: aiLineItems,
+        invoiceDate,
+        dueDate,
+        notes,
+      } = draft.data;
+      const nextLineItems =
+        aiLineItems && aiLineItems.length > 0
+          ? aiLineItems.map((item: any) => ({
+              description: item.description || "",
+              quantity: item.quantity || 1,
+              unit_price: item.unitPrice || 0,
+              total: (item.quantity || 1) * (item.unitPrice || 0),
+            }))
+          : lineItems;
+
       // 1. Sanitize & Match Client
       if (clientName) {
         const sanitizedName = sanitizeClientNameAi(clientName);
-        matchClient(sanitizedName).then(matched => {
+        matchClient(sanitizedName).then((matched) => {
           if (matched) {
             setSelectedClient(matched);
-            updateField('clientName', matched.company_name);
-            toast.success({ title: "AI Draft Loaded", message: `Matched client: ${matched.company_name}` });
+            updateField("clientName", matched.company_name);
+            toast.success({
+              title: "AI Draft Loaded",
+              message: `Matched client: ${matched.company_name}`,
+            });
           } else {
-            toast.info({ title: "AI Draft Loaded", message: `New client detected: "${sanitizedName}"` });
-            setSearchTerm(sanitizedName);
-            updateField('clientName', sanitizedName);
+            // Switch to quick client mode with the name pre-populated
+            setClientMode("quick");
+            setQuickClient((prev) => ({
+              ...prev,
+              company_name: sanitizedName,
+            }));
+            toast.info({
+              title: "AI Draft Loaded",
+              message: `Quick client: "${sanitizedName}"`,
+            });
+            updateField("clientName", sanitizedName);
           }
         });
       }
 
       // 2. Dates
       if (invoiceDate || dueDate) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           issue_date: invoiceDate || prev.issue_date,
-          due_date: dueDate || prev.due_date
+          due_date: dueDate || prev.due_date,
         }));
-        if (invoiceDate) updateField('issue_date', invoiceDate);
-        if (dueDate) updateField('due_date', dueDate);
+        if (invoiceDate) updateField("issue_date", invoiceDate);
+        if (dueDate) updateField("due_date", dueDate);
       }
 
       // 3. Pre-populate Line Items
@@ -203,12 +274,12 @@ function NewInvoiceContent() {
 
       // 4. Pre-populate Notes
       if (notes) {
-        setFormData(prev => ({ ...prev, notes }));
-        updateField('notes', notes);
+        setFormData((prev) => ({ ...prev, notes }));
+        updateField("notes", notes);
       }
 
       registerDocumentSession({
-        documentType: 'invoice',
+        documentType: "invoice",
         documentId: null,
         documentData: {
           invoiceNumber,
@@ -227,9 +298,29 @@ function NewInvoiceContent() {
             total: item.total,
             line_total: item.total,
           })),
-          subtotal: nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0),
-          vatAmount: includeVat ? nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0) * 0.15 : 0,
-          total: includeVat ? nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0) * 1.15 : nextLineItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0),
+          subtotal: nextLineItems.reduce(
+            (sum: number, item: any) =>
+              sum + Number(item.quantity) * Number(item.unit_price),
+            0,
+          ),
+          vatAmount: includeVat
+            ? nextLineItems.reduce(
+                (sum: number, item: any) =>
+                  sum + Number(item.quantity) * Number(item.unit_price),
+                0,
+              ) * 0.15
+            : 0,
+          total: includeVat
+            ? nextLineItems.reduce(
+                (sum: number, item: any) =>
+                  sum + Number(item.quantity) * Number(item.unit_price),
+                0,
+              ) * 1.15
+            : nextLineItems.reduce(
+                (sum: number, item: any) =>
+                  sum + Number(item.quantity) * Number(item.unit_price),
+                0,
+              ),
         },
         isOpen: true,
       });
@@ -237,7 +328,18 @@ function NewInvoiceContent() {
       // Clear draft
       clearAiDraft();
     }
-  }, [clearAiDraft, draft, fetchingClients, formData, includeVat, invoiceNumber, lineItems, registerDocumentSession, toast, updateField]);
+  }, [
+    clearAiDraft,
+    draft,
+    fetchingClients,
+    formData,
+    includeVat,
+    invoiceNumber,
+    lineItems,
+    registerDocumentSession,
+    toast,
+    updateField,
+  ]);
 
   useEffect(() => {
     if (!documentData) {
@@ -246,7 +348,11 @@ function NewInvoiceContent() {
 
     const nextClientName = documentData.clientName ?? null;
     if (nextClientName) {
-      const matchedClient = clients.find((client) => String(client.company_name || '').toLowerCase() === String(nextClientName).toLowerCase());
+      const matchedClient = clients.find(
+        (client) =>
+          String(client.company_name || "").toLowerCase() ===
+          String(nextClientName).toLowerCase(),
+      );
       if (matchedClient && matchedClient.id !== selectedClient?.id) {
         setSelectedClient(matchedClient);
       } else if (!matchedClient && searchTerm !== nextClientName) {
@@ -265,13 +371,20 @@ function NewInvoiceContent() {
     }));
 
     if (Array.isArray(documentData.lineItems)) {
-      setLineItems(documentData.lineItems.map((item: any) => ({
-        description: item.description || '',
-        quantity: Number(item.quantity) || 1,
-        unit_price: Number(item.unitPrice ?? item.unit_price) || 0,
-        total: Number(item.total ?? item.line_total ?? (Number(item.quantity) || 1) * (Number(item.unitPrice ?? item.unit_price) || 0)),
-        qty_type: item.qty_type === 'hrs' ? 'hrs' : 'qty',
-      })));
+      setLineItems(
+        documentData.lineItems.map((item: any) => ({
+          description: item.description || "",
+          quantity: Number(item.quantity) || 1,
+          unit_price: Number(item.unitPrice ?? item.unit_price) || 0,
+          total: Number(
+            item.total ??
+              item.line_total ??
+              (Number(item.quantity) || 1) *
+                (Number(item.unitPrice ?? item.unit_price) || 0),
+          ),
+          qty_type: item.qty_type === "hrs" ? "hrs" : "qty",
+        })),
+      );
     }
   }, [clients, documentData, searchTerm, selectedClient?.id]);
 
@@ -283,7 +396,10 @@ function NewInvoiceContent() {
 
   // Calculations
   const subtotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+    return lineItems.reduce(
+      (sum, item) => sum + item.quantity * item.unit_price,
+      0,
+    );
   }, [lineItems]);
 
   const vatAmount = includeVat ? subtotal * 0.15 : 0;
@@ -291,8 +407,24 @@ function NewInvoiceContent() {
 
   // Handlers
   const handleAddLine = () => {
-    setLineItems((prev) => [...prev, { description: '', quantity: 1, unit_price: 0, total: 0, qty_type: 'qty' }]);
-    addLineItem({ description: '', quantity: 1, unitPrice: 0, total: 0, line_total: 0, qty_type: 'qty' });
+    setLineItems((prev) => [
+      ...prev,
+      {
+        description: "",
+        quantity: 1,
+        unit_price: 0,
+        total: 0,
+        qty_type: "qty",
+      },
+    ]);
+    addLineItem({
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+      line_total: 0,
+      qty_type: "qty",
+    });
   };
 
   const handleRemoveLine = (index: number) => {
@@ -304,77 +436,172 @@ function NewInvoiceContent() {
     removeLineItem(index);
   };
 
-  const handleLineChange = (index: number, field: keyof LineItem, value: string | number) => {
+  const handleLineChange = (
+    index: number,
+    field: keyof LineItem,
+    value: string | number,
+  ) => {
     setLineItems((prev) => {
       const newItems = [...prev];
       const item = { ...newItems[index], [field]: value };
-      if (field === 'quantity' || field === 'unit_price') {
+      if (field === "quantity" || field === "unit_price") {
         item.total = Number(item.quantity) * Number(item.unit_price);
       }
       newItems[index] = item;
       return newItems;
     });
-    updateLineItem(index, field === 'unit_price' ? 'unitPrice' : field, value);
+    updateLineItem(index, field === "unit_price" ? "unitPrice" : field, value);
   };
 
-  const handleClientSelect = useCallback((client: any | null) => {
-    setSelectedClient(client);
-    updateField('clientName', client?.company_name ?? null);
-  }, [updateField]);
+  const handleClientSelect = useCallback(
+    (client: any | null) => {
+      setSelectedClient(client);
+      updateField("clientName", client?.company_name ?? null);
+    },
+    [updateField],
+  );
 
-  const handleFormFieldChange = useCallback((field: 'issue_date' | 'due_date' | 'reference' | 'notes' | 'internal_notes' | 'status', value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    updateField(field, value);
-  }, [updateField]);
+  const handleFormFieldChange = useCallback(
+    (
+      field:
+        | "issue_date"
+        | "due_date"
+        | "reference"
+        | "notes"
+        | "internal_notes"
+        | "status",
+      value: string,
+    ) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      updateField(field, value);
+    },
+    [updateField],
+  );
 
   const normalizedSearchTerm = searchTerm.toLowerCase();
-  const filteredClients = clients.filter((c) =>
-    (c.company_name || '').toLowerCase().includes(normalizedSearchTerm) ||
-    (c.contact_person || '').toLowerCase().includes(normalizedSearchTerm)
+  const filteredClients = clients.filter(
+    (c) =>
+      (c.company_name || "").toLowerCase().includes(normalizedSearchTerm) ||
+      (c.contact_person || "").toLowerCase().includes(normalizedSearchTerm),
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClient) {
-      setError("Please select a client.");
+
+    // Validation depends on mode
+    if (clientMode === "existing" && !selectedClient) {
+      setError("Please select a client or switch to Quick Add mode.");
       return;
     }
-    if (lineItems.some(item => !item.description || item.unit_price <= 0)) {
-       setError("Please fill in all line item descriptions and prices.");
-       return;
+    if (clientMode === "quick" && !quickClient.company_name.trim()) {
+      setError("Please enter a client / company name.");
+      return;
+    }
+    if (lineItems.some((item) => !item.description || item.unit_price <= 0)) {
+      setError("Please fill in all line item descriptions and prices.");
+      return;
     }
 
     setLoading(true);
     setError(null);
 
     try {
-      // Atomic creation: header + line items in one DB transaction
-      const itemsJson = lineItems.map(item => ({
+      const itemsJson = lineItems.map((item) => ({
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        qty_type: item.qty_type || 'qty',
+        qty_type: item.qty_type || "qty",
       }));
 
-      const { data: result, error: rpcError } = await supabase.rpc('create_invoice_with_items', {
-        p_client_id: selectedClient.id,
-        p_line_items: itemsJson,
-        p_notes: formData.notes || null,
-        p_internal_notes: formData.internal_notes || null,
-        p_is_recurring: isRecurring,
-        p_recurring_freq: isRecurring ? recurringFrequency : null,
-        p_issue_date: formData.issue_date,
-        p_due_date: formData.due_date,
-        p_status: formData.status,
-        p_recurring_start_date: isRecurring ? recurringStartDate : null,
-        p_recurring_end_date: isRecurring && recurringEndDate ? recurringEndDate : null,
-        p_recurring_auto_send: isRecurring ? recurringAutoSend : false,
-      });
+      if (clientMode === "quick") {
+        let clientId: string | null = null;
 
-      if (rpcError || !result) throw new Error(rpcError?.message || 'Invoice creation failed');
+        if (quickClient.save_to_database) {
+          const { data: newClient, error: clientError } = await supabase
+            .from("clients")
+            .insert([
+              {
+                company_name: quickClient.company_name.trim(),
+                contact_person: quickClient.contact_person || null,
+                email: quickClient.email || null,
+                physical_address: quickClient.physical_address || null,
+                vat_number: quickClient.vat_number || null,
+              },
+            ])
+            .select()
+            .single();
 
-      router.push(`/office/invoices/${result.id}`);
-      router.refresh();
+          if (clientError)
+            throw new Error(`Failed to create client: ${clientError.message}`);
+          clientId = newClient.id;
+        }
+
+        const quickClientNotes = [
+          formData.internal_notes || "",
+          `Quick Client: ${quickClient.company_name}`,
+          quickClient.contact_person
+            ? `Contact: ${quickClient.contact_person}`
+            : "",
+          quickClient.email ? `Email: ${quickClient.email}` : "",
+          quickClient.physical_address
+            ? `Address: ${quickClient.physical_address}`
+            : "",
+          quickClient.vat_number ? `VAT: ${quickClient.vat_number}` : "",
+          quickClient.save_to_database ? "" : "(Not saved to client database)",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        const { data: result, error: rpcError } = await supabase.rpc(
+          "create_invoice_with_items",
+          {
+            p_client_id: clientId,
+            p_client_name: quickClient.company_name.trim(),
+            p_line_items: itemsJson,
+            p_notes: formData.notes || null,
+            p_internal_notes: quickClientNotes,
+            p_is_recurring: isRecurring,
+            p_recurring_freq: isRecurring ? recurringFrequency : null,
+            p_issue_date: formData.issue_date,
+            p_due_date: formData.due_date,
+            p_status: formData.status,
+            p_recurring_start_date: isRecurring ? recurringStartDate : null,
+            p_recurring_end_date:
+              isRecurring && recurringEndDate ? recurringEndDate : null,
+            p_recurring_auto_send: isRecurring ? recurringAutoSend : false,
+          },
+        );
+
+        if (rpcError || !result)
+          throw new Error(rpcError?.message || "Invoice creation failed");
+        router.push(`/office/invoices/${result.id}`);
+        router.refresh();
+      } else {
+        // Existing client — original flow
+        const { data: result, error: rpcError } = await supabase.rpc(
+          "create_invoice_with_items",
+          {
+            p_client_id: selectedClient.id,
+            p_line_items: itemsJson,
+            p_notes: formData.notes || null,
+            p_internal_notes: formData.internal_notes || null,
+            p_is_recurring: isRecurring,
+            p_recurring_freq: isRecurring ? recurringFrequency : null,
+            p_issue_date: formData.issue_date,
+            p_due_date: formData.due_date,
+            p_status: formData.status,
+            p_recurring_start_date: isRecurring ? recurringStartDate : null,
+            p_recurring_end_date:
+              isRecurring && recurringEndDate ? recurringEndDate : null,
+            p_recurring_auto_send: isRecurring ? recurringAutoSend : false,
+          },
+        );
+
+        if (rpcError || !result)
+          throw new Error(rpcError?.message || "Invoice creation failed");
+        router.push(`/office/invoices/${result.id}`);
+        router.refresh();
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to save invoice.");
@@ -389,21 +616,27 @@ function NewInvoiceContent() {
   // Allow AI assistant to trigger save remotely
   useEffect(() => {
     const handler = () => triggerSave();
-    window.addEventListener('touchteq-ai-save-document', handler);
-    return () => window.removeEventListener('touchteq-ai-save-document', handler);
+    window.addEventListener("touchteq-ai-save-document", handler);
+    return () =>
+      window.removeEventListener("touchteq-ai-save-document", handler);
   }, [triggerSave]);
 
   const formatRand = (val: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(val).replace('ZAR', 'R');
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    })
+      .format(val)
+      .replace("ZAR", "R");
   };
 
   return (
     <div className="w-full space-y-10 pb-24">
       {statusOpen && (
-        <div className="fixed inset-0 z-[99]" onClick={() => setStatusOpen(false)} />
+        <div
+          className="fixed inset-0 z-[99]"
+          onClick={() => setStatusOpen(false)}
+        />
       )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -415,7 +648,9 @@ function NewInvoiceContent() {
             <ArrowLeft size={14} /> Back to Registry
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-black text-white uppercase tracking-tighter">New Invoice</h1>
+            <h1 className="text-4xl font-black text-white uppercase tracking-tighter">
+              New Invoice
+            </h1>
             <span className="px-3 py-1 bg-slate-800 text-slate-400 font-black text-xs rounded border border-slate-700">
               {invoiceNumber}
             </span>
@@ -423,62 +658,100 @@ function NewInvoiceContent() {
         </div>
       </div>
 
-      <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+      >
         <div className="lg:col-span-2 space-y-8">
-          
           {/* Client Selection */}
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-visible">
             <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Building2 className="text-orange-500" size={18} />
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Client Details</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                  Client Details
+                </h2>
               </div>
+              <ClientModeToggle
+                mode={clientMode}
+                onModeChange={setClientMode}
+                existingLabel="Existing Client"
+                quickLabel="Quick Add Client"
+              />
             </div>
-            
+
             <div className="p-8">
-              {selectedClient ? (
-                <div className="flex items-center justify-between bg-[#0B0F19] p-6 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center gap-6">
-                    <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 italic font-black text-xl">
-                      {selectedClient.company_name.charAt(0)}
+              {clientMode === "existing" ? (
+                selectedClient ? (
+                  <div className="flex items-center justify-between bg-[#0B0F19] p-6 rounded-lg border border-orange-500/20">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 italic font-black text-xl">
+                        {selectedClient.company_name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-white uppercase tracking-tight text-lg">
+                          {selectedClient.company_name}
+                        </p>
+                        <p className="text-slate-400 font-bold text-xs flex items-center gap-2 mt-1">
+                          {selectedClient.contact_person} •{" "}
+                          {selectedClient.email}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-white uppercase tracking-tight text-lg">{selectedClient.company_name}</p>
-                      <p className="text-slate-400 font-bold text-xs flex items-center gap-2 mt-1">
-                        {selectedClient.contact_person} • {selectedClient.email}
-                      </p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleClientSelect(null)}
+                      className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                  <button type="button" onClick={() => handleClientSelect(null)} className="p-2 text-slate-600 hover:text-red-500 transition-colors">
-                    <X size={18} />
-                  </button>
-                </div>
+                ) : (
+                  <div ref={clientSearchRef} className="relative group">
+                    <Search
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search and select a client..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 pl-12 text-white font-medium rounded-sm"
+                    />
+                    {searchTerm && filteredClients.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#151B28] border border-slate-700 shadow-2xl rounded-lg z-50 max-h-60 overflow-y-auto">
+                        {filteredClients.map((client) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            onClick={() => {
+                              handleClientSelect(client);
+                              setSearchTerm("");
+                            }}
+                            className="w-full text-left p-4 hover:bg-slate-800 transition-colors border-b border-slate-800/50"
+                          >
+                            <p className="font-black text-white text-xs uppercase tracking-widest">
+                              {client.company_name}
+                            </p>
+                            <p className="text-slate-500 text-[10px] font-bold">
+                              {client.contact_person} • {client.email}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
               ) : (
-                <div ref={clientSearchRef} className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" size={18} />
-                  <input 
-                    type="text"
-                    placeholder="Search and select a client..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 pl-12 text-white font-medium rounded-sm"
-                  />
-                  {searchTerm && filteredClients.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#151B28] border border-slate-700 shadow-2xl rounded-lg z-50 max-h-60 overflow-y-auto">
-                      {filteredClients.map(client => (
-                        <button
-                          key={client.id}
-                          type="button"
-                          onClick={() => { handleClientSelect(client); setSearchTerm(''); }}
-                          className="w-full text-left p-4 hover:bg-slate-800 transition-colors border-b border-slate-800/50"
-                        >
-                          <p className="font-black text-white text-xs uppercase tracking-widest">{client.company_name}</p>
-                          <p className="text-slate-500 text-[10px] font-bold">{client.contact_person} • {client.email}</p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <QuickClientForm
+                  value={quickClient}
+                  onChange={setQuickClient}
+                  nameLabel="Client / Company Name"
+                  namePlaceholder="Enter client or company name"
+                  type="client"
+                />
               )}
             </div>
           </div>
@@ -487,7 +760,9 @@ function NewInvoiceContent() {
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-slate-800/50 flex items-center gap-3">
               <Receipt className="text-orange-500" size={18} />
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Invoice Items</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                Invoice Items
+              </h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -506,69 +781,123 @@ function NewInvoiceContent() {
                   {lineItems.map((item, idx) => (
                     <tr key={idx} className="bg-[#0B0F19]/20 group">
                       <td className="px-8 py-4">
-                        <textarea 
-                          ref={(el) => { descriptionRefs.current[idx] = el; }}
+                        <textarea
+                          ref={(el) => {
+                            descriptionRefs.current[idx] = el;
+                          }}
                           required
                           value={item.description}
                           onChange={(e) => {
-                            handleLineChange(idx, 'description', e.target.value);
+                            handleLineChange(
+                              idx,
+                              "description",
+                              e.target.value,
+                            );
                             setTimeout(() => {
                               const textarea = descriptionRefs.current[idx];
                               if (textarea) {
-                                textarea.style.height = 'auto';
-                                textarea.style.height = textarea.scrollHeight + 'px';
+                                textarea.style.height = "auto";
+                                textarea.style.height =
+                                  textarea.scrollHeight + "px";
                               }
                             }, 0);
                           }}
                           placeholder="e.g. Electrical Installation & Wiring"
                           className="w-full bg-[#0B0F19] border border-slate-800 rounded outline-none text-slate-200 text-sm font-medium"
                           rows={1}
-                          style={{ minHeight: '2rem', height: 'auto', resize: 'none', overflow: 'hidden', paddingTop: '0.5rem', paddingBottom: '0.375rem', paddingLeft: '0.75rem' }}
+                          style={{
+                            minHeight: "2rem",
+                            height: "auto",
+                            resize: "none",
+                            overflow: "hidden",
+                            paddingTop: "0.5rem",
+                            paddingBottom: "0.375rem",
+                            paddingLeft: "0.75rem",
+                          }}
                         />
                       </td>
                       <td className="px-2 py-4">
                         <button
                           type="button"
-                          onClick={() => handleLineChange(idx, 'qty_type', item.qty_type === 'qty' ? 'hrs' : 'qty')}
+                          onClick={() =>
+                            handleLineChange(
+                              idx,
+                              "qty_type",
+                              item.qty_type === "qty" ? "hrs" : "qty",
+                            )
+                          }
                           className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded transition-colors ${
-                            item.qty_type === 'hrs' 
-                              ? 'bg-orange-500 text-white' 
-                              : 'bg-[#0B0F19] border border-slate-800 text-slate-400 hover:text-white'
+                            item.qty_type === "hrs"
+                              ? "bg-orange-500 text-white"
+                              : "bg-[#0B0F19] border border-slate-800 text-slate-400 hover:text-white"
                           }`}
                         >
-                          {item.qty_type === 'hrs' ? 'Hrs' : 'Qty'}
+                          {item.qty_type === "hrs" ? "Hrs" : "Qty"}
                         </button>
                       </td>
                       <td className="px-6 py-4">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           inputMode="numeric"
                           value={item.quantity}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (val === '') {
-                              handleLineChange(idx, 'quantity', 0);
+                            if (val === "") {
+                              handleLineChange(idx, "quantity", 0);
                             } else {
-                              const num = parseInt(val.replace(/\D/g, ''), 10);
-                              if (!isNaN(num)) handleLineChange(idx, 'quantity', num);
+                              const num = parseInt(val.replace(/\D/g, ""), 10);
+                              if (!isNaN(num))
+                                handleLineChange(idx, "quantity", num);
                             }
                           }}
                           onBlur={(e) => {
                             const val = e.target.value;
-                            if (val === '' || isNaN(parseInt(val, 10))) {
-                              handleLineChange(idx, 'quantity', 1);
+                            if (val === "" || isNaN(parseInt(val, 10))) {
+                              handleLineChange(idx, "quantity", 1);
                             }
                           }}
-                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold" 
+                          className="w-16 bg-[#0B0F19] border border-slate-800 rounded p-2 text-center text-white text-xs font-bold"
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <input type="text" inputMode="decimal" value={item.unit_price} onFocus={(e) => e.target.select()} onChange={(e) => { const val = e.target.value; if (val === '') { handleLineChange(idx, 'unit_price', 0); } else { const num = parseFloat(val.replace(/[^\d.]/g, '')); if (!isNaN(num)) handleLineChange(idx, 'unit_price', num); } }} onBlur={(e) => { const val = e.target.value; if (val === '' || isNaN(parseFloat(val))) { handleLineChange(idx, 'unit_price', 0); } }} className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold" />
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={item.unit_price}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") {
+                              handleLineChange(idx, "unit_price", 0);
+                            } else {
+                              const num = parseFloat(
+                                val.replace(/[^\d.]/g, ""),
+                              );
+                              if (!isNaN(num))
+                                handleLineChange(idx, "unit_price", num);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || isNaN(parseFloat(val))) {
+                              handleLineChange(idx, "unit_price", 0);
+                            }
+                          }}
+                          className="w-28 bg-[#0B0F19] border border-slate-800 rounded p-2 text-right text-white text-xs font-bold"
+                        />
                       </td>
-                      <td className="px-6 py-4 text-right font-black text-sm text-slate-200">{formatRand(item.quantity * item.unit_price)}</td>
+                      <td className="px-6 py-4 text-right font-black text-sm text-slate-200">
+                        {formatRand(item.quantity * item.unit_price)}
+                      </td>
                       <td className="px-6 py-4 text-right">
-                        <button type="button" onClick={() => handleRemoveLine(idx)} className={`p-2 text-slate-700 hover:text-red-500 transition-colors ${lineItems.length === 1 ? 'opacity-0 pointer-events-none' : ''}`}><Trash2 size={16} /></button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLine(idx)}
+                          className={`p-2 text-slate-700 hover:text-red-500 transition-colors ${lineItems.length === 1 ? "opacity-0 pointer-events-none" : ""}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -577,9 +906,20 @@ function NewInvoiceContent() {
             </div>
 
             <div className="p-8 flex flex-col md:flex-row justify-between items-start gap-8">
-              <button type="button" onClick={handleAddLine} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors"><Plus size={16} /> Add Line Item</button>
+              <button
+                type="button"
+                onClick={handleAddLine}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors"
+              >
+                <Plus size={16} /> Add Line Item
+              </button>
               <div className="w-full md:w-96 md:ml-auto space-y-3 pt-6 border-t md:border-t-0 md:pt-0 border-slate-800">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>Subtotal</span><span className="font-bold text-right min-w-[120px]">{formatRand(subtotal)}</span></div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-right min-w-[120px]">
+                    {formatRand(subtotal)}
+                  </span>
+                </div>
                 <label className="flex items-center justify-between gap-3 text-[10px] font-black uppercase text-slate-500">
                   <span>Apply VAT (15%)</span>
                   <input
@@ -589,8 +929,20 @@ function NewInvoiceContent() {
                     className="h-4 w-4 accent-orange-500"
                   />
                 </label>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500"><span>VAT (15%)</span><span className="font-bold text-right min-w-[120px]">{formatRand(vatAmount)}</span></div>
-                <div className="flex justify-between items-center py-4 border-t border-slate-800"><span className="text-xs font-black uppercase text-white">Grand Total</span><span className="text-2xl font-black text-orange-500 text-right min-w-[120px]">{formatRand(total)}</span></div>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                  <span>VAT (15%)</span>
+                  <span className="font-bold text-right min-w-[120px]">
+                    {formatRand(vatAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-4 border-t border-slate-800">
+                  <span className="text-xs font-black uppercase text-white">
+                    Grand Total
+                  </span>
+                  <span className="text-2xl font-black text-orange-500 text-right min-w-[120px]">
+                    {formatRand(total)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -601,127 +953,181 @@ function NewInvoiceContent() {
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl overflow-visible p-6 space-y-6 shadow-2xl">
             <div className="flex items-center gap-3 border-b border-slate-800/50 pb-4">
               <Calendar className="text-orange-500" size={18} />
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Settings</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                Settings
+              </h2>
             </div>
             <div className="space-y-4">
-              <DatePicker 
+              <DatePicker
                 label="Issue Date"
                 value={formData.issue_date}
-                onChange={(val) => handleFormFieldChange('issue_date', val)}
+                onChange={(val) => handleFormFieldChange("issue_date", val)}
               />
-              <DatePicker 
+              <DatePicker
                 label="Due Date"
                 value={formData.due_date}
-                onChange={(val) => handleFormFieldChange('due_date', val)}
+                onChange={(val) => handleFormFieldChange("due_date", val)}
               />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Default terms: {paymentTermsDays} days</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                Default terms: {paymentTermsDays} days
+              </p>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">PO / Reference</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  PO / Reference
+                </label>
                 <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
-                  <input type="text" value={formData.reference} onChange={(e) => handleFormFieldChange('reference', e.target.value)} placeholder="Optional reference..." className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 pl-10 text-white text-xs font-medium" />
+                  <Hash
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                    size={14}
+                  />
+                  <input
+                    type="text"
+                    value={formData.reference}
+                    onChange={(e) =>
+                      handleFormFieldChange("reference", e.target.value)
+                    }
+                    placeholder="Optional reference..."
+                    className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 pl-10 text-white text-xs font-medium"
+                  />
                 </div>
               </div>
               <div className="space-y-2 pt-4">
-                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Initial Status</label>
-                 <div className="relative">
-                   <button
-                     type="button"
-                     onClick={() => setStatusOpen(!statusOpen)}
-                     className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
-                       statusOpen ? 'border-orange-500' : 'border-slate-700 hover:border-slate-600'
-                     }`}
-                   >
-                     <span className="text-white">{formData.status}</span>
-                     <ChevronDown size={14} className={`text-slate-500 transition-transform ${statusOpen ? 'rotate-180' : ''}`} />
-                   </button>
-                   {statusOpen && (
-                     <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
-                       {['Draft', 'Sent'].map((status) => (
-                         <button
-                           key={status}
-                           type="button"
-                           onClick={() => {
-                             handleFormFieldChange('status', status);
-                             setStatusOpen(false);
-                           }}
-                           className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm uppercase tracking-widest ${
-                             formData.status === status ? 'text-orange-500' : 'text-slate-300'
-                           }`}
-                         >
-                           {status}
-                         </button>
-                       ))}
-                     </div>
-                   )}
-                  </div>
-               </div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  Initial Status
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setStatusOpen(!statusOpen)}
+                    className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg transition-all font-bold text-sm bg-[#151B28] ${
+                      statusOpen
+                        ? "border-orange-500"
+                        : "border-slate-700 hover:border-slate-600"
+                    }`}
+                  >
+                    <span className="text-white">{formData.status}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 transition-transform ${statusOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {statusOpen && (
+                    <div className="absolute top-full left-0 w-full mt-2 bg-[#151B28] border border-slate-800 rounded-xl shadow-2xl z-[100] p-1">
+                      {["Draft", "Sent"].map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => {
+                            handleFormFieldChange("status", status);
+                            setStatusOpen(false);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left hover:bg-slate-800 transition-colors font-bold text-sm uppercase tracking-widest ${
+                            formData.status === status
+                              ? "text-orange-500"
+                              : "text-slate-300"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-               {/* Recurring Invoice Toggle */}
-               <div className="space-y-3 pt-4 border-t border-slate-800/50">
-                 <div className="flex items-center justify-between">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Make Recurring</label>
-                   <button
-                     type="button"
-                     onClick={() => setIsRecurring(!isRecurring)}
-                     className={`relative w-11 h-6 rounded-full transition-colors ${isRecurring ? 'bg-orange-500' : 'bg-slate-700'}`}
-                   >
-                     <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${isRecurring ? 'left-6' : 'left-1'}`} />
-                   </button>
-                 </div>
-                 
-                 {isRecurring && (
-                   <div className="space-y-3 pt-2">
-                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Frequency</label>
-                       <select
-                         value={recurringFrequency}
-                         onChange={(e) => setRecurringFrequency(e.target.value)}
-                         className="w-full bg-[#0B0F19] border border-slate-800 rounded p-2 text-white text-xs"
-                       >
-                         <option value="weekly">Weekly</option>
-                         <option value="monthly">Monthly</option>
-                         <option value="quarterly">Quarterly</option>
-                         <option value="annually">Annually</option>
-                       </select>
-                     </div>
-                      <DatePicker 
-                        label="Start Date"
-                        value={recurringStartDate}
-                        onChange={setRecurringStartDate}
-                      />
-                      <DatePicker 
-                        label="End Date (optional)"
-                        value={recurringEndDate}
-                        onChange={setRecurringEndDate}
-                      />
-                     <div className="flex items-center justify-between">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Auto-send</span>
-                       <button
-                         type="button"
-                         onClick={() => setRecurringAutoSend(!recurringAutoSend)}
-                         className={`relative w-11 h-6 rounded-full transition-colors ${recurringAutoSend ? 'bg-green-500' : 'bg-slate-700'}`}
-                       >
-                         <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${recurringAutoSend ? 'left-6' : 'left-1'}`} />
-                       </button>
-                     </div>
-                     <p className="text-[10px] text-slate-500">
-                       {recurringAutoSend ? 'Automatically sent to client on schedule' : 'Creates draft for review'}
-                     </p>
-                   </div>
-                 )}
-               </div>
+              {/* Recurring Invoice Toggle */}
+              <div className="space-y-3 pt-4 border-t border-slate-800/50">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Make Recurring
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecurring(!isRecurring)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${isRecurring ? "bg-orange-500" : "bg-slate-700"}`}
+                  >
+                    <span
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${isRecurring ? "left-6" : "left-1"}`}
+                    />
+                  </button>
+                </div>
+
+                {isRecurring && (
+                  <div className="space-y-3 pt-2">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Frequency
+                      </label>
+                      <select
+                        value={recurringFrequency}
+                        onChange={(e) => setRecurringFrequency(e.target.value)}
+                        className="w-full bg-[#0B0F19] border border-slate-800 rounded p-2 text-white text-xs"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="annually">Annually</option>
+                      </select>
+                    </div>
+                    <DatePicker
+                      label="Start Date"
+                      value={recurringStartDate}
+                      onChange={setRecurringStartDate}
+                    />
+                    <DatePicker
+                      label="End Date (optional)"
+                      value={recurringEndDate}
+                      onChange={setRecurringEndDate}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        Auto-send
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setRecurringAutoSend(!recurringAutoSend)}
+                        className={`relative w-11 h-6 rounded-full transition-colors ${recurringAutoSend ? "bg-green-500" : "bg-slate-700"}`}
+                      >
+                        <span
+                          className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${recurringAutoSend ? "left-6" : "left-1"}`}
+                        />
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500">
+                      {recurringAutoSend
+                        ? "Automatically sent to client on schedule"
+                        : "Creates draft for review"}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="bg-[#151B28] border border-slate-800/50 rounded-xl p-6 shadow-2xl space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-800/50 pb-4">
               <FileText className="text-orange-500" size={18} />
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">Notes</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white">
+                Notes
+              </h2>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              <textarea rows={3} value={formData.notes} onChange={(e) => handleFormFieldChange('notes', e.target.value)} className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium resize-none" placeholder="Public notes on invoice..." />
-              <textarea rows={3} value={formData.internal_notes} onChange={(e) => handleFormFieldChange('internal_notes', e.target.value)} className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium border-dashed" placeholder="Internal private context..." />
+              <textarea
+                rows={3}
+                value={formData.notes}
+                onChange={(e) => handleFormFieldChange("notes", e.target.value)}
+                className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium resize-none"
+                placeholder="Public notes on invoice..."
+              />
+              <textarea
+                rows={3}
+                value={formData.internal_notes}
+                onChange={(e) =>
+                  handleFormFieldChange("internal_notes", e.target.value)
+                }
+                className="w-full bg-[#0B0F19] border border-slate-800 rounded p-3 text-white text-xs font-medium border-dashed"
+                placeholder="Internal private context..."
+              />
             </div>
           </div>
 
@@ -731,10 +1137,20 @@ function NewInvoiceContent() {
               disabled={loading}
               className="w-full py-5 bg-orange-500 hover:bg-orange-600 rounded-sm font-black text-sm uppercase tracking-[0.3em] text-white shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> Create Tax Invoice</>}
+              {loading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <Save size={18} /> Create Tax Invoice
+                </>
+              )}
             </button>
           </div>
-          {error && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
+              {error}
+            </p>
+          )}
         </div>
       </form>
 

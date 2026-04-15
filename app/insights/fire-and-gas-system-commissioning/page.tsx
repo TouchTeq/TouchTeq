@@ -151,6 +151,7 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -207,6 +208,15 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
     setCurrentTime(newTime);
   };
 
+  const changeSpeed = (speed: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.playbackRate = speed;
+    setPlaybackSpeed(speed);
+  };
+
+  const speedOptions = [1, 1.5, 2];
+
   if (!audioSrc) return null;
 
   return (
@@ -234,6 +244,22 @@ function AudioPlayer({ audioSrc }: AudioPlayerProps) {
             <span className="text-slate-400 text-xs">{formatTime(currentTime)}</span>
             <span className="text-slate-400 text-xs">{formatTime(duration)}</span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1 ml-2">
+          {speedOptions.map((speed) => (
+            <button
+              key={speed}
+              onClick={() => changeSpeed(speed)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                playbackSpeed === speed
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+              }`}
+            >
+              {speed}x
+            </button>
+          ))}
         </div>
       </div>
     </div>

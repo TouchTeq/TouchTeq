@@ -9,6 +9,11 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
   const fontFamily = settings.document_font === 'Times New Roman' ? 'Times-Roman' : 'Helvetica';
   const banking = businessProfile.banking_details || {};
 
+  const clientName = invoice.clients?.company_name ?? invoice.quick_client_name ?? 'N/A';
+  const clientContact = invoice.clients?.contact_person ?? invoice.quick_client_email ?? '';
+  const clientAddress = invoice.clients?.physical_address ?? invoice.quick_client_address ?? '';
+  const clientVatNumber = invoice.clients?.vat_number ?? '';
+
   const styles = StyleSheet.create({
     page: {
       padding: 40,
@@ -308,7 +313,7 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
       {pageNum > 1 && (
         <View style={styles.header2}>
           <Text style={styles.header2Left}>#{invoice.invoice_number}</Text>
-          <Text style={styles.header2Right}>{invoice.clients?.company_name}</Text>
+          <Text style={styles.header2Right}>{clientName}</Text>
         </View>
       )}
 
@@ -356,15 +361,15 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
         <View style={styles.detailsColRight}>
           <Text style={styles.label}>Bill To:</Text>
           <View style={styles.supplierInfo}>
-            <Text style={styles.supplierName}>{invoice.clients?.company_name}</Text>
-            {invoice.clients?.contact_person && (
-              <Text style={styles.supplierDetail}>Attn: {invoice.clients?.contact_person}</Text>
+            <Text style={styles.supplierName}>{clientName}</Text>
+            {clientContact && (
+              <Text style={styles.supplierDetail}>Attn: {clientContact}</Text>
             )}
-            {invoice.clients?.physical_address && (
-              <Text style={styles.supplierAddress}>{invoice.clients?.physical_address}</Text>
+            {clientAddress && (
+              <Text style={styles.supplierAddress}>{clientAddress}</Text>
             )}
-            {invoice.clients?.vat_number && (
-              <Text style={styles.supplierDetail}>VAT No: {invoice.clients?.vat_number}</Text>
+            {clientVatNumber && (
+              <Text style={styles.supplierDetail}>VAT No: {clientVatNumber}</Text>
             )}
           </View>
         </View>

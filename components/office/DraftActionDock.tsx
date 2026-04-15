@@ -23,7 +23,7 @@ export default function DraftActionDock({
 }: Props) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const isS = e.key.toLowerCase() === 's';
+      const isS = e.key?.toLowerCase() === 's';
       if ((e.ctrlKey || e.metaKey) && isS) {
         e.preventDefault();
         if (!disabled && !loading) onSave();

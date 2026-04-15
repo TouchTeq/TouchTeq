@@ -27,7 +27,7 @@ function calculateTotals(items: LineItemInput[]) {
 
 export async function updateInvoiceWithItems(input: {
   invoiceId: string;
-  clientId: string;
+  clientId: string | null;
   issue_date: string;
   due_date: string;
   status: string;
@@ -35,24 +35,73 @@ export async function updateInvoiceWithItems(input: {
   internal_notes?: string | null;
   reference?: string | null;
   line_items: LineItemInput[];
+  quick_client_name?: string | null;
+  quick_client_email?: string | null;
+  quick_client_address?: string | null;
 }) {
   const supabase = await createClient();
   const normalizedItems = normalizeLineItems(input.line_items || []);
 
-  const { data: result, error: rpcError } = await supabase.rpc('update_invoice_with_items', {
-    p_invoice_id: input.invoiceId,
-    p_client_id: input.clientId,
-    p_line_items: normalizedItems,
-    p_issue_date: input.issue_date,
-    p_due_date: input.due_date,
-    p_status: input.status,
-    p_notes: input.notes ?? null,
-    p_internal_notes: input.internal_notes ?? null,
-    p_reference: input.reference ?? null,
-  });
+  // Calculate totals
+  const totals = calculateTotals(input.line_items || []);
 
-  if (rpcError || !result) {
-    throw new Error(rpcError?.message || 'Invoice update failed');
+  // Handle quick client (no linked client record) vs regular client
+  if (!input.clientId) {
+    // Quick client invoice - update directly without RPC
+    const { error: updateError } = await supabase
+      .from('invoices')
+      .update({
+        client_id: null,
+        quick_client_name: input.quick_client_name ?? null,
+        quick_client_email: input.quick_client_email ?? null,
+        quick_client_address: input.quick_client_address ?? null,
+        issue_date: input.issue_date,
+        due_date: input.due_date,
+        status: input.status,
+        subtotal: totals.subtotal,
+        vat_amount: totals.vat_amount,
+        total: totals.total,
+        notes: input.notes ?? null,
+        internal_notes: input.internal_notes ?? null,
+        reference: input.reference ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', input.invoiceId);
+
+    if (updateError) {
+      throw new Error(updateError.message || 'Invoice update failed');
+    }
+
+    // Delete existing line items and insert new ones
+    await supabase.from('invoice_line_items').delete().eq('invoice_id', input.invoiceId);
+
+    for (let i = 0; i < normalizedItems.length; i++) {
+      await supabase.from('invoice_line_items').insert({
+        invoice_id: input.invoiceId,
+        description: normalizedItems[i].description,
+        quantity: normalizedItems[i].quantity,
+        unit_price: normalizedItems[i].unit_price,
+        sort_order: i,
+        qty_type: normalizedItems[i].qty_type,
+      });
+    }
+  } else {
+    // Regular client - use the RPC
+    const { data: result, error: rpcError } = await supabase.rpc('update_invoice_with_items', {
+      p_invoice_id: input.invoiceId,
+      p_client_id: input.clientId,
+      p_line_items: normalizedItems,
+      p_issue_date: input.issue_date,
+      p_due_date: input.due_date,
+      p_status: input.status,
+      p_notes: input.notes ?? null,
+      p_internal_notes: input.internal_notes ?? null,
+      p_reference: input.reference ?? null,
+    });
+
+    if (rpcError || !result) {
+      throw new Error(rpcError?.message || 'Invoice update failed');
+    }
   }
 
   const { data: invoice, error: invoiceError } = await supabase

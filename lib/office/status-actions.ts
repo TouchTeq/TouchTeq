@@ -252,7 +252,7 @@ export async function validateTransition(
   currentStatus: string,
   action: string,
   doc: Record<string, any> = {}
-): TransitionResult {
+): Promise<TransitionResult> {
   const transitions = TRANSITION_MAP[docType]?.[currentStatus];
 
   if (!transitions || transitions.length === 0) {

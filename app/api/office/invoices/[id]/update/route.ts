@@ -20,14 +20,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       internal_notes,
       reference,
       line_items,
+      quick_client_name,
+      quick_client_email,
+      quick_client_address,
     } = body || {};
 
-    if (!client_id) {
-      return NextResponse.json({ success: false, error: 'Client id is required.' }, { status: 400 });
-    }
-
+    // client_id can be null for quick client invoices
     if (!issue_date || !due_date) {
       return NextResponse.json({ success: false, error: 'Issue date and due date are required.' }, { status: 400 });
+    }
+
+    // If client_id is null, quick_client_name is required (check trimmed for whitespace-only input)
+    const hasQuickClientName = quick_client_name && quick_client_name.trim() && quick_client_name.trim().length > 0;
+    if (!client_id && !hasQuickClientName) {
+      return NextResponse.json({ success: false, error: 'Client name is required for quick client invoices.' }, { status: 400 });
     }
 
     const validation = validateLineItems(line_items || []);
@@ -45,6 +51,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       internal_notes,
       reference,
       line_items: validation.items,
+      quick_client_name,
+      quick_client_email,
+      quick_client_address,
     });
 
     return NextResponse.json({ success: true, invoice, lineItems });

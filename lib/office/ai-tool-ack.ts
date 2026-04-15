@@ -7,6 +7,8 @@ export interface AiToolAckEvent {
   data?: Record<string, any>;
 }
 
+export type SaveStatus = 'saved' | 'server_error' | 'network_error' | 'no_endpoint' | 'stale_session' | 'no_document';
+
 /**
  * Acknowledgement for a save attempt.
  * Distinguishes between local application and server persistence.
@@ -17,7 +19,7 @@ export interface AiSaveAckEvent {
   message?: string;
   error?: string;
   data?: {
-    saveStatus: 'saved' | 'server_error' | 'network_error' | 'no_endpoint' | 'stale_session' | 'no_document';
+    saveStatus: SaveStatus;
     serverVersion?: string | null;
     statusCode?: number;
     isDirty?: boolean;
@@ -46,7 +48,7 @@ export interface SaveEventResult {
   success: boolean;
   message: string;
   error?: string;
-  saveStatus: AiSaveAckEvent['data']['saveStatus'];
+  saveStatus: SaveStatus;
 }
 
 export const AI_TOOL_ACK_EVENT_NAME = 'ai-tool-ack';

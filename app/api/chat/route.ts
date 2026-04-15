@@ -5,11 +5,23 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveApiKey } from "@/lib/api-keys/resolver";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ActionResult, wrapWithActionResult, actionSuccess, actionFailed, actionNeedInfo, actionUnsupported, actionAttempted } from "@/lib/assistant-action";
+import {
+  ActionResult,
+  wrapWithActionResult,
+  actionSuccess,
+  actionFailed,
+  actionNeedInfo,
+  actionUnsupported,
+  actionAttempted,
+} from "@/lib/assistant-action";
 import { SYSTEM_PROMPT_BASE } from "@/lib/assistant-prompt";
 import { validateTransition } from "@/lib/office/status-actions";
 import { checkRateLimit } from "@/lib/ai/rate-limiter";
-import { logAIAction, parseActionResult, extractTargetInfo } from "@/lib/ai/action-logger";
+import {
+  logAIAction,
+  parseActionResult,
+  extractTargetInfo,
+} from "@/lib/ai/action-logger";
 import { recordToolExecution } from "@/lib/ai/tool-telemetry";
 import { saveConversationToSupabase } from "@/lib/ai/conversations";
 
@@ -20,7 +32,7 @@ function getSupabase() {
   }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   );
 }
 
@@ -33,7 +45,10 @@ type VerificationResult = {
   verificationDetails: Record<string, any>;
 };
 
-function verifyResult(verified: boolean, details: Record<string, any>): VerificationResult {
+function verifyResult(
+  verified: boolean,
+  details: Record<string, any>,
+): VerificationResult {
   return {
     attempted: true,
     verified,
@@ -47,45 +62,71 @@ function verifyResult(verified: boolean, details: Record<string, any>): Verifica
 // to confirm intended state before returning success.
 // ============================================================
 
-async function verifyInvoice(supabase: any, invoiceId: string, expected: {
-  invoice_number: string;
-  client_id: string;
-  lineItemCount: number;
-}): Promise<VerificationResult> {
-  const [
-    { data: invoice, error },
-    { count, error: countErr },
-  ] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select("id, invoice_number, client_id, subtotal, vat_amount, total, status")
-      .eq("id", invoiceId)
-      .maybeSingle(),
-    supabase
-      .from("invoice_line_items")
-      .select("id", { count: "exact", head: true })
-      .eq("invoice_id", invoiceId),
-  ]);
+async function verifyInvoice(
+  supabase: any,
+  invoiceId: string,
+  expected: {
+    invoice_number: string;
+    client_id: string;
+    lineItemCount: number;
+  },
+): Promise<VerificationResult> {
+  const [{ data: invoice, error }, { count, error: countErr }] =
+    await Promise.all([
+      supabase
+        .from("invoices")
+        .select(
+          "id, invoice_number, client_id, subtotal, vat_amount, total, status",
+        )
+        .eq("id", invoiceId)
+        .maybeSingle(),
+      supabase
+        .from("invoice_line_items")
+        .select("id", { count: "exact", head: true })
+        .eq("invoice_id", invoiceId),
+    ]);
 
   if (error || !invoice) {
-    return verifyResult(false, { reason: "Invoice row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Invoice row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (invoice.invoice_number !== expected.invoice_number) {
-    return verifyResult(false, { reason: "invoice_number mismatch", expected: expected.invoice_number, actual: invoice.invoice_number });
+    return verifyResult(false, {
+      reason: "invoice_number mismatch",
+      expected: expected.invoice_number,
+      actual: invoice.invoice_number,
+    });
   }
   if (invoice.client_id !== expected.client_id) {
-    return verifyResult(false, { reason: "client_id mismatch", expected: expected.client_id, actual: invoice.client_id });
+    return verifyResult(false, {
+      reason: "client_id mismatch",
+      expected: expected.client_id,
+      actual: invoice.client_id,
+    });
   }
   if (!invoice.subtotal || !invoice.total) {
-    return verifyResult(false, { reason: "Missing totals", subtotal: invoice.subtotal, total: invoice.total });
+    return verifyResult(false, {
+      reason: "Missing totals",
+      subtotal: invoice.subtotal,
+      total: invoice.total,
+    });
   }
 
   if (countErr) {
-    return verifyResult(false, { reason: "Could not count line items", error: countErr.message });
+    return verifyResult(false, {
+      reason: "Could not count line items",
+      error: countErr.message,
+    });
   }
   if (count !== expected.lineItemCount) {
-    return verifyResult(false, { reason: "Line item count mismatch", expected: expected.lineItemCount, actual: count });
+    return verifyResult(false, {
+      reason: "Line item count mismatch",
+      expected: expected.lineItemCount,
+      actual: count,
+    });
   }
 
   return verifyResult(true, {
@@ -98,38 +139,54 @@ async function verifyInvoice(supabase: any, invoiceId: string, expected: {
   });
 }
 
-async function verifyQuote(supabase: any, quoteId: string, expected: {
-  quote_number: string;
-  lineItemCount: number;
-}): Promise<VerificationResult> {
-  const [
-    { data: quote, error },
-    { count, error: countErr },
-  ] = await Promise.all([
-    supabase
-      .from("quotes")
-      .select("id, quote_number, client_id, subtotal, total, status")
-      .eq("id", quoteId)
-      .maybeSingle(),
-    supabase
-      .from("quote_line_items")
-      .select("id", { count: "exact", head: true })
-      .eq("quote_id", quoteId),
-  ]);
+async function verifyQuote(
+  supabase: any,
+  quoteId: string,
+  expected: {
+    quote_number: string;
+    lineItemCount: number;
+  },
+): Promise<VerificationResult> {
+  const [{ data: quote, error }, { count, error: countErr }] =
+    await Promise.all([
+      supabase
+        .from("quotes")
+        .select("id, quote_number, client_id, subtotal, total, status")
+        .eq("id", quoteId)
+        .maybeSingle(),
+      supabase
+        .from("quote_line_items")
+        .select("id", { count: "exact", head: true })
+        .eq("quote_id", quoteId),
+    ]);
 
   if (error || !quote) {
-    return verifyResult(false, { reason: "Quote row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Quote row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (quote.quote_number !== expected.quote_number) {
-    return verifyResult(false, { reason: "quote_number mismatch", expected: expected.quote_number, actual: quote.quote_number });
+    return verifyResult(false, {
+      reason: "quote_number mismatch",
+      expected: expected.quote_number,
+      actual: quote.quote_number,
+    });
   }
 
   if (countErr) {
-    return verifyResult(false, { reason: "Could not count quote line items", error: countErr.message });
+    return verifyResult(false, {
+      reason: "Could not count quote line items",
+      error: countErr.message,
+    });
   }
   if (count !== expected.lineItemCount) {
-    return verifyResult(false, { reason: "Line item count mismatch", expected: expected.lineItemCount, actual: count });
+    return verifyResult(false, {
+      reason: "Line item count mismatch",
+      expected: expected.lineItemCount,
+      actual: count,
+    });
   }
 
   return verifyResult(true, {
@@ -141,14 +198,15 @@ async function verifyQuote(supabase: any, quoteId: string, expected: {
   });
 }
 
-async function verifyPurchaseOrder(supabase: any, poId: string, expected: {
-  po_number: string;
-  lineItemCount: number;
-}): Promise<VerificationResult> {
-  const [
-    { data: po, error },
-    { count, error: countErr },
-  ] = await Promise.all([
+async function verifyPurchaseOrder(
+  supabase: any,
+  poId: string,
+  expected: {
+    po_number: string;
+    lineItemCount: number;
+  },
+): Promise<VerificationResult> {
+  const [{ data: po, error }, { count, error: countErr }] = await Promise.all([
     supabase
       .from("purchase_orders")
       .select("id, po_number, supplier_name, total, status")
@@ -161,18 +219,32 @@ async function verifyPurchaseOrder(supabase: any, poId: string, expected: {
   ]);
 
   if (error || !po) {
-    return verifyResult(false, { reason: "PO row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "PO row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (po.po_number !== expected.po_number) {
-    return verifyResult(false, { reason: "po_number mismatch", expected: expected.po_number, actual: po.po_number });
+    return verifyResult(false, {
+      reason: "po_number mismatch",
+      expected: expected.po_number,
+      actual: po.po_number,
+    });
   }
 
   if (countErr) {
-    return verifyResult(false, { reason: "Could not count PO line items", error: countErr.message });
+    return verifyResult(false, {
+      reason: "Could not count PO line items",
+      error: countErr.message,
+    });
   }
   if (count !== expected.lineItemCount) {
-    return verifyResult(false, { reason: "Line item count mismatch", expected: expected.lineItemCount, actual: count });
+    return verifyResult(false, {
+      reason: "Line item count mismatch",
+      expected: expected.lineItemCount,
+      actual: count,
+    });
   }
 
   return verifyResult(true, {
@@ -184,14 +256,15 @@ async function verifyPurchaseOrder(supabase: any, poId: string, expected: {
   });
 }
 
-async function verifyCreditNote(supabase: any, cnId: string, expected: {
-  cn_number: string;
-  lineItemCount: number;
-}): Promise<VerificationResult> {
-  const [
-    { data: cn, error },
-    { count, error: countErr },
-  ] = await Promise.all([
+async function verifyCreditNote(
+  supabase: any,
+  cnId: string,
+  expected: {
+    cn_number: string;
+    lineItemCount: number;
+  },
+): Promise<VerificationResult> {
+  const [{ data: cn, error }, { count, error: countErr }] = await Promise.all([
     supabase
       .from("credit_notes")
       .select("id, cn_number, client_id, total, status")
@@ -204,18 +277,32 @@ async function verifyCreditNote(supabase: any, cnId: string, expected: {
   ]);
 
   if (error || !cn) {
-    return verifyResult(false, { reason: "Credit note row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Credit note row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (cn.cn_number !== expected.cn_number) {
-    return verifyResult(false, { reason: "cn_number mismatch", expected: expected.cn_number, actual: cn.cn_number });
+    return verifyResult(false, {
+      reason: "cn_number mismatch",
+      expected: expected.cn_number,
+      actual: cn.cn_number,
+    });
   }
 
   if (countErr) {
-    return verifyResult(false, { reason: "Could not count CN line items", error: countErr.message });
+    return verifyResult(false, {
+      reason: "Could not count CN line items",
+      error: countErr.message,
+    });
   }
   if (count !== expected.lineItemCount) {
-    return verifyResult(false, { reason: "Line item count mismatch", expected: expected.lineItemCount, actual: count });
+    return verifyResult(false, {
+      reason: "Line item count mismatch",
+      expected: expected.lineItemCount,
+      actual: count,
+    });
   }
 
   return verifyResult(true, {
@@ -227,10 +314,14 @@ async function verifyCreditNote(supabase: any, cnId: string, expected: {
   });
 }
 
-async function verifyPayment(supabase: any, invoiceId: string, expected: {
-  amountPaid: number;
-  expectedStatus: string;
-}): Promise<VerificationResult> {
+async function verifyPayment(
+  supabase: any,
+  invoiceId: string,
+  expected: {
+    amountPaid: number;
+    expectedStatus: string;
+  },
+): Promise<VerificationResult> {
   const { data: invoice, error } = await supabase
     .from("invoices")
     .select("id, invoice_number, total, amount_paid, balance_due, status")
@@ -238,7 +329,10 @@ async function verifyPayment(supabase: any, invoiceId: string, expected: {
     .maybeSingle();
 
   if (error || !invoice) {
-    return verifyResult(false, { reason: "Invoice not found after payment", error: error?.message });
+    return verifyResult(false, {
+      reason: "Invoice not found after payment",
+      error: error?.message,
+    });
   }
 
   const { count, error: payErr } = await supabase
@@ -248,10 +342,15 @@ async function verifyPayment(supabase: any, invoiceId: string, expected: {
     .gte("created_at", new Date(Date.now() - 60000).toISOString());
 
   if (payErr) {
-    return verifyResult(false, { reason: "Could not verify payment record", error: payErr.message });
+    return verifyResult(false, {
+      reason: "Could not verify payment record",
+      error: payErr.message,
+    });
   }
   if (count === 0 || count === null) {
-    return verifyResult(false, { reason: "No payment record found in last 60 seconds" });
+    return verifyResult(false, {
+      reason: "No payment record found in last 60 seconds",
+    });
   }
 
   const statusMatch = invoice.status === expected.expectedStatus;
@@ -274,9 +373,13 @@ async function verifyPayment(supabase: any, invoiceId: string, expected: {
   });
 }
 
-async function verifyClient(supabase: any, clientId: string, expected: {
-  company_name: string;
-}): Promise<VerificationResult> {
+async function verifyClient(
+  supabase: any,
+  clientId: string,
+  expected: {
+    company_name: string;
+  },
+): Promise<VerificationResult> {
   const { data: client, error } = await supabase
     .from("clients")
     .select("id, company_name, is_active")
@@ -284,11 +387,18 @@ async function verifyClient(supabase: any, clientId: string, expected: {
     .maybeSingle();
 
   if (error || !client) {
-    return verifyResult(false, { reason: "Client row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Client row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (client.company_name !== expected.company_name) {
-    return verifyResult(false, { reason: "company_name mismatch", expected: expected.company_name, actual: client.company_name });
+    return verifyResult(false, {
+      reason: "company_name mismatch",
+      expected: expected.company_name,
+      actual: client.company_name,
+    });
   }
 
   return verifyResult(true, {
@@ -297,21 +407,33 @@ async function verifyClient(supabase: any, clientId: string, expected: {
   });
 }
 
-async function verifyExpense(supabase: any, expenseId: string, expected: {
-  amount_inclusive: number;
-  description: string;
-}): Promise<VerificationResult> {
+async function verifyExpense(
+  supabase: any,
+  expenseId: string,
+  expected: {
+    amount_inclusive: number;
+    description: string;
+  },
+): Promise<VerificationResult> {
   const { data: expense, error } = await supabase
     .from("expenses")
-    .select("id, expense_date, supplier_name, description, amount_inclusive, category")
+    .select(
+      "id, expense_date, supplier_name, description, amount_inclusive, category",
+    )
     .eq("id", expenseId)
     .maybeSingle();
 
   if (error || !expense) {
-    return verifyResult(false, { reason: "Expense row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Expense row not found after insert",
+      error: error?.message,
+    });
   }
 
-  if (Math.abs(Number(expense.amount_inclusive) - expected.amount_inclusive) > 0.01) {
+  if (
+    Math.abs(Number(expense.amount_inclusive) - expected.amount_inclusive) >
+    0.01
+  ) {
     return verifyResult(false, {
       reason: "amount_inclusive mismatch",
       expected: expected.amount_inclusive,
@@ -334,23 +456,36 @@ async function verifyExpense(supabase: any, expenseId: string, expected: {
   });
 }
 
-async function verifyTrip(supabase: any, tripId: string, expected: {
-  to_location: string;
-  distance_km: number;
-  purpose: string;
-}): Promise<VerificationResult> {
+async function verifyTrip(
+  supabase: any,
+  tripId: string,
+  expected: {
+    to_location: string;
+    distance_km: number;
+    purpose: string;
+  },
+): Promise<VerificationResult> {
   const { data: trip, error } = await supabase
     .from("travel_trips")
-    .select("id, date, from_location, to_location, distance_km, purpose, vehicle_id")
+    .select(
+      "id, date, from_location, to_location, distance_km, purpose, vehicle_id",
+    )
     .eq("id", tripId)
     .maybeSingle();
 
   if (error || !trip) {
-    return verifyResult(false, { reason: "Trip row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Trip row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (trip.to_location !== expected.to_location) {
-    return verifyResult(false, { reason: "to_location mismatch", expected: expected.to_location, actual: trip.to_location });
+    return verifyResult(false, {
+      reason: "to_location mismatch",
+      expected: expected.to_location,
+      actual: trip.to_location,
+    });
   }
   if (Math.abs(Number(trip.distance_km) - expected.distance_km) > 0.01) {
     return verifyResult(false, {
@@ -360,7 +495,11 @@ async function verifyTrip(supabase: any, tripId: string, expected: {
     });
   }
   if (trip.purpose !== expected.purpose) {
-    return verifyResult(false, { reason: "purpose mismatch", expected: expected.purpose, actual: trip.purpose });
+    return verifyResult(false, {
+      reason: "purpose mismatch",
+      expected: expected.purpose,
+      actual: trip.purpose,
+    });
   }
 
   return verifyResult(true, {
@@ -371,10 +510,14 @@ async function verifyTrip(supabase: any, tripId: string, expected: {
   });
 }
 
-async function verifyFuelLog(supabase: any, fuelId: string, expected: {
-  supplier_name: string;
-  total_amount: number;
-}): Promise<VerificationResult> {
+async function verifyFuelLog(
+  supabase: any,
+  fuelId: string,
+  expected: {
+    supplier_name: string;
+    total_amount: number;
+  },
+): Promise<VerificationResult> {
   const { data: fuel, error } = await supabase
     .from("fuel_logs")
     .select("id, date, supplier_name, litres, total_amount, vehicle_id")
@@ -382,11 +525,18 @@ async function verifyFuelLog(supabase: any, fuelId: string, expected: {
     .maybeSingle();
 
   if (error || !fuel) {
-    return verifyResult(false, { reason: "Fuel log row not found after insert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Fuel log row not found after insert",
+      error: error?.message,
+    });
   }
 
   if (fuel.supplier_name !== expected.supplier_name) {
-    return verifyResult(false, { reason: "supplier_name mismatch", expected: expected.supplier_name, actual: fuel.supplier_name });
+    return verifyResult(false, {
+      reason: "supplier_name mismatch",
+      expected: expected.supplier_name,
+      actual: fuel.supplier_name,
+    });
   }
   if (Math.abs(Number(fuel.total_amount) - expected.total_amount) > 0.01) {
     return verifyResult(false, {
@@ -403,11 +553,14 @@ async function verifyFuelLog(supabase: any, fuelId: string, expected: {
   });
 }
 
-async function verifyMemory(supabase: any, expected: {
-  category: string;
-  key: string;
-  value: string;
-}): Promise<VerificationResult> {
+async function verifyMemory(
+  supabase: any,
+  expected: {
+    category: string;
+    key: string;
+    value: string;
+  },
+): Promise<VerificationResult> {
   const { data: memory, error } = await supabase
     .from("ai_memory")
     .select("category, key, value, confidence")
@@ -416,7 +569,10 @@ async function verifyMemory(supabase: any, expected: {
     .maybeSingle();
 
   if (error || !memory) {
-    return verifyResult(false, { reason: "Memory row not found after upsert", error: error?.message });
+    return verifyResult(false, {
+      reason: "Memory row not found after upsert",
+      error: error?.message,
+    });
   }
 
   if (memory.value !== expected.value) {
@@ -446,13 +602,18 @@ type ResolveResult<T> =
   | { kind: "ambiguous"; candidates: T[] }
   | { kind: "not_found" };
 
-async function resolveClientForWrite(supabase: any, name: string): Promise<ResolveResult<{
-  id: string;
-  company_name: string;
-  email: string | null;
-  phone: string | null;
-  recent_invoice: string | null;
-}>> {
+async function resolveClientForWrite(
+  supabase: any,
+  name: string,
+): Promise<
+  ResolveResult<{
+    id: string;
+    company_name: string;
+    email: string | null;
+    phone: string | null;
+    recent_invoice: string | null;
+  }>
+> {
   const trimmed = name.trim();
   if (!trimmed) return { kind: "not_found" };
 
@@ -537,28 +698,35 @@ async function resolveClientForWrite(supabase: any, name: string): Promise<Resol
         phone: c.phone,
         recent_invoice: recent?.invoice_number || null,
       };
-    })
+    }),
   );
 
   return { kind: "ambiguous", candidates };
 }
 
-async function resolveInvoiceForWrite(supabase: any, reference: string): Promise<ResolveResult<{
-  id: string;
-  invoice_number: string;
-  client_name: string;
-  total: number;
-  amount_paid: number;
-  balance_due: number;
-  status: string;
-}>> {
+async function resolveInvoiceForWrite(
+  supabase: any,
+  reference: string,
+): Promise<
+  ResolveResult<{
+    id: string;
+    invoice_number: string;
+    client_name: string;
+    total: number;
+    amount_paid: number;
+    balance_due: number;
+    status: string;
+  }>
+> {
   const ref = reference.trim().toUpperCase();
   if (!ref) return { kind: "not_found" };
 
   // 1. Exact match on invoice_number
   const { data: exact } = await supabase
     .from("invoices")
-    .select("id, invoice_number, total, amount_paid, balance_due, status, clients(company_name)")
+    .select(
+      "id, invoice_number, total, amount_paid, balance_due, status, clients(company_name)",
+    )
     .eq("invoice_number", ref)
     .maybeSingle();
 
@@ -580,7 +748,9 @@ async function resolveInvoiceForWrite(supabase: any, reference: string): Promise
   // 2. Fuzzy match — partial ilike
   const { data: fuzzy } = await supabase
     .from("invoices")
-    .select("id, invoice_number, total, amount_paid, balance_due, status, clients(company_name)")
+    .select(
+      "id, invoice_number, total, amount_paid, balance_due, status, clients(company_name)",
+    )
     .ilike("invoice_number", `%${ref}%`)
     .limit(10);
 
@@ -618,13 +788,18 @@ async function resolveInvoiceForWrite(supabase: any, reference: string): Promise
   };
 }
 
-async function resolveQuoteForWrite(supabase: any, reference: string): Promise<ResolveResult<{
-  id: string;
-  quote_number: string;
-  client_name: string;
-  total: number;
-  status: string;
-}>> {
+async function resolveQuoteForWrite(
+  supabase: any,
+  reference: string,
+): Promise<
+  ResolveResult<{
+    id: string;
+    quote_number: string;
+    client_name: string;
+    total: number;
+    status: string;
+  }>
+> {
   const ref = reference.trim().toUpperCase();
   if (!ref) return { kind: "not_found" };
 
@@ -682,13 +857,18 @@ async function resolveQuoteForWrite(supabase: any, reference: string): Promise<R
   };
 }
 
-async function resolvePOForWrite(supabase: any, reference: string): Promise<ResolveResult<{
-  id: string;
-  po_number: string;
-  supplier_name: string;
-  total: number;
-  status: string;
-}>> {
+async function resolvePOForWrite(
+  supabase: any,
+  reference: string,
+): Promise<
+  ResolveResult<{
+    id: string;
+    po_number: string;
+    supplier_name: string;
+    total: number;
+    status: string;
+  }>
+> {
   const ref = reference.trim().toUpperCase();
   if (!ref) return { kind: "not_found" };
 
@@ -746,14 +926,19 @@ async function resolvePOForWrite(supabase: any, reference: string): Promise<Reso
   };
 }
 
-async function resolveCreditNoteForWrite(supabase: any, reference: string): Promise<ResolveResult<{
-  id: string;
-  cn_number: string;
-  client_name: string;
-  total: number;
-  status: string;
-  invoice_id: string | null;
-}>> {
+async function resolveCreditNoteForWrite(
+  supabase: any,
+  reference: string,
+): Promise<
+  ResolveResult<{
+    id: string;
+    cn_number: string;
+    client_name: string;
+    total: number;
+    status: string;
+    invoice_id: string | null;
+  }>
+> {
   const ref = reference.trim().toUpperCase();
   if (!ref) return { kind: "not_found" };
 
@@ -818,21 +1003,38 @@ async function executeSaveMemory(args: any): Promise<string> {
   const category = String(args.category || "business_rule").trim();
   const key = String(args.key || "").trim();
   const value = String(args.value || "").trim();
-  const confidence = Math.min(1.0, Math.max(0.0, Number(args.confidence ?? 1.0)));
+  const confidence = Math.min(
+    1.0,
+    Math.max(0.0, Number(args.confidence ?? 1.0)),
+  );
 
   if (!key || !value) {
     return wrapWithActionResult(
-      actionFailed({ action: "save_memory", targetType: "ai_memory", toolUsed: "saveMemory", error: "key and value are required.", nextStep: "Please provide both a key and a value to remember." })
+      actionFailed({
+        action: "save_memory",
+        targetType: "ai_memory",
+        toolUsed: "saveMemory",
+        error: "key and value are required.",
+        nextStep: "Please provide both a key and a value to remember.",
+      }),
     );
   }
 
   const { error } = await supabase
     .from("ai_memory")
-    .upsert({ category, key, value, confidence }, { onConflict: "category,key" });
+    .upsert(
+      { category, key, value, confidence },
+      { onConflict: "category,key" },
+    );
 
   if (error) {
     return wrapWithActionResult(
-      actionFailed({ action: "save_memory", targetType: "ai_memory", toolUsed: "saveMemory", error: error.message })
+      actionFailed({
+        action: "save_memory",
+        targetType: "ai_memory",
+        toolUsed: "saveMemory",
+        error: error.message,
+      }),
     );
   }
 
@@ -845,7 +1047,7 @@ async function executeSaveMemory(args: any): Promise<string> {
       summary: `Saved "${key}" in ${category}: ${value}`,
       verified: true,
     }),
-    { saved: { category, key, value } }
+    { saved: { category, key, value } },
   );
 }
 
@@ -902,9 +1104,13 @@ type SessionContextInput = {
 
 function parseAssistantPreferences(value: any): AssistantPreferences {
   return {
-    requireConfirmationBeforeSend: value?.requireConfirmationBeforeSend !== false,
+    requireConfirmationBeforeSend:
+      value?.requireConfirmationBeforeSend !== false,
     conciseResponses: value?.conciseResponses !== false,
-    languagePreference: value?.languagePreference === "british_english" ? "british_english" : "south_african_english",
+    languagePreference:
+      value?.languagePreference === "british_english"
+        ? "british_english"
+        : "south_african_english",
     alwaysIncludeVatInvoice: value?.alwaysIncludeVatInvoice !== false,
     alwaysIncludeVatQuote: value?.alwaysIncludeVatQuote !== false,
   };
@@ -927,7 +1133,7 @@ function parseAssistantPreferences(value: any): AssistantPreferences {
 
 function buildSystemInstruction(
   preferences: AssistantPreferences,
-  activeDocumentSession: ActiveDocumentSession
+  activeDocumentSession: ActiveDocumentSession,
 ): string {
   // --- Section 1: Static operational rules (always sent) ---
   const sections: string[] = [SYSTEM_PROMPT_BASE.trim()];
@@ -936,7 +1142,9 @@ function buildSystemInstruction(
   if (activeDocumentSession?.isOpen && activeDocumentSession.documentType) {
     const docType = activeDocumentSession.documentType;
     const docData = activeDocumentSession.documentData;
-    const lineItems = Array.isArray(docData?.lineItems) ? docData.lineItems : [];
+    const lineItems = Array.isArray(docData?.lineItems)
+      ? docData.lineItems
+      : [];
     const itemCount = lineItems.length;
     const total = lineItems.reduce((sum: number, item: any) => {
       const qty = Number(item?.quantity ?? 0);
@@ -945,10 +1153,10 @@ function buildSystemInstruction(
     }, 0);
 
     sections.push(`## ACTIVE DOCUMENT SESSION (CRITICAL)
-A ${docType} is currently OPEN in the user's browser. Document ID: ${activeDocumentSession.documentId || 'new'}.
+A ${docType} is currently OPEN in the user's browser. Document ID: ${activeDocumentSession.documentId || "new"}.
 Current state: ${itemCount} line items, subtotal R${total.toFixed(2)}.
-${lineItems.length > 0 ? `Current line items:\n${lineItems.map((item: any, i: number) => `  ${i + 1}. ${item.description || 'Untitled'} — Qty: ${item.quantity ?? 1}, Price: R${Number(item.unitPrice ?? item.unit_price ?? 0).toFixed(2)}`).join('\n')}` : 'No line items yet.'}
-${docData?.clientName ? `Client: ${docData.clientName}` : ''}
+${lineItems.length > 0 ? `Current line items:\n${lineItems.map((item: any, i: number) => `  ${i + 1}. ${item.description || "Untitled"} — Qty: ${item.quantity ?? 1}, Price: R${Number(item.unitPrice ?? item.unit_price ?? 0).toFixed(2)}`).join("\n")}` : "No line items yet."}
+${docData?.clientName ? `Client: ${docData.clientName}` : ""}
 
 RULES FOR THIS SESSION:
 - Do NOT call openInvoiceManager or openQuotationBuilder — the document is already open.
@@ -986,7 +1194,7 @@ No invoice, quote, or certificate is currently open. If the user wants to create
       : `Use South African English phrasing and local business tone.`;
 
   // VAT defaults
-  const vatInstruction = `For invoices, ${preferences.alwaysIncludeVatInvoice ? 'default to including VAT (15%) unless the user explicitly asks to remove it' : 'ask whether VAT (15%) should be included before finalising totals'}. For quotations, ${preferences.alwaysIncludeVatQuote ? 'default to including VAT (15%) unless the user explicitly asks to remove it' : 'ask whether VAT (15%) should be included before finalising totals'}.`;
+  const vatInstruction = `For invoices, ${preferences.alwaysIncludeVatInvoice ? "default to including VAT (15%) unless the user explicitly asks to remove it" : "ask whether VAT (15%) should be included before finalising totals"}. For quotations, ${preferences.alwaysIncludeVatQuote ? "default to including VAT (15%) unless the user explicitly asks to remove it" : "ask whether VAT (15%) should be included before finalising totals"}.`;
 
   sections.push(modeInstruction);
   sections.push(brevityInstruction);
@@ -1002,7 +1210,8 @@ const tools = [
       // === SERVER-SIDE DOCUMENT GENERATION ===
       {
         name: "draftQuote",
-        description: "Creates a new Quote directly in the database. ALWAYS use this when the user asks to generate, create, make, or draft a quote. This is completely automated and executes server-side.",
+        description:
+          "Creates a new Quote directly in the database. ALWAYS use this when the user asks to generate, create, make, or draft a quote. This is completely automated and executes server-side.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1016,17 +1225,21 @@ const tools = [
                   quantity: { type: "number" },
                   unitPrice: { type: "number" },
                 },
-                required: ["description", "quantity", "unitPrice"]
+                required: ["description", "quantity", "unitPrice"],
               },
             },
-            notes: { type: "string", description: "Additional notes for the quote." },
+            notes: {
+              type: "string",
+              description: "Additional notes for the quote.",
+            },
           },
           required: ["clientName", "lineItems"],
         },
       },
       {
         name: "draftInvoice",
-        description: "Creates a new Invoice directly in the database. ALWAYS use this when the user asks to generate, create, make, or draft an invoice. This is completely automated and executes server-side.",
+        description:
+          "Creates a new Invoice directly in the database. ALWAYS use this when the user asks to generate, create, make, or draft an invoice. This is completely automated and executes server-side.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1040,19 +1253,23 @@ const tools = [
                   quantity: { type: "number" },
                   unitPrice: { type: "number" },
                 },
-                required: ["description", "quantity", "unitPrice"]
+                required: ["description", "quantity", "unitPrice"],
               },
             },
             notes: { type: "string" },
             isRecurring: { type: "boolean" },
-            recurringFrequency: { type: "string", description: "'weekly', 'monthly', 'quarterly', 'annually'" },
+            recurringFrequency: {
+              type: "string",
+              description: "'weekly', 'monthly', 'quarterly', 'annually'",
+            },
           },
           required: ["clientName", "lineItems"],
         },
       },
       {
         name: "draftPurchaseOrder",
-        description: "Creates a new Purchase Order directly in the database. Use when the user asks to generate a PO for a supplier.",
+        description:
+          "Creates a new Purchase Order directly in the database. Use when the user asks to generate a PO for a supplier.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1066,7 +1283,7 @@ const tools = [
                   quantity: { type: "number" },
                   unitPrice: { type: "number" },
                 },
-                required: ["description", "quantity", "unitPrice"]
+                required: ["description", "quantity", "unitPrice"],
               },
             },
             notes: { type: "string" },
@@ -1076,12 +1293,16 @@ const tools = [
       },
       {
         name: "draftCreditNote",
-        description: "Creates a new Credit Note directly in the database. Usually linked to an existing invoice.",
+        description:
+          "Creates a new Credit Note directly in the database. Usually linked to an existing invoice.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             clientName: { type: "string" },
-            invoiceReference: { type: "string", description: "The INV- numerical reference number if known." },
+            invoiceReference: {
+              type: "string",
+              description: "The INV- numerical reference number if known.",
+            },
             reason: { type: "string" },
             lineItems: {
               type: "array",
@@ -1092,7 +1313,7 @@ const tools = [
                   quantity: { type: "number" },
                   unitPrice: { type: "number" },
                 },
-                required: ["description", "quantity", "unitPrice"]
+                required: ["description", "quantity", "unitPrice"],
               },
             },
           },
@@ -1103,11 +1324,15 @@ const tools = [
       // === DOCUMENT CREATION (only when no document is open) ===
       {
         name: "openQuotationBuilder",
-        description: "Opens the quotation builder UI only. Use this ONLY when the user explicitly asks to open the builder, form, or blank quotation editor. Do not use this to actually create a quote in the database.",
+        description:
+          "Opens the quotation builder UI only. Use this ONLY when the user explicitly asks to open the builder, form, or blank quotation editor. Do not use this to actually create a quote in the database.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            clientName: { type: "string", description: "Name of the client. Strip numerical digits." },
+            clientName: {
+              type: "string",
+              description: "Name of the client. Strip numerical digits.",
+            },
             lineItems: {
               type: "array",
               items: {
@@ -1119,14 +1344,18 @@ const tools = [
                 },
               },
             },
-            notes: { type: "string", description: "Additional notes or scope." },
+            notes: {
+              type: "string",
+              description: "Additional notes or scope.",
+            },
           },
           required: ["clientName"],
         },
       },
       {
         name: "openInvoiceManager",
-        description: "Opens the invoice builder UI only. Use this ONLY when the user explicitly asks to open the builder, form, or blank invoice editor. Do not use this to actually create an invoice in the database.",
+        description:
+          "Opens the invoice builder UI only. Use this ONLY when the user explicitly asks to open the builder, form, or blank invoice editor. Do not use this to actually create an invoice in the database.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1142,8 +1371,14 @@ const tools = [
                 },
               },
             },
-            invoiceDate: { type: "string", description: "ISO date format (YYYY-MM-DD)." },
-            dueDate: { type: "string", description: "ISO date format (YYYY-MM-DD)." },
+            invoiceDate: {
+              type: "string",
+              description: "ISO date format (YYYY-MM-DD).",
+            },
+            dueDate: {
+              type: "string",
+              description: "ISO date format (YYYY-MM-DD).",
+            },
             notes: { type: "string" },
           },
           required: ["clientName"],
@@ -1151,16 +1386,33 @@ const tools = [
       },
       {
         name: "generateCertificate",
-        description: "Opens the certificate builder to create a NEW compliance document. Supported types: commissioning, hac, sat, as_built, installation, maintenance, sil.",
+        description:
+          "Opens the certificate builder to create a NEW compliance document. Supported types: commissioning, hac, sat, as_built, installation, maintenance, sil.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             clientName: { type: "string", description: "Name of the client." },
-            certificateType: { type: "string", description: "Type: 'commissioning', 'hac', 'sat', 'as_built', 'installation', 'maintenance', 'sil'." },
-            siteName: { type: "string", description: "Name of the facility or site." },
-            siteAddress: { type: "string", description: "Physical address of the site." },
-            projectReference: { type: "string", description: "Project reference number." },
-            inspectionDate: { type: "string", description: "ISO date (YYYY-MM-DD)." },
+            certificateType: {
+              type: "string",
+              description:
+                "Type: 'commissioning', 'hac', 'sat', 'as_built', 'installation', 'maintenance', 'sil'.",
+            },
+            siteName: {
+              type: "string",
+              description: "Name of the facility or site.",
+            },
+            siteAddress: {
+              type: "string",
+              description: "Physical address of the site.",
+            },
+            projectReference: {
+              type: "string",
+              description: "Project reference number.",
+            },
+            inspectionDate: {
+              type: "string",
+              description: "ISO date (YYYY-MM-DD).",
+            },
             notes: { type: "string" },
           },
           required: ["clientName", "certificateType"],
@@ -1170,49 +1422,85 @@ const tools = [
       // === DIRECT DOCUMENT EDITING (for open documents) ===
       {
         name: "addLineItem",
-        description: "Adds a new line item to the currently open invoice or quote. Use this when the user asks to add items to an already-open document. Call once per item to add.",
+        description:
+          "Adds a new line item to the currently open invoice or quote. Use this when the user asks to add items to an already-open document. Call once per item to add.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            description: { type: "string", description: "Description of the line item." },
-            quantity: { type: "number", description: "Quantity. Default 1 if not specified." },
-            unitPrice: { type: "number", description: "Unit price in ZAR. Default 0 if not specified." },
+            description: {
+              type: "string",
+              description: "Description of the line item.",
+            },
+            quantity: {
+              type: "number",
+              description: "Quantity. Default 1 if not specified.",
+            },
+            unitPrice: {
+              type: "number",
+              description: "Unit price in ZAR. Default 0 if not specified.",
+            },
           },
           required: ["description"],
         },
       },
       {
         name: "removeLineItem",
-        description: "Removes a line item from the currently open invoice or quote by its index (0-based). Line 1 = index 0, line 2 = index 1, etc.",
+        description:
+          "Removes a line item from the currently open invoice or quote by its index (0-based). Line 1 = index 0, line 2 = index 1, etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            index: { type: "number", description: "0-based index of the line item to remove. Line 1 = index 0." },
+            index: {
+              type: "number",
+              description:
+                "0-based index of the line item to remove. Line 1 = index 0.",
+            },
           },
           required: ["index"],
         },
       },
       {
         name: "updateLineItem",
-        description: "Updates a specific field of a line item in the currently open document. Can update description, quantity, or unitPrice.",
+        description:
+          "Updates a specific field of a line item in the currently open document. Can update description, quantity, or unitPrice.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            index: { type: "number", description: "0-based index of the line item to update. Line 1 = index 0." },
-            field: { type: "string", description: "Field to update: 'description', 'quantity', or 'unitPrice'." },
-            value: { type: "string", description: "The new value. Numbers should be provided as strings (e.g., '5' for quantity, '15000' for price)." },
+            index: {
+              type: "number",
+              description:
+                "0-based index of the line item to update. Line 1 = index 0.",
+            },
+            field: {
+              type: "string",
+              description:
+                "Field to update: 'description', 'quantity', or 'unitPrice'.",
+            },
+            value: {
+              type: "string",
+              description:
+                "The new value. Numbers should be provided as strings (e.g., '5' for quantity, '15000' for price).",
+            },
           },
           required: ["index", "field", "value"],
         },
       },
       {
         name: "updateDocumentField",
-        description: "Updates a top-level field on the currently open document (e.g., clientName, notes, issue_date, due_date, internal_notes).",
+        description:
+          "Updates a top-level field on the currently open document (e.g., clientName, notes, issue_date, due_date, internal_notes).",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            field: { type: "string", description: "Field name: 'clientName', 'notes', 'internal_notes', 'issue_date', 'due_date'." },
-            value: { type: "string", description: "The new value for the field." },
+            field: {
+              type: "string",
+              description:
+                "Field name: 'clientName', 'notes', 'internal_notes', 'issue_date', 'due_date'.",
+            },
+            value: {
+              type: "string",
+              description: "The new value for the field.",
+            },
           },
           required: ["field", "value"],
         },
@@ -1221,7 +1509,8 @@ const tools = [
       // === DOCUMENT LIFECYCLE ===
       {
         name: "saveDocument",
-        description: "Saves the currently open invoice or quote. Use when the user says 'save', 'save it', 'save the invoice', etc.",
+        description:
+          "Saves the currently open invoice or quote. Use when the user says 'save', 'save it', 'save the invoice', etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {},
@@ -1229,11 +1518,16 @@ const tools = [
       },
       {
         name: "closeDocument",
-        description: "Closes the currently open invoice or quote (saves first). Use when the user says 'close', 'close the invoice', 'I'm done with this', etc.",
+        description:
+          "Closes the currently open invoice or quote (saves first). Use when the user says 'close', 'close the invoice', 'I'm done with this', etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            navigateTo: { type: "string", description: "Optional destination after closing: 'dashboard', 'invoices', 'quotes', 'clients', etc." },
+            navigateTo: {
+              type: "string",
+              description:
+                "Optional destination after closing: 'dashboard', 'invoices', 'quotes', 'clients', etc.",
+            },
           },
         },
       },
@@ -1241,13 +1535,15 @@ const tools = [
       // === NAVIGATION ===
       {
         name: "navigateTo",
-        description: "Navigates to a specific section of the Touch Teq Office dashboard. Use when the user says 'go to dashboard', 'open clients', 'take me to reports', 'show expenses', etc.",
+        description:
+          "Navigates to a specific section of the Touch Teq Office dashboard. Use when the user says 'go to dashboard', 'open clients', 'take me to reports', 'show expenses', etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             destination: {
               type: "string",
-              description: "The destination to navigate to. Valid values: 'dashboard', 'invoices', 'quotes', 'clients', 'expenses', 'reports', 'settings', 'emails', 'travel', 'vat', 'reminders', 'timeline', 'certificates'.",
+              description:
+                "The destination to navigate to. Valid values: 'dashboard', 'invoices', 'quotes', 'clients', 'expenses', 'reports', 'settings', 'emails', 'travel', 'vat', 'reminders', 'timeline', 'certificates'.",
             },
           },
           required: ["destination"],
@@ -1255,12 +1551,20 @@ const tools = [
       },
       {
         name: "openExistingDocument",
-        description: "Opens an existing invoice or quote by its reference number (e.g., INV-0001, QT-0023). Use when the user says 'open invoice INV-0001' or 'edit quote QT-0023'.",
+        description:
+          "Opens an existing invoice or quote by its reference number (e.g., INV-0001, QT-0023). Use when the user says 'open invoice INV-0001' or 'edit quote QT-0023'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            documentType: { type: "string", description: "'invoice', 'quote', or 'certificate'." },
-            reference: { type: "string", description: "The document reference number (e.g., 'INV-0001', 'QT-0023', 'CERT-COM-2025-001')." },
+            documentType: {
+              type: "string",
+              description: "'invoice', 'quote', or 'certificate'.",
+            },
+            reference: {
+              type: "string",
+              description:
+                "The document reference number (e.g., 'INV-0001', 'QT-0023', 'CERT-COM-2025-001').",
+            },
           },
           required: ["documentType", "reference"],
         },
@@ -1269,7 +1573,8 @@ const tools = [
       // === EMAIL ===
       {
         name: "composeEmail",
-        description: "Opens the email drafting tool with pre-populated content.",
+        description:
+          "Opens the email drafting tool with pre-populated content.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1282,16 +1587,34 @@ const tools = [
       },
       {
         name: "stageEmailForConfirmation",
-        description: "Prepares an email (quotation, invoice, or message) for the user to confirm before sending via Brevo. Always call this before sending — never send directly.",
+        description:
+          "Prepares an email (quotation, invoice, or message) for the user to confirm before sending via Brevo. Always call this before sending — never send directly.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            recipientEmail: { type: "string", description: "The resolved email address of the recipient." },
-            recipientName: { type: "string", description: "The name of the recipient." },
+            recipientEmail: {
+              type: "string",
+              description: "The resolved email address of the recipient.",
+            },
+            recipientName: {
+              type: "string",
+              description: "The name of the recipient.",
+            },
             subject: { type: "string", description: "Email subject line." },
-            htmlBody: { type: "string", description: "The full HTML content of the email, including branding and professional formatting." },
-            documentType: { type: "string", description: "Type of document: 'quotation', 'invoice', 'certificate', or 'message'." },
-            documentReference: { type: "string", description: "The reference number (e.g., QT-0001 or INV-0001)." },
+            htmlBody: {
+              type: "string",
+              description:
+                "The full HTML content of the email, including branding and professional formatting.",
+            },
+            documentType: {
+              type: "string",
+              description:
+                "Type of document: 'quotation', 'invoice', 'certificate', or 'message'.",
+            },
+            documentReference: {
+              type: "string",
+              description: "The reference number (e.g., QT-0001 or INV-0001).",
+            },
           },
           required: ["recipientEmail", "subject", "htmlBody"],
         },
@@ -1300,36 +1623,88 @@ const tools = [
       // === TRAVEL LOGBOOK ===
       {
         name: "logTrip",
-        description: "Logs a business trip to the travel logbook. Use when user says things like 'log a trip', 'record my travel', 'I drove to...'. This executes server-side and saves directly — no confirmation needed.",
+        description:
+          "Logs a business trip to the travel logbook. Use when user says things like 'log a trip', 'record my travel', 'I drove to...'. This executes server-side and saves directly — no confirmation needed.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            date: { type: "string", description: "Date of the trip in ISO format (YYYY-MM-DD). Default to today if not specified." },
-            destination: { type: "string", description: "The destination or 'to' location. Keep as-is including numbers." },
-            distanceKm: { type: "number", description: "Distance in kilometres." },
-            purpose: { type: "string", description: "Purpose of the trip, e.g. 'Site visit', 'Client meeting', 'Inspection'. Keep as-is." },
-            clientName: { type: "string", description: "Name of the client visited (optional)." },
-            vehicleName: { type: "string", description: "Name or description of the vehicle used (optional). If not specified, the default vehicle will be used." },
-            fromLocation: { type: "string", description: "The starting location. Default to 'Office' if not specified." },
+            date: {
+              type: "string",
+              description:
+                "Date of the trip in ISO format (YYYY-MM-DD). Default to today if not specified.",
+            },
+            destination: {
+              type: "string",
+              description:
+                "The destination or 'to' location. Keep as-is including numbers.",
+            },
+            distanceKm: {
+              type: "number",
+              description: "Distance in kilometres.",
+            },
+            purpose: {
+              type: "string",
+              description:
+                "Purpose of the trip, e.g. 'Site visit', 'Client meeting', 'Inspection'. Keep as-is.",
+            },
+            clientName: {
+              type: "string",
+              description: "Name of the client visited (optional).",
+            },
+            vehicleName: {
+              type: "string",
+              description:
+                "Name or description of the vehicle used (optional). If not specified, the default vehicle will be used.",
+            },
+            fromLocation: {
+              type: "string",
+              description:
+                "The starting location. Default to 'Office' if not specified.",
+            },
           },
           required: ["destination", "distanceKm", "purpose"],
         },
       },
       {
         name: "logFuelPurchase",
-        description: "Logs a fuel purchase to the fuel tracker. Extracts date, station, litres, price, and total amount. This triggers a confirmation UI for the user to verify details before saving.",
+        description:
+          "Logs a fuel purchase to the fuel tracker. Extracts date, station, litres, price, and total amount. This triggers a confirmation UI for the user to verify details before saving.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            date: { type: "string", description: "Date of purchase (YYYY-MM-DD)." },
-            supplierName: { type: "string", description: "Name of the fuel station / supplier." },
-            fuelType: { type: "string", description: "Type: 'Diesel', 'Petrol 95' or 'Petrol 93'." },
-            litres: { type: "number", description: "Number of litres purchased." },
-            pricePerLitre: { type: "number", description: "Price per litre in ZAR." },
+            date: {
+              type: "string",
+              description: "Date of purchase (YYYY-MM-DD).",
+            },
+            supplierName: {
+              type: "string",
+              description: "Name of the fuel station / supplier.",
+            },
+            fuelType: {
+              type: "string",
+              description: "Type: 'Diesel', 'Petrol 95' or 'Petrol 93'.",
+            },
+            litres: {
+              type: "number",
+              description: "Number of litres purchased.",
+            },
+            pricePerLitre: {
+              type: "number",
+              description: "Price per litre in ZAR.",
+            },
             totalAmount: { type: "number", description: "Total spend in ZAR." },
-            odometer: { type: "number", description: "Odometer reading at fill-up." },
-            vehicleName: { type: "string", description: "Description or registration of the vehicle." },
-            paymentMethod: { type: "string", description: "Method: 'Card', 'Cash', or 'Company Account'." },
+            odometer: {
+              type: "number",
+              description: "Odometer reading at fill-up.",
+            },
+            vehicleName: {
+              type: "string",
+              description: "Description or registration of the vehicle.",
+            },
+            paymentMethod: {
+              type: "string",
+              description: "Method: 'Card', 'Cash', or 'Company Account'.",
+            },
           },
           required: ["supplierName", "totalAmount"],
         },
@@ -1338,17 +1713,20 @@ const tools = [
       // === DATA QUERYING ===
       {
         name: "queryBusinessData",
-        description: "Queries real business data from the database to answer the user's question. Call this whenever the user asks about their financial data, invoices, quotes, clients, expenses, travel, certificates, or any business metrics. This returns real data — never make up numbers.",
+        description:
+          "Queries real business data from the database to answer the user's question. Call this whenever the user asks about their financial data, invoices, quotes, clients, expenses, travel, certificates, or any business metrics. This returns real data — never make up numbers.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             queryType: {
               type: "string",
-              description: "Type of query: 'revenue_summary', 'invoice_list', 'overdue_invoices', 'quote_list', 'client_list', 'client_lookup', 'client_data_quality', 'expense_summary', 'travel_summary', 'certificate_list', 'vat_summary', 'dashboard_stats', 'purchase_order_list', 'credit_note_list', 'recurring_invoice_list', 'communication_log'.",
+              description:
+                "Type of query: 'revenue_summary', 'invoice_list', 'overdue_invoices', 'quote_list', 'client_list', 'client_lookup', 'client_data_quality', 'expense_summary', 'travel_summary', 'certificate_list', 'vat_summary', 'dashboard_stats', 'purchase_order_list', 'credit_note_list', 'recurring_invoice_list', 'communication_log'.",
             },
             filters: {
               type: "object",
-              description: "Optional filters like { clientName: '...', status: '...', dateFrom: 'YYYY-MM-DD', dateTo: 'YYYY-MM-DD', limit: 10 }.",
+              description:
+                "Optional filters like { clientName: '...', status: '...', dateFrom: 'YYYY-MM-DD', dateTo: 'YYYY-MM-DD', limit: 10 }.",
               properties: {
                 clientName: { type: "string" },
                 status: { type: "string" },
@@ -1365,16 +1743,29 @@ const tools = [
       // === CLIENT MANAGEMENT ===
       {
         name: "createClient",
-        description: "Creates a new client in the client database. Use when user says 'add a client', 'new client', 'register ABC company'. Executes server-side and saves directly.",
+        description:
+          "Creates a new client in the client database. Use when user says 'add a client', 'new client', 'register ABC company'. Executes server-side and saves directly.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            companyName: { type: "string", description: "Company or client name. Required." },
-            contactPerson: { type: "string", description: "Primary contact person's name." },
+            companyName: {
+              type: "string",
+              description: "Company or client name. Required.",
+            },
+            contactPerson: {
+              type: "string",
+              description: "Primary contact person's name.",
+            },
             email: { type: "string", description: "Email address." },
             phone: { type: "string", description: "Phone number." },
-            physicalAddress: { type: "string", description: "Physical address." },
-            vatNumber: { type: "string", description: "VAT registration number." },
+            physicalAddress: {
+              type: "string",
+              description: "Physical address.",
+            },
+            vatNumber: {
+              type: "string",
+              description: "VAT registration number.",
+            },
             notes: { type: "string", description: "Additional notes." },
           },
           required: ["companyName"],
@@ -1382,72 +1773,153 @@ const tools = [
       },
       {
         name: "updateClient",
-        description: "Updates an existing client's details. Use when user says 'update client', 'change client email', 'fix client phone', 'update Sasol's address'. Only whitelisted fields can be updated. Executes server-side with exact-match-first lookup.",
+        description:
+          "Updates an existing client's details. Use when user says 'update client', 'change client email', 'fix client phone', 'update Sasol's address'. Only whitelisted fields can be updated. Executes server-side with exact-match-first lookup.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            clientName: { type: "string", description: "The client company name to identify the client. Exact match preferred." },
-            contactPerson: { type: "string", description: "Updated contact person name." },
+            clientName: {
+              type: "string",
+              description:
+                "The client company name to identify the client. Exact match preferred.",
+            },
+            contactPerson: {
+              type: "string",
+              description: "Updated contact person name.",
+            },
             email: { type: "string", description: "Updated email address." },
             phone: { type: "string", description: "Updated phone number." },
-            physicalAddress: { type: "string", description: "Updated physical address." },
-            vatNumber: { type: "string", description: "Updated VAT registration number." },
-            category: { type: "string", description: "Updated client category." },
-            notes: { type: "string", description: "Updated notes (appends to existing)." },
+            physicalAddress: {
+              type: "string",
+              description: "Updated physical address.",
+            },
+            vatNumber: {
+              type: "string",
+              description: "Updated VAT registration number.",
+            },
+            category: {
+              type: "string",
+              description: "Updated client category.",
+            },
+            notes: {
+              type: "string",
+              description: "Updated notes (appends to existing).",
+            },
           },
           required: ["clientName"],
         },
       },
       {
         name: "addClientCommunication",
-        description: "Logs a communication event for a client. Use when user says 'log a call', 'add a note', 'record meeting', 'follow-up note', 'email summary'. Automatically updates last_contact_at and last_contact_summary on the client.",
+        description:
+          "Logs a communication event for a client. Use when user says 'log a call', 'add a note', 'record meeting', 'follow-up note', 'email summary'. Automatically updates last_contact_at and last_contact_summary on the client.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            clientName: { type: "string", description: "The client company name. Exact match preferred." },
-            noteType: { type: "string", description: "Type of interaction: 'Phone Call', 'Site Visit', 'Meeting', 'WhatsApp', 'Follow-up', 'Other'." },
-            content: { type: "string", description: "The note content, call summary, or meeting minutes." },
-            subject: { type: "string", description: "Optional subject line for the communication." },
+            clientName: {
+              type: "string",
+              description: "The client company name. Exact match preferred.",
+            },
+            noteType: {
+              type: "string",
+              description:
+                "Type of interaction: 'Phone Call', 'Site Visit', 'Meeting', 'WhatsApp', 'Follow-up', 'Other'.",
+            },
+            content: {
+              type: "string",
+              description:
+                "The note content, call summary, or meeting minutes.",
+            },
+            subject: {
+              type: "string",
+              description: "Optional subject line for the communication.",
+            },
           },
           required: ["clientName", "content"],
         },
       },
       {
         name: "createClientContact",
-        description: "Creates a new contact person for an existing client. Use when user says 'add contact', 'new contact for Sasol', 'add John as technical contact'. Prevents duplicates by checking existing contacts.",
+        description:
+          "Creates a new contact person for an existing client. Use when user says 'add contact', 'new contact for Sasol', 'add John as technical contact'. Prevents duplicates by checking existing contacts.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            clientName: { type: "string", description: "The client company name. Exact match preferred." },
-            fullName: { type: "string", description: "Full name of the contact person. Required." },
-            contactType: { type: "string", description: "Contact type: 'Technical', 'Finance', or 'General'." },
-            jobTitle: { type: "string", description: "Job title of the contact." },
+            clientName: {
+              type: "string",
+              description: "The client company name. Exact match preferred.",
+            },
+            fullName: {
+              type: "string",
+              description: "Full name of the contact person. Required.",
+            },
+            contactType: {
+              type: "string",
+              description:
+                "Contact type: 'Technical', 'Finance', or 'General'.",
+            },
+            jobTitle: {
+              type: "string",
+              description: "Job title of the contact.",
+            },
             email: { type: "string", description: "Contact email address." },
             cellNumber: { type: "string", description: "Cell/mobile number." },
-            landlineNumber: { type: "string", description: "Office landline number." },
+            landlineNumber: {
+              type: "string",
+              description: "Office landline number.",
+            },
             extension: { type: "string", description: "Phone extension." },
-            isPrimary: { type: "boolean", description: "Set as primary contact for this client." },
-            notes: { type: "string", description: "Additional notes about this contact." },
+            isPrimary: {
+              type: "boolean",
+              description: "Set as primary contact for this client.",
+            },
+            notes: {
+              type: "string",
+              description: "Additional notes about this contact.",
+            },
           },
           required: ["clientName", "fullName"],
         },
       },
       {
         name: "updateClientContact",
-        description: "Updates an existing client contact. Use when user says 'update contact', 'change contact email', 'fix contact phone'. Identifies contact by client name + contact name.",
+        description:
+          "Updates an existing client contact. Use when user says 'update contact', 'change contact email', 'fix contact phone'. Identifies contact by client name + contact name.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            clientName: { type: "string", description: "The client company name. Exact match preferred." },
-            contactName: { type: "string", description: "The existing contact's full name to identify them." },
+            clientName: {
+              type: "string",
+              description: "The client company name. Exact match preferred.",
+            },
+            contactName: {
+              type: "string",
+              description: "The existing contact's full name to identify them.",
+            },
             fullName: { type: "string", description: "Updated full name." },
-            contactType: { type: "string", description: "Updated contact type: 'Technical', 'Finance', or 'General'." },
+            contactType: {
+              type: "string",
+              description:
+                "Updated contact type: 'Technical', 'Finance', or 'General'.",
+            },
             jobTitle: { type: "string", description: "Updated job title." },
             email: { type: "string", description: "Updated email address." },
-            cellNumber: { type: "string", description: "Updated cell/mobile number." },
-            landlineNumber: { type: "string", description: "Updated office landline." },
-            extension: { type: "string", description: "Updated phone extension." },
-            isPrimary: { type: "boolean", description: "Set as primary contact." },
+            cellNumber: {
+              type: "string",
+              description: "Updated cell/mobile number.",
+            },
+            landlineNumber: {
+              type: "string",
+              description: "Updated office landline.",
+            },
+            extension: {
+              type: "string",
+              description: "Updated phone extension.",
+            },
+            isPrimary: {
+              type: "boolean",
+              description: "Set as primary contact.",
+            },
             notes: { type: "string", description: "Updated notes." },
           },
           required: ["clientName", "contactName"],
@@ -1457,16 +1929,37 @@ const tools = [
       // === EXPENSE MANAGEMENT ===
       {
         name: "logExpense",
-        description: "Records a business expense. Use when user says 'log expense', 'record expense', 'I spent R500 on...'. Executes server-side and saves directly.",
+        description:
+          "Records a business expense. Use when user says 'log expense', 'record expense', 'I spent R500 on...'. Executes server-side and saves directly.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            supplierName: { type: "string", description: "Name of the supplier or vendor." },
-            description: { type: "string", description: "Description of the expense." },
-            amountInclusive: { type: "number", description: "Total amount including VAT in ZAR." },
-            category: { type: "string", description: "Expense category: 'Materials', 'Equipment', 'Fuel', 'Insurance', 'Office Supplies', 'Software', 'Subscriptions', 'Professional Fees', 'Travel', 'Maintenance', 'Marketing', 'Telecommunications', 'Utilities', 'Other'." },
-            expenseDate: { type: "string", description: "Date of the expense in YYYY-MM-DD format. Defaults to today." },
-            vatClaimable: { type: "boolean", description: "Whether VAT can be claimed. Defaults to true." },
+            supplierName: {
+              type: "string",
+              description: "Name of the supplier or vendor.",
+            },
+            description: {
+              type: "string",
+              description: "Description of the expense.",
+            },
+            amountInclusive: {
+              type: "number",
+              description: "Total amount including VAT in ZAR.",
+            },
+            category: {
+              type: "string",
+              description:
+                "Expense category: 'Materials', 'Equipment', 'Fuel', 'Insurance', 'Office Supplies', 'Software', 'Subscriptions', 'Professional Fees', 'Travel', 'Maintenance', 'Marketing', 'Telecommunications', 'Utilities', 'Other'.",
+            },
+            expenseDate: {
+              type: "string",
+              description:
+                "Date of the expense in YYYY-MM-DD format. Defaults to today.",
+            },
+            vatClaimable: {
+              type: "boolean",
+              description: "Whether VAT can be claimed. Defaults to true.",
+            },
             notes: { type: "string", description: "Additional notes." },
           },
           required: ["supplierName", "description", "amountInclusive"],
@@ -1476,15 +1969,34 @@ const tools = [
       // === PAYMENT RECORDING ===
       {
         name: "recordPayment",
-        description: "Records a payment against an existing invoice. Use when user says 'record payment', 'client paid', 'received R10000 for invoice INV-0001'. Automatically updates invoice status to Paid if fully settled, or Partially Paid if partially settled.",
+        description:
+          "Records a payment against an existing invoice. Use when user says 'record payment', 'client paid', 'received R10000 for invoice INV-0001'. Automatically updates invoice status to Paid if fully settled, or Partially Paid if partially settled.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "Invoice reference number (e.g., 'INV-0001'). Required." },
-            amount: { type: "number", description: "Payment amount in ZAR. Required." },
-            paymentDate: { type: "string", description: "Date of the payment in YYYY-MM-DD format. Defaults to today." },
-            paymentMethod: { type: "string", description: "Payment method: 'EFT', 'Cash', 'Card', 'Cheque', 'PayFast', 'Other'. Defaults to 'EFT'." },
-            reference: { type: "string", description: "Payment reference or transaction ID (optional)." },
+            invoiceReference: {
+              type: "string",
+              description:
+                "Invoice reference number (e.g., 'INV-0001'). Required.",
+            },
+            amount: {
+              type: "number",
+              description: "Payment amount in ZAR. Required.",
+            },
+            paymentDate: {
+              type: "string",
+              description:
+                "Date of the payment in YYYY-MM-DD format. Defaults to today.",
+            },
+            paymentMethod: {
+              type: "string",
+              description:
+                "Payment method: 'EFT', 'Cash', 'Card', 'Cheque', 'PayFast', 'Other'. Defaults to 'EFT'.",
+            },
+            reference: {
+              type: "string",
+              description: "Payment reference or transaction ID (optional).",
+            },
             notes: { type: "string", description: "Additional notes." },
           },
           required: ["invoiceReference", "amount"],
@@ -1494,17 +2006,31 @@ const tools = [
       // === PERSISTENT AI MEMORY ===
       {
         name: "saveMemory",
-        description: "Saves a fact, preference, or business rule to persistent memory so it can be recalled in future sessions. Use when the user explicitly tells you to remember something, or when you learn a reliable recurring fact (e.g. standard rates, preferred suppliers, client contacts). Upserts by category+key so duplicates are updated, not added.",
+        description:
+          "Saves a fact, preference, or business rule to persistent memory so it can be recalled in future sessions. Use when the user explicitly tells you to remember something, or when you learn a reliable recurring fact (e.g. standard rates, preferred suppliers, client contacts). Upserts by category+key so duplicates are updated, not added.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             category: {
               type: "string",
-              description: "Memory category: 'client_preference', 'pricing_pattern', 'supplier_preference', 'communication_style', 'business_rule', or 'reminder'.",
+              description:
+                "Memory category: 'client_preference', 'pricing_pattern', 'supplier_preference', 'communication_style', 'business_rule', or 'reminder'.",
             },
-            key: { type: "string", description: "Short unique label for this memory (e.g. 'site_commissioning_rate', 'sasol_procurement_contact')." },
-            value: { type: "string", description: "The fact or rule to remember (e.g. 'R9,500 per site commissioning job', 'John Smith — +27 82 000 0000')." },
-            confidence: { type: "number", description: "Confidence level 0.0–1.0. Default 1.0 for explicit user instruction." },
+            key: {
+              type: "string",
+              description:
+                "Short unique label for this memory (e.g. 'site_commissioning_rate', 'sasol_procurement_contact').",
+            },
+            value: {
+              type: "string",
+              description:
+                "The fact or rule to remember (e.g. 'R9,500 per site commissioning job', 'John Smith — +27 82 000 0000').",
+            },
+            confidence: {
+              type: "number",
+              description:
+                "Confidence level 0.0–1.0. Default 1.0 for explicit user instruction.",
+            },
           },
           required: ["category", "key", "value"],
         },
@@ -1513,23 +2039,37 @@ const tools = [
       // === INVOICE STATUS MANAGEMENT ===
       {
         name: "updateInvoiceStatus",
-        description: "Updates the status of an existing invoice. Use when the user asks to mark an invoice as sent, mark it as overdue, or change its status. Do NOT use this to mark an invoice as paid — use markInvoicePaid for that. Do NOT use this to cancel/void — use voidInvoice for that.",
+        description:
+          "Updates the status of an existing invoice. Use when the user asks to mark an invoice as sent, mark it as overdue, or change its status. Do NOT use this to mark an invoice as paid — use markInvoicePaid for that. Do NOT use this to cancel/void — use voidInvoice for that.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
-            newStatus: { type: "string", description: "The new status to set. Only 'Draft', 'Sent', and 'Overdue' are allowed." },
+            invoiceReference: {
+              type: "string",
+              description:
+                "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice.",
+            },
+            newStatus: {
+              type: "string",
+              description:
+                "The new status to set. Only 'Draft', 'Sent', and 'Overdue' are allowed.",
+            },
           },
           required: ["invoiceReference", "newStatus"],
         },
       },
       {
         name: "updatePurchaseOrderStatus",
-        description: "Updates the status of a purchase order. Use this when the user asks to mark a PO as sent, acknowledged, delivered, or cancelled.",
+        description:
+          "Updates the status of a purchase order. Use this when the user asks to mark a PO as sent, acknowledged, delivered, or cancelled.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            poReference: { type: "string", description: "The purchase order number (e.g., 'PO-0001') or a description that identifies the PO." },
+            poReference: {
+              type: "string",
+              description:
+                "The purchase order number (e.g., 'PO-0001') or a description that identifies the PO.",
+            },
             newStatus: {
               type: "string",
               enum: ["Draft", "Sent", "Acknowledged", "Delivered", "Cancelled"],
@@ -1541,11 +2081,16 @@ const tools = [
       },
       {
         name: "updateCreditNoteStatus",
-        description: "Updates the status of a credit note. Use this when the user asks to issue, apply, send, or cancel a credit note.",
+        description:
+          "Updates the status of a credit note. Use this when the user asks to issue, apply, send, or cancel a credit note.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            creditNoteReference: { type: "string", description: "The credit note number (e.g., 'CN-0001') or a description that identifies the credit note." },
+            creditNoteReference: {
+              type: "string",
+              description:
+                "The credit note number (e.g., 'CN-0001') or a description that identifies the credit note.",
+            },
             newStatus: {
               type: "string",
               enum: ["Draft", "Sent", "Issued", "Applied", "Cancelled"],
@@ -1557,121 +2102,167 @@ const tools = [
       },
       {
         name: "markInvoicePaid",
-        description: "Marks an invoice as fully paid and sets the balance due to zero. Use when the user says an invoice has been paid, is settled, or should be closed. This does NOT record a payment transaction — use recordPayment if the user wants to log a specific payment amount and method.",
+        description:
+          "Marks an invoice as fully paid and sets the balance due to zero. Use when the user says an invoice has been paid, is settled, or should be closed. This does NOT record a payment transaction — use recordPayment if the user wants to log a specific payment amount and method.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
+            invoiceReference: {
+              type: "string",
+              description:
+                "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice.",
+            },
           },
           required: ["invoiceReference"],
         },
       },
       {
         name: "voidInvoice",
-        description: "Cancels/voids an invoice by setting its status to Cancelled. Use when the user asks to cancel, void, delete, or remove an invoice. This does not delete the record — it marks it as Cancelled. An invoice that has been paid or partially paid cannot be voided — a credit note should be issued instead.",
+        description:
+          "Cancels/voids an invoice by setting its status to Cancelled. Use when the user asks to cancel, void, delete, or remove an invoice. This does not delete the record — it marks it as Cancelled. An invoice that has been paid or partially paid cannot be voided — a credit note should be issued instead.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice." },
+            invoiceReference: {
+              type: "string",
+              description:
+                "The invoice number (e.g., 'INV-0001') or a description that identifies the invoice.",
+            },
           },
           required: ["invoiceReference"],
         },
       },
       {
         name: "markInvoiceSent",
-        description: "Marks an invoice as Sent. Use when the user says the invoice has been sent to the client, emailed, or dispatched.",
+        description:
+          "Marks an invoice as Sent. Use when the user says the invoice has been sent to the client, emailed, or dispatched.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+            invoiceReference: {
+              type: "string",
+              description: "The invoice number (e.g., 'INV-0001').",
+            },
           },
           required: ["invoiceReference"],
         },
       },
       {
         name: "reopenInvoice",
-        description: "Reopens a cancelled invoice back to Draft. Only allowed if the invoice has no payments recorded.",
+        description:
+          "Reopens a cancelled invoice back to Draft. Only allowed if the invoice has no payments recorded.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            invoiceReference: { type: "string", description: "The invoice number (e.g., 'INV-0001')." },
+            invoiceReference: {
+              type: "string",
+              description: "The invoice number (e.g., 'INV-0001').",
+            },
           },
           required: ["invoiceReference"],
         },
       },
       {
         name: "markQuoteSent",
-        description: "Marks a quote as Sent. Use when the user says the quote has been sent to the client.",
+        description:
+          "Marks a quote as Sent. Use when the user says the quote has been sent to the client.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "acceptQuote",
-        description: "Marks a quote as Accepted. Use when the client has accepted the quotation.",
+        description:
+          "Marks a quote as Accepted. Use when the client has accepted the quotation.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "declineQuote",
-        description: "Marks a quote as Declined. Use when the client has declined the quotation.",
+        description:
+          "Marks a quote as Declined. Use when the client has declined the quotation.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "expireQuote",
-        description: "Marks a quote as Expired. Use when the quote validity period has passed.",
+        description:
+          "Marks a quote as Expired. Use when the quote validity period has passed.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "reopenQuote",
-        description: "Reopens a declined, rejected, or expired quote back to Draft for revision.",
+        description:
+          "Reopens a declined, rejected, or expired quote back to Draft for revision.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "rejectQuote",
-        description: "Marks a quote as Rejected. Use when the quote has been formally rejected by the client or internally.",
+        description:
+          "Marks a quote as Rejected. Use when the quote has been formally rejected by the client or internally.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
       },
       {
         name: "issueQuote",
-        description: "Marks a quote as Issued. Use when the quote has been formally issued to the client.",
+        description:
+          "Marks a quote as Issued. Use when the quote has been formally issued to the client.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            quoteReference: { type: "string", description: "The quote number (e.g., 'QT-0001')." },
+            quoteReference: {
+              type: "string",
+              description: "The quote number (e.g., 'QT-0001').",
+            },
           },
           required: ["quoteReference"],
         },
@@ -1682,7 +2273,10 @@ const tools = [
         parametersJsonSchema: {
           type: "object",
           properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+            poReference: {
+              type: "string",
+              description: "The PO number (e.g., 'PO-0001').",
+            },
           },
           required: ["poReference"],
         },
@@ -1693,7 +2287,10 @@ const tools = [
         parametersJsonSchema: {
           type: "object",
           properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+            poReference: {
+              type: "string",
+              description: "The PO number (e.g., 'PO-0001').",
+            },
           },
           required: ["poReference"],
         },
@@ -1704,29 +2301,40 @@ const tools = [
         parametersJsonSchema: {
           type: "object",
           properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+            poReference: {
+              type: "string",
+              description: "The PO number (e.g., 'PO-0001').",
+            },
           },
           required: ["poReference"],
         },
       },
       {
         name: "cancelPO",
-        description: "Cancels a purchase order. Allowed from any status except Cancelled.",
+        description:
+          "Cancels a purchase order. Allowed from any status except Cancelled.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            poReference: { type: "string", description: "The PO number (e.g., 'PO-0001')." },
+            poReference: {
+              type: "string",
+              description: "The PO number (e.g., 'PO-0001').",
+            },
           },
           required: ["poReference"],
         },
       },
       {
         name: "issueCreditNote",
-        description: "Issues a credit note (changes status from Draft/Sent to Issued).",
+        description:
+          "Issues a credit note (changes status from Draft/Sent to Issued).",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+            cnReference: {
+              type: "string",
+              description: "The credit note number (e.g., 'CN-0001').",
+            },
           },
           required: ["cnReference"],
         },
@@ -1737,36 +2345,48 @@ const tools = [
         parametersJsonSchema: {
           type: "object",
           properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+            cnReference: {
+              type: "string",
+              description: "The credit note number (e.g., 'CN-0001').",
+            },
           },
           required: ["cnReference"],
         },
       },
       {
         name: "applyCreditNote",
-        description: "Applies a credit note against its linked invoice (changes status to Applied).",
+        description:
+          "Applies a credit note against its linked invoice (changes status to Applied).",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+            cnReference: {
+              type: "string",
+              description: "The credit note number (e.g., 'CN-0001').",
+            },
           },
           required: ["cnReference"],
         },
       },
       {
         name: "cancelCreditNote",
-        description: "Cancels a credit note. Not allowed if the credit note has already been applied.",
+        description:
+          "Cancels a credit note. Not allowed if the credit note has already been applied.",
         parametersJsonSchema: {
           type: "object",
           properties: {
-            cnReference: { type: "string", description: "The credit note number (e.g., 'CN-0001')." },
+            cnReference: {
+              type: "string",
+              description: "The credit note number (e.g., 'CN-0001').",
+            },
           },
           required: ["cnReference"],
         },
       },
       {
         name: "convertQuoteToInvoice",
-        description: "Converts an accepted quote into an invoice. Copies all line items, totals, and client details from the quote to create a new invoice. The quote status is updated to 'Converted'. Use this when the user says 'convert this quote to an invoice', 'invoice this quote', 'raise an invoice from quote [number]', or after a quote has been accepted and the user wants to proceed.",
+        description:
+          "Converts an accepted quote into an invoice. Copies all line items, totals, and client details from the quote to create a new invoice. The quote status is updated to 'Converted'. Use this when the user says 'convert this quote to an invoice', 'invoice this quote', 'raise an invoice from quote [number]', or after a quote has been accepted and the user wants to proceed.",
         parametersJsonSchema: {
           type: "object",
           properties: {
@@ -1776,7 +2396,8 @@ const tools = [
             },
             paymentTermsDays: {
               type: "number",
-              description: "Payment terms in days for the invoice. If not specified, the business profile default will be used.",
+              description:
+                "Payment terms in days for the invoice. If not specified, the business profile default will be used.",
             },
           },
           required: ["quoteReference"],
@@ -1784,22 +2405,24 @@ const tools = [
       },
       {
         name: "transitionDocumentStatus",
-        description: "Transitions the status of an invoice, quote, purchase order, or credit note following strict lifecycle rules. Use this for specific transitions like 'mark_sent', 'void', 'reopen', etc.",
+        description:
+          "Transitions the status of an invoice, quote, purchase order, or credit note following strict lifecycle rules. Use this for specific transitions like 'mark_sent', 'void', 'reopen', etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             documentType: {
               type: "string",
               enum: ["invoice", "quote", "purchase_order", "credit_note"],
-              description: "The type of document to transition."
+              description: "The type of document to transition.",
             },
             reference: {
               type: "string",
-              description: "The document number (e.g., 'INV-0001', 'QT-0001')."
+              description: "The document number (e.g., 'INV-0001', 'QT-0001').",
             },
             action: {
               type: "string",
-              description: "The transition action to perform (e.g., 'mark_sent', 'accept', 'decline', 'void', 'reopen', 'issue', 'acknowledge', 'mark_delivered', 'cancel')."
+              description:
+                "The transition action to perform (e.g., 'mark_sent', 'accept', 'decline', 'void', 'reopen', 'issue', 'acknowledge', 'mark_delivered', 'cancel').",
             },
           },
           required: ["documentType", "reference", "action"],
@@ -1807,589 +2430,699 @@ const tools = [
       },
       {
         name: "createTask",
-        description: "Creates a new task or to-do item. Use this when the user asks to create a task, add a to-do, set a reminder, or when they say things like 'remind me to...', 'I need to...', 'don't forget to...', 'schedule...', or 'add to my list...'.",
+        description:
+          "Creates a new task or to-do item. Use this when the user asks to create a task, add a to-do, set a reminder, or when they say things like 'remind me to...', 'I need to...', 'don't forget to...', 'schedule...', or 'add to my list...'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             title: {
               type: "string",
-              description: "The task title — a clear, concise description of what needs to be done."
+              description:
+                "The task title — a clear, concise description of what needs to be done.",
             },
             description: {
               type: "string",
-              description: "Optional longer description with additional details or context."
+              description:
+                "Optional longer description with additional details or context.",
             },
             priority: {
               type: "string",
               enum: ["low", "medium", "high", "urgent"],
-              description: "Task priority. Default to 'medium' if the user does not specify. Use 'urgent' only if the user explicitly says urgent, critical, or ASAP. Use 'high' if they say important or high priority."
+              description:
+                "Task priority. Default to 'medium' if the user does not specify. Use 'urgent' only if the user explicitly says urgent, critical, or ASAP. Use 'high' if they say important or high priority.",
             },
             dueDate: {
               type: "string",
-              description: "Due date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'end of the week', 'next month', etc. If the user says 'remind me' with a date, use that as the due date."
+              description:
+                "Due date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'end of the week', 'next month', etc. If the user says 'remind me' with a date, use that as the due date.",
             },
             dueTime: {
               type: "string",
-              description: "Optional due time in HH:MM format (24-hour). Only set if the user specifies a specific time."
+              description:
+                "Optional due time in HH:MM format (24-hour). Only set if the user specifies a specific time.",
             },
             category: {
               type: "string",
-              description: "Task category. Common categories: Admin, Site Visit, Follow-up, Procurement, Documentation, Maintenance, Client Communication, Invoicing, Safety. Infer from context if not explicitly stated."
+              description:
+                "Task category. Common categories: Admin, Site Visit, Follow-up, Procurement, Documentation, Maintenance, Client Communication, Invoicing, Safety. Infer from context if not explicitly stated.",
             },
             clientName: {
               type: "string",
-              description: "Client name to link the task to, if the task relates to a specific client. Will be looked up by name."
+              description:
+                "Client name to link the task to, if the task relates to a specific client. Will be looked up by name.",
             },
             tags: {
               type: "array",
               items: { type: "string" },
-              description: "Optional tags for the task."
+              description: "Optional tags for the task.",
             },
             notes: {
               type: "string",
-              description: "Optional additional notes."
-            }
+              description: "Optional additional notes.",
+            },
           },
-          required: ["title"]
+          required: ["title"],
         },
       },
       {
         name: "updateTask",
-        description: "Updates an existing task. Use this when the user asks to change a task's priority, due date, description, status, or any other field. Also use this when the user asks to 'start working on' a task (set status to in_progress).",
+        description:
+          "Updates an existing task. Use this when the user asks to change a task's priority, due date, description, status, or any other field. Also use this when the user asks to 'start working on' a task (set status to in_progress).",
         parametersJsonSchema: {
           type: "object",
           properties: {
             taskIdentifier: {
               type: "string",
-              description: "The task title or a description that identifies the task. Will be searched by title."
+              description:
+                "The task title or a description that identifies the task. Will be searched by title.",
             },
             title: { type: "string", description: "New title, if changing." },
-            description: { type: "string", description: "New description, if changing." },
+            description: {
+              type: "string",
+              description: "New description, if changing.",
+            },
             priority: {
               type: "string",
               enum: ["low", "medium", "high", "urgent"],
-              description: "New priority, if changing."
+              description: "New priority, if changing.",
             },
             status: {
               type: "string",
               enum: ["todo", "in_progress", "done", "cancelled"],
-              description: "New status, if changing."
+              description: "New status, if changing.",
             },
-            dueDate: { type: "string", description: "New due date in YYYY-MM-DD format, if changing." },
-            dueTime: { type: "string", description: "New due time in HH:MM format, if changing." },
-            category: { type: "string", description: "New category, if changing." },
-            notes: { type: "string", description: "New notes, if changing." }
+            dueDate: {
+              type: "string",
+              description: "New due date in YYYY-MM-DD format, if changing.",
+            },
+            dueTime: {
+              type: "string",
+              description: "New due time in HH:MM format, if changing.",
+            },
+            category: {
+              type: "string",
+              description: "New category, if changing.",
+            },
+            notes: { type: "string", description: "New notes, if changing." },
           },
-          required: ["taskIdentifier"]
+          required: ["taskIdentifier"],
         },
       },
       {
         name: "completeTask",
-        description: "Marks a task as done/completed. Use this when the user says 'done', 'finished', 'completed', 'tick off', or 'mark as done' for a specific task.",
+        description:
+          "Marks a task as done/completed. Use this when the user says 'done', 'finished', 'completed', 'tick off', or 'mark as done' for a specific task.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             taskIdentifier: {
               type: "string",
-              description: "The task title or description that identifies the task."
-            }
+              description:
+                "The task title or description that identifies the task.",
+            },
           },
-          required: ["taskIdentifier"]
+          required: ["taskIdentifier"],
         },
       },
       {
         name: "queryTasks",
-        description: "Queries tasks based on filters. Use this when the user asks 'what do I need to do today?', 'show me my overdue tasks', 'what tasks are due this week?', 'what are my high priority tasks?', 'how many tasks do I have?', or any question about their task list.",
+        description:
+          "Queries tasks based on filters. Use this when the user asks 'what do I need to do today?', 'show me my overdue tasks', 'what tasks are due this week?', 'what are my high priority tasks?', 'how many tasks do I have?', or any question about their task list.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             queryType: {
               type: "string",
-              enum: ["today", "overdue", "this_week", "all_open", "by_priority", "by_client", "by_category", "stats", "search"],
-              description: "The type of query to run."
+              enum: [
+                "today",
+                "overdue",
+                "this_week",
+                "all_open",
+                "by_priority",
+                "by_client",
+                "by_category",
+                "stats",
+                "search",
+              ],
+              description: "The type of query to run.",
             },
             priority: {
               type: "string",
               enum: ["low", "medium", "high", "urgent"],
-              description: "Filter by priority (for by_priority query)."
+              description: "Filter by priority (for by_priority query).",
             },
             clientName: {
               type: "string",
-              description: "Client name to filter by (for by_client query)."
+              description: "Client name to filter by (for by_client query).",
             },
             category: {
               type: "string",
-              description: "Category to filter by (for by_category query)."
+              description: "Category to filter by (for by_category query).",
             },
             searchTerm: {
               type: "string",
-              description: "Search term for task titles and descriptions (for search query)."
-            }
+              description:
+                "Search term for task titles and descriptions (for search query).",
+            },
           },
-          required: ["queryType"]
+          required: ["queryType"],
         },
       },
       {
         name: "deleteTask",
-        description: "Deletes a task permanently. Use this when the user explicitly asks to delete or remove a task. For tasks the user just wants to dismiss or skip, suggest marking as cancelled instead.",
+        description:
+          "Deletes a task permanently. Use this when the user explicitly asks to delete or remove a task. For tasks the user just wants to dismiss or skip, suggest marking as cancelled instead.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             taskIdentifier: {
               type: "string",
-              description: "The task title or description that identifies the task to delete."
-            }
+              description:
+                "The task title or description that identifies the task to delete.",
+            },
           },
-          required: ["taskIdentifier"]
+          required: ["taskIdentifier"],
         },
       },
       {
         name: "createNote",
-        description: "Creates a new note. Use this when the user says 'take a note', 'note that...', 'jot down...', 'write down...', 'remember that...', or describes something they want to record. For phone calls, use note_type 'call'. For meetings, use 'meeting'. For site visits, use 'site_visit'. For quick one-liners, use 'quick'. For everything else, use 'general'.",
+        description:
+          "Creates a new note. Use this when the user says 'take a note', 'note that...', 'jot down...', 'write down...', 'remember that...', or describes something they want to record. For phone calls, use note_type 'call'. For meetings, use 'meeting'. For site visits, use 'site_visit'. For quick one-liners, use 'quick'. For everything else, use 'general'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             title: {
               type: "string",
-              description: "Optional title for the note. Generate a short descriptive title if the user does not provide one."
+              description:
+                "Optional title for the note. Generate a short descriptive title if the user does not provide one.",
             },
             content: {
               type: "string",
-              description: "The note content. Capture what the user said, organized clearly. For call notes, structure as: who was called, what was discussed, outcomes. For site visits: site name, observations, action items."
+              description:
+                "The note content. Capture what the user said, organized clearly. For call notes, structure as: who was called, what was discussed, outcomes. For site visits: site name, observations, action items.",
             },
             noteType: {
               type: "string",
               enum: ["general", "call", "meeting", "site_visit", "quick"],
-              description: "The type of note. Infer from context: if the user mentions a phone call, use 'call'. If they mention a meeting, use 'meeting'. If they mention a site visit or being on site, use 'site_visit'. If it is a brief note or reminder-style, use 'quick'. Default to 'general'."
+              description:
+                "The type of note. Infer from context: if the user mentions a phone call, use 'call'. If they mention a meeting, use 'meeting'. If they mention a site visit or being on site, use 'site_visit'. If it is a brief note or reminder-style, use 'quick'. Default to 'general'.",
             },
             contactName: {
               type: "string",
-              description: "For call/meeting notes: the name of the person contacted or who attended."
+              description:
+                "For call/meeting notes: the name of the person contacted or who attended.",
             },
             contactPhone: {
               type: "string",
-              description: "For call notes: the phone number if mentioned."
+              description: "For call notes: the phone number if mentioned.",
             },
             callDirection: {
               type: "string",
               enum: ["inbound", "outbound"],
-              description: "For call notes: whether the call was inbound or outbound."
+              description:
+                "For call notes: whether the call was inbound or outbound.",
             },
             meetingAttendees: {
               type: "array",
               items: { type: "string" },
-              description: "For meeting notes: list of attendee names."
+              description: "For meeting notes: list of attendee names.",
             },
             siteName: {
               type: "string",
-              description: "For site visit notes: the name of the site."
+              description: "For site visit notes: the name of the site.",
             },
             clientName: {
               type: "string",
-              description: "Client to link this note to, if it relates to a specific client."
+              description:
+                "Client to link this note to, if it relates to a specific client.",
             },
             followUpRequired: {
               type: "boolean",
-              description: "Whether a follow-up action is needed. Set to true if the user mentions needing to follow up, get back to someone, or take further action."
+              description:
+                "Whether a follow-up action is needed. Set to true if the user mentions needing to follow up, get back to someone, or take further action.",
             },
             followUpDate: {
               type: "string",
-              description: "If follow-up is required, the date by which it should happen (YYYY-MM-DD). Interpret natural language dates."
+              description:
+                "If follow-up is required, the date by which it should happen (YYYY-MM-DD). Interpret natural language dates.",
             },
             followUpNotes: {
               type: "string",
-              description: "Brief description of the follow-up action needed."
+              description: "Brief description of the follow-up action needed.",
             },
             tags: {
               type: "array",
               items: { type: "string" },
-              description: "Optional tags for categorising the note."
-            }
+              description: "Optional tags for categorising the note.",
+            },
           },
-          required: ["content"]
+          required: ["content"],
         },
       },
       {
         name: "searchNotes",
-        description: "Searches through existing notes. Use this when the user asks 'what did I note about...', 'find my notes on...', 'show me notes about...', 'what did we discuss with [client]...', 'any notes about [topic]...', or 'show me my follow-ups'.",
+        description:
+          "Searches through existing notes. Use this when the user asks 'what did I note about...', 'find my notes on...', 'show me notes about...', 'what did we discuss with [client]...', 'any notes about [topic]...', or 'show me my follow-ups'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             searchTerm: {
               type: "string",
-              description: "Text to search for in note titles and content."
+              description: "Text to search for in note titles and content.",
             },
             noteType: {
               type: "string",
-              enum: ["general", "call", "meeting", "site_visit", "quick", "all"],
-              description: "Filter by note type. Default to 'all'."
+              enum: [
+                "general",
+                "call",
+                "meeting",
+                "site_visit",
+                "quick",
+                "all",
+              ],
+              description: "Filter by note type. Default to 'all'.",
             },
             clientName: {
               type: "string",
-              description: "Filter notes by client name."
+              description: "Filter notes by client name.",
             },
             followUpPending: {
               type: "boolean",
-              description: "If true, only return notes with pending (not completed) follow-ups."
+              description:
+                "If true, only return notes with pending (not completed) follow-ups.",
             },
             limit: {
               type: "number",
-              description: "Maximum number of notes to return. Default 10."
-            }
+              description: "Maximum number of notes to return. Default 10.",
+            },
           },
-          required: []
+          required: [],
         },
       },
       {
         name: "logCallNote",
-        description: "Quickly logs a phone call note. Use this when the user explicitly mentions a phone call: 'just got off the phone with...', 'called [person/company]...', 'log a call with...', '[person] called about...'. This is a shortcut that pre-sets the note type to 'call'.",
+        description:
+          "Quickly logs a phone call note. Use this when the user explicitly mentions a phone call: 'just got off the phone with...', 'called [person/company]...', 'log a call with...', '[person] called about...'. This is a shortcut that pre-sets the note type to 'call'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             contactName: {
               type: "string",
-              description: "Who the call was with."
+              description: "Who the call was with.",
             },
             clientName: {
               type: "string",
-              description: "The client company, if applicable."
+              description: "The client company, if applicable.",
             },
             callDirection: {
               type: "string",
               enum: ["inbound", "outbound"],
-              description: "Whether the user called them (outbound) or they called the user (inbound). Infer from context: 'I called' = outbound, 'they called' or '[person] called' = inbound."
+              description:
+                "Whether the user called them (outbound) or they called the user (inbound). Infer from context: 'I called' = outbound, 'they called' or '[person] called' = inbound.",
             },
             content: {
               type: "string",
-              description: "What was discussed, decisions made, outcomes, and any action items. Structure the content clearly."
+              description:
+                "What was discussed, decisions made, outcomes, and any action items. Structure the content clearly.",
             },
             followUpRequired: {
               type: "boolean",
-              description: "Whether follow-up is needed."
+              description: "Whether follow-up is needed.",
             },
             followUpDate: {
               type: "string",
-              description: "Follow-up date if needed (YYYY-MM-DD)."
+              description: "Follow-up date if needed (YYYY-MM-DD).",
             },
             followUpNotes: {
               type: "string",
-              description: "What the follow-up should involve."
-            }
+              description: "What the follow-up should involve.",
+            },
           },
-          required: ["contactName", "content"]
+          required: ["contactName", "content"],
         },
       },
       {
         name: "createCalendarEvent",
-        description: "Creates a new calendar event or appointment. Use this when the user asks to schedule a meeting, add an appointment, block time, set up a call, or when they say 'book...', 'schedule...', 'set up...', 'add to calendar...', or 'I have a meeting with...'.",
+        description:
+          "Creates a new calendar event or appointment. Use this when the user asks to schedule a meeting, add an appointment, block time, set up a call, or when they say 'book...', 'schedule...', 'set up...', 'add to calendar...', or 'I have a meeting with...'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             title: {
               type: "string",
-              description: "The event title — what the event is called."
+              description: "The event title — what the event is called.",
             },
             description: {
               type: "string",
-              description: "Optional longer description with additional details."
+              description:
+                "Optional longer description with additional details.",
             },
             eventType: {
               type: "string",
-              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
-              description: "Type of event. Default to 'appointment' if not specified."
+              enum: [
+                "appointment",
+                "meeting",
+                "site_visit",
+                "deadline",
+                "reminder",
+                "travel",
+                "other",
+              ],
+              description:
+                "Type of event. Default to 'appointment' if not specified.",
             },
             startDate: {
               type: "string",
-              description: "Start date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'next week', etc."
+              description:
+                "Start date in YYYY-MM-DD format. Interpret natural language: 'tomorrow', 'next Tuesday', 'next week', etc.",
             },
             startTime: {
               type: "string",
-              description: "Start time in HH:MM format (24-hour). Only set if the user specifies a specific time."
+              description:
+                "Start time in HH:MM format (24-hour). Only set if the user specifies a specific time.",
             },
             endDate: {
               type: "string",
-              description: "End date in YYYY-MM-DD format. If not set, defaults to start date."
+              description:
+                "End date in YYYY-MM-DD format. If not set, defaults to start date.",
             },
             endTime: {
               type: "string",
-              description: "End time in HH:MM format (24-hour)."
+              description: "End time in HH:MM format (24-hour).",
             },
             allDay: {
               type: "boolean",
-              description: "Whether this is an all-day event. Default false."
+              description: "Whether this is an all-day event. Default false.",
             },
             location: {
               type: "string",
-              description: "Where the event takes place."
+              description: "Where the event takes place.",
             },
             clientName: {
               type: "string",
-              description: "Client name to link the event to, if applicable. Will be looked up by name."
+              description:
+                "Client name to link the event to, if applicable. Will be looked up by name.",
             },
             status: {
               type: "string",
               enum: ["scheduled", "completed", "cancelled", "rescheduled"],
-              description: "Event status. Default to 'scheduled'."
+              description: "Event status. Default to 'scheduled'.",
             },
             colour: {
               type: "string",
-              description: "Event colour in hex format (e.g., '#3B82F6'). Optional."
+              description:
+                "Event colour in hex format (e.g., '#3B82F6'). Optional.",
             },
             notes: {
               type: "string",
-              description: "Internal/private notes about the event."
-            }
+              description: "Internal/private notes about the event.",
+            },
           },
-          required: ["title", "startDate"]
+          required: ["title", "startDate"],
         },
       },
       {
         name: "queryCalendarEvents",
-        description: "Queries calendar events for a specific date range or searches for events. Use this when the user asks 'what's on my calendar', 'what meetings do I have', 'show me my schedule', 'any events on [date]', 'what's happening today/tomorrow/this week', or 'do I have anything scheduled'.",
+        description:
+          "Queries calendar events for a specific date range or searches for events. Use this when the user asks 'what's on my calendar', 'what meetings do I have', 'show me my schedule', 'any events on [date]', 'what's happening today/tomorrow/this week', or 'do I have anything scheduled'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             startDate: {
               type: "string",
-              description: "Start date in YYYY-MM-DD format. If not set, defaults to today."
+              description:
+                "Start date in YYYY-MM-DD format. If not set, defaults to today.",
             },
             endDate: {
               type: "string",
-              description: "End date in YYYY-MM-DD format. If not set, defaults to start date."
+              description:
+                "End date in YYYY-MM-DD format. If not set, defaults to start date.",
             },
             eventType: {
               type: "string",
-              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
-              description: "Filter by event type."
+              enum: [
+                "appointment",
+                "meeting",
+                "site_visit",
+                "deadline",
+                "reminder",
+                "travel",
+                "other",
+              ],
+              description: "Filter by event type.",
             },
             clientName: {
               type: "string",
-              description: "Filter events by client name."
+              description: "Filter events by client name.",
             },
             status: {
               type: "string",
               enum: ["scheduled", "completed", "cancelled", "rescheduled"],
-              description: "Filter by event status."
+              description: "Filter by event status.",
             },
             limit: {
               type: "number",
-              description: "Maximum number of events to return. Default 20."
-            }
+              description: "Maximum number of events to return. Default 20.",
+            },
           },
-          required: []
+          required: [],
         },
       },
       {
         name: "updateCalendarEvent",
-        description: "Updates an existing calendar event. Use this when the user asks to change an event's time, location, title, status, or any other field.",
+        description:
+          "Updates an existing calendar event. Use this when the user asks to change an event's time, location, title, status, or any other field.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             eventIdentifier: {
               type: "string",
-              description: "The event title or description that identifies the event. Will be searched by title."
+              description:
+                "The event title or description that identifies the event. Will be searched by title.",
             },
             title: {
               type: "string",
-              description: "New event title."
+              description: "New event title.",
             },
             description: {
               type: "string",
-              description: "New description."
+              description: "New description.",
             },
             eventType: {
               type: "string",
-              enum: ["appointment", "meeting", "site_visit", "deadline", "reminder", "travel", "other"],
-              description: "New event type."
+              enum: [
+                "appointment",
+                "meeting",
+                "site_visit",
+                "deadline",
+                "reminder",
+                "travel",
+                "other",
+              ],
+              description: "New event type.",
             },
             startDate: {
               type: "string",
-              description: "New start date in YYYY-MM-DD format."
+              description: "New start date in YYYY-MM-DD format.",
             },
             startTime: {
               type: "string",
-              description: "New start time in HH:MM format."
+              description: "New start time in HH:MM format.",
             },
             endDate: {
               type: "string",
-              description: "New end date in YYYY-MM-DD format."
+              description: "New end date in YYYY-MM-DD format.",
             },
             endTime: {
               type: "string",
-              description: "New end time in HH:MM format."
+              description: "New end time in HH:MM format.",
             },
             allDay: {
               type: "boolean",
-              description: "Whether this is an all-day event."
+              description: "Whether this is an all-day event.",
             },
             location: {
               type: "string",
-              description: "New location."
+              description: "New location.",
             },
             status: {
               type: "string",
               enum: ["scheduled", "completed", "cancelled", "rescheduled"],
-              description: "New status."
+              description: "New status.",
             },
             notes: {
               type: "string",
-              description: "New internal notes."
-            }
+              description: "New internal notes.",
+            },
           },
-          required: ["eventIdentifier"]
+          required: ["eventIdentifier"],
         },
       },
       {
         name: "createReminder",
-        description: "Creates a new reminder or follow-up. Use this when the user asks to set a reminder, be reminded about something, follow up on something, or says 'remind me to...', 'don't forget to...', 'I need to follow up on...'.",
+        description:
+          "Creates a new reminder or follow-up. Use this when the user asks to set a reminder, be reminded about something, follow up on something, or says 'remind me to...', 'don't forget to...', 'I need to follow up on...'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             title: {
               type: "string",
-              description: "The reminder title — what needs to be reminded."
+              description: "The reminder title — what needs to be reminded.",
             },
             description: {
               type: "string",
-              description: "Optional longer description with additional details."
+              description:
+                "Optional longer description with additional details.",
             },
             reminderType: {
               type: "string",
               enum: ["task", "follow_up", "meeting", "call", "custom"],
-              description: "Type of reminder. Default to 'custom' if not specified."
+              description:
+                "Type of reminder. Default to 'custom' if not specified.",
             },
             reminderAt: {
               type: "string",
-              description: "When the reminder should trigger in ISO 8601 format. Interpret natural language: 'tomorrow at 9am', 'next Friday at 2pm', 'in 30 minutes'."
+              description:
+                "When the reminder should trigger in ISO 8601 format. Interpret natural language: 'tomorrow at 9am', 'next Friday at 2pm', 'in 30 minutes'.",
             },
             clientName: {
               type: "string",
-              description: "Client name to link the reminder to, if applicable. Will be looked up by name."
+              description:
+                "Client name to link the reminder to, if applicable. Will be looked up by name.",
             },
             isRecurring: {
               type: "boolean",
-              description: "Whether this is a recurring reminder. Default false."
+              description:
+                "Whether this is a recurring reminder. Default false.",
             },
             recurringFrequency: {
               type: "string",
               enum: ["daily", "weekly", "monthly", "yearly"],
-              description: "If recurring, how often."
-            }
+              description: "If recurring, how often.",
+            },
           },
-          required: ["title", "reminderAt"]
+          required: ["title", "reminderAt"],
         },
       },
       {
         name: "queryReminders",
-        description: "Queries reminders for a specific date range or searches for pending/due reminders. Use this when the user asks 'what reminders do I have', 'show my follow-ups', 'what's due today', 'what am I forgetting', or 'any overdue reminders'.",
+        description:
+          "Queries reminders for a specific date range or searches for pending/due reminders. Use this when the user asks 'what reminders do I have', 'show my follow-ups', 'what's due today', 'what am I forgetting', or 'any overdue reminders'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             status: {
               type: "string",
               enum: ["pending", "completed", "cancelled", "all"],
-              description: "Filter by status. Default to 'pending'."
+              description: "Filter by status. Default to 'pending'.",
             },
             startDate: {
               type: "string",
-              description: "Start date in YYYY-MM-DD format."
+              description: "Start date in YYYY-MM-DD format.",
             },
             endDate: {
               type: "string",
-              description: "End date in YYYY-MM-DD format."
+              description: "End date in YYYY-MM-DD format.",
             },
             reminderType: {
               type: "string",
               enum: ["task", "follow_up", "meeting", "call", "custom"],
-              description: "Filter by reminder type."
+              description: "Filter by reminder type.",
             },
             clientName: {
               type: "string",
-              description: "Filter reminders by client name."
+              description: "Filter reminders by client name.",
             },
             limit: {
               type: "number",
-              description: "Maximum number of reminders to return. Default 20."
-            }
+              description: "Maximum number of reminders to return. Default 20.",
+            },
           },
-          required: []
+          required: [],
         },
       },
       {
         name: "updateReminder",
-        description: "Updates an existing reminder. Use this when the user asks to change a reminder's time, reschedule it, or mark it complete.",
+        description:
+          "Updates an existing reminder. Use this when the user asks to change a reminder's time, reschedule it, or mark it complete.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             reminderIdentifier: {
               type: "string",
-              description: "The reminder title that identifies the reminder. Will be searched by title."
+              description:
+                "The reminder title that identifies the reminder. Will be searched by title.",
             },
             title: {
               type: "string",
-              description: "New reminder title."
+              description: "New reminder title.",
             },
             description: {
               type: "string",
-              description: "New description."
+              description: "New description.",
             },
             reminderAt: {
               type: "string",
-              description: "New reminder time in ISO 8601 format."
+              description: "New reminder time in ISO 8601 format.",
             },
             reminderType: {
               type: "string",
               enum: ["task", "follow_up", "meeting", "call", "custom"],
-              description: "New reminder type."
+              description: "New reminder type.",
             },
             status: {
               type: "string",
               enum: ["pending", "completed", "cancelled"],
-              description: "New status. Use 'completed' to mark as done, 'cancelled' to cancel."
+              description:
+                "New status. Use 'completed' to mark as done, 'cancelled' to cancel.",
             },
             snoozeMinutes: {
               type: "number",
-              description: "Snooze the reminder by this many minutes."
-            }
+              description: "Snooze the reminder by this many minutes.",
+            },
           },
-          required: ["reminderIdentifier"]
+          required: ["reminderIdentifier"],
         },
       },
       {
         name: "queryAgenda",
-        description: "Queries today's agenda combining tasks due today, overdue tasks, calendar events, and pending reminders. Use this when the user asks 'What's on my agenda today?', 'What's my day look like?', 'Morning briefing', 'What do I have today?', or 'What do I need to do today?'.",
+        description:
+          "Queries today's agenda combining tasks due today, overdue tasks, calendar events, and pending reminders. Use this when the user asks 'What's on my agenda today?', 'What's my day look like?', 'Morning briefing', 'What do I have today?', or 'What do I need to do today?'.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             date: {
               type: "string",
-              description: "Date to query in YYYY-MM-DD format. Defaults to today."
+              description:
+                "Date to query in YYYY-MM-DD format. Defaults to today.",
             },
             includeOverdue: {
               type: "boolean",
-              description: "Include overdue items. Default true."
+              description: "Include overdue items. Default true.",
             },
             includeReminders: {
               type: "boolean",
-              description: "Include reminders. Default true."
+              description: "Include reminders. Default true.",
             },
             includeCalendar: {
               type: "boolean",
-              description: "Include calendar events. Default true."
-            }
+              description: "Include calendar events. Default true.",
+            },
           },
-          required: []
+          required: [],
         },
       },
       {
         name: "convertNoteToTasks",
-        description: "Converts a note into one or more tasks. Use this when the user asks to 'convert this note to tasks', 'create tasks from this note', 'turn this note into a to-do list', or when the user mentions action items in a note that should become tasks.",
+        description:
+          "Converts a note into one or more tasks. Use this when the user asks to 'convert this note to tasks', 'create tasks from this note', 'turn this note into a to-do list', or when the user mentions action items in a note that should become tasks.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             noteIdentifier: {
               type: "string",
-              description: "The note title or content that identifies the note to convert. Search by title or content."
+              description:
+                "The note title or content that identifies the note to convert. Search by title or content.",
             },
             tasks: {
               type: "array",
@@ -2397,41 +3130,49 @@ const tools = [
                 type: "object",
                 properties: {
                   title: { type: "string" },
-                  priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+                  priority: {
+                    type: "string",
+                    enum: ["low", "medium", "high", "urgent"],
+                  },
                   dueDate: { type: "string", description: "YYYY-MM-DD" },
-                  category: { type: "string" }
+                  category: { type: "string" },
                 },
-                required: ["title"]
+                required: ["title"],
               },
-              description: "List of tasks to create from the note. Parse action items and specific tasks mentioned in the note."
-            }
+              description:
+                "List of tasks to create from the note. Parse action items and specific tasks mentioned in the note.",
+            },
           },
-          required: ["noteIdentifier", "tasks"]
+          required: ["noteIdentifier", "tasks"],
         },
       },
       {
         name: "openWhatsApp",
-        description: "Opens a WhatsApp click-to-chat with a client or contact. Use this when the user says 'WhatsApp [client]', 'send a WhatsApp to [client]', 'message [client] on WhatsApp', or 'WhatsApp about the overdue invoice'. Does not execute server-side — the client handles opening the URL.",
+        description:
+          "Opens a WhatsApp click-to-chat with a client or contact. Use this when the user says 'WhatsApp [client]', 'send a WhatsApp to [client]', 'message [client] on WhatsApp', or 'WhatsApp about the overdue invoice'. Does not execute server-side — the client handles opening the URL.",
         parametersJsonSchema: {
           type: "object",
           properties: {
             clientName: {
               type: "string",
-              description: "The client company name to WhatsApp."
+              description: "The client company name to WhatsApp.",
             },
             messageType: {
               type: "string",
               enum: ["general", "invoice", "quote", "payment_reminder"],
-              description: "Type of pre-filled message. 'general' opens with a greeting, 'invoice' includes invoice details, 'quote' includes quote details, 'payment_reminder' includes overdue info."
+              description:
+                "Type of pre-filled message. 'general' opens with a greeting, 'invoice' includes invoice details, 'quote' includes quote details, 'payment_reminder' includes overdue info.",
             },
             invoiceReference: {
               type: "string",
-              description: "Invoice number if messageType is 'invoice' or 'payment_reminder' (e.g., 'INV-0001')."
+              description:
+                "Invoice number if messageType is 'invoice' or 'payment_reminder' (e.g., 'INV-0001').",
             },
             quoteReference: {
               type: "string",
-              description: "Quote number if messageType is 'quote' (e.g., 'QT-0001')."
-            }
+              description:
+                "Quote number if messageType is 'quote' (e.g., 'QT-0001').",
+            },
           },
           required: ["clientName"],
         },
@@ -2446,7 +3187,63 @@ const tools = [
 
 // Tools that execute server-side and return data for a follow-up AI call
 // Tools that execute server-side and return data for a follow-up AI call
-const SERVER_SIDE_TOOLS = new Set(["queryBusinessData", "logTrip", "createClient", "updateClient", "addClientCommunication", "createClientContact", "updateClientContact", "logExpense", "recordPayment", "draftQuote", "draftInvoice", "draftPurchaseOrder", "draftCreditNote", "saveMemory", "logFuelPurchase", "updateInvoiceStatus", "updatePurchaseOrderStatus", "updateCreditNoteStatus", "markInvoicePaid", "voidInvoice", "markInvoiceSent", "reopenInvoice", "markQuoteSent", "acceptQuote", "declineQuote", "expireQuote", "reopenQuote", "rejectQuote", "issueQuote", "markPOSent", "acknowledgePO", "markPODelivered", "cancelPO", "issueCreditNote", "sendCreditNote", "applyCreditNote", "cancelCreditNote", "transitionDocumentStatus", "convertQuoteToInvoice", "createTask", "updateTask", "completeTask", "queryTasks", "deleteTask", "createNote", "searchNotes", "logCallNote", "createCalendarEvent", "queryCalendarEvents", "updateCalendarEvent", "createReminder", "queryReminders", "updateReminder", "queryAgenda", "convertNoteToTasks"]);
+const SERVER_SIDE_TOOLS = new Set([
+  "queryBusinessData",
+  "logTrip",
+  "createClient",
+  "updateClient",
+  "addClientCommunication",
+  "createClientContact",
+  "updateClientContact",
+  "logExpense",
+  "recordPayment",
+  "draftQuote",
+  "draftInvoice",
+  "draftPurchaseOrder",
+  "draftCreditNote",
+  "saveMemory",
+  "logFuelPurchase",
+  "updateInvoiceStatus",
+  "updatePurchaseOrderStatus",
+  "updateCreditNoteStatus",
+  "markInvoicePaid",
+  "voidInvoice",
+  "markInvoiceSent",
+  "reopenInvoice",
+  "markQuoteSent",
+  "acceptQuote",
+  "declineQuote",
+  "expireQuote",
+  "reopenQuote",
+  "rejectQuote",
+  "issueQuote",
+  "markPOSent",
+  "acknowledgePO",
+  "markPODelivered",
+  "cancelPO",
+  "issueCreditNote",
+  "sendCreditNote",
+  "applyCreditNote",
+  "cancelCreditNote",
+  "transitionDocumentStatus",
+  "convertQuoteToInvoice",
+  "createTask",
+  "updateTask",
+  "completeTask",
+  "queryTasks",
+  "deleteTask",
+  "createNote",
+  "searchNotes",
+  "logCallNote",
+  "createCalendarEvent",
+  "queryCalendarEvents",
+  "updateCalendarEvent",
+  "createReminder",
+  "queryReminders",
+  "updateReminder",
+  "queryAgenda",
+  "convertNoteToTasks",
+]);
 
 async function executeLogTrip(args: any): Promise<string> {
   const supabase = getSupabase();
@@ -2460,21 +3257,32 @@ async function executeLogTrip(args: any): Promise<string> {
     .order("is_default", { ascending: false })
     .limit(10);
 
-  let vehicleId = vehicles?.find((v: any) => v.is_default)?.id || vehicles?.[0]?.id;
+  let vehicleId =
+    vehicles?.find((v: any) => v.is_default)?.id || vehicles?.[0]?.id;
 
   if (args.vehicleName && vehicles) {
     const clean = String(args.vehicleName).toLowerCase().trim();
     const match = vehicles.find(
       (v: any) =>
         v.vehicle_description.toLowerCase().includes(clean) ||
-        v.registration_number.toLowerCase().replace(/\s/g, "").includes(clean.replace(/\s/g, ""))
+        v.registration_number
+          .toLowerCase()
+          .replace(/\s/g, "")
+          .includes(clean.replace(/\s/g, "")),
     );
     if (match) vehicleId = match.id;
   }
 
   if (!vehicleId) {
     return wrapWithActionResult(
-      actionFailed({ action: "log_trip", targetType: "travel_trip", toolUsed: "logTrip", error: "No active vehicle found. Add a vehicle in Travel Settings first.", nextStep: "Go to Travel Logbook Settings and add a vehicle." })
+      actionFailed({
+        action: "log_trip",
+        targetType: "travel_trip",
+        toolUsed: "logTrip",
+        error:
+          "No active vehicle found. Add a vehicle in Travel Settings first.",
+        nextStep: "Go to Travel Logbook Settings and add a vehicle.",
+      }),
     );
   }
 
@@ -2493,7 +3301,10 @@ async function executeLogTrip(args: any): Promise<string> {
   // Resolve client if provided — safe exact-match-first lookup
   let clientId: string | null = null;
   if (args.clientName) {
-    const resolved = await resolveClientForWrite(supabase, String(args.clientName));
+    const resolved = await resolveClientForWrite(
+      supabase,
+      String(args.clientName),
+    );
     if (resolved.kind === "exact" || resolved.kind === "fuzzy_single") {
       clientId = resolved.record.id;
     } else if (resolved.kind === "ambiguous") {
@@ -2505,7 +3316,13 @@ async function executeLogTrip(args: any): Promise<string> {
           missingFields: ["clientName"],
           nextStep: `Multiple clients match "${args.clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join(", ")}`,
         }),
-        { disambiguation: { type: "client", query: args.clientName, candidates: resolved.candidates } }
+        {
+          disambiguation: {
+            type: "client",
+            query: args.clientName,
+            candidates: resolved.candidates,
+          },
+        },
       );
     }
     // not_found — proceed without client_id (trip doesn't require a client)
@@ -2525,12 +3342,21 @@ async function executeLogTrip(args: any): Promise<string> {
     source: "AI",
   };
 
-  const { data: insertedTrip, error } = await supabase.from("travel_trips").insert(tripData).select("id").single();
+  const { data: insertedTrip, error } = await supabase
+    .from("travel_trips")
+    .insert(tripData)
+    .select("id")
+    .single();
 
   if (error) {
     console.error("[logTrip] Failed to insert trip:", error);
     return wrapWithActionResult(
-      actionFailed({ action: "log_trip", targetType: "travel_trip", toolUsed: "logTrip", error: error.message })
+      actionFailed({
+        action: "log_trip",
+        targetType: "travel_trip",
+        toolUsed: "logTrip",
+        error: error.message,
+      }),
     );
   }
 
@@ -2561,7 +3387,7 @@ async function executeLogTrip(args: any): Promise<string> {
         odometerEnd: tripData.odometer_end,
       },
       verification,
-    }
+    },
   );
 }
 
@@ -2574,7 +3400,13 @@ async function executeLogFuelPurchase(args: any): Promise<string> {
 
   if (!supplierName || totalAmount <= 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "log_fuel_purchase", targetType: "fuel_log", toolUsed: "logFuelPurchase", error: "Supplier name and a positive total amount are required.", nextStep: "Please provide the fuel station name and total amount." })
+      actionFailed({
+        action: "log_fuel_purchase",
+        targetType: "fuel_log",
+        toolUsed: "logFuelPurchase",
+        error: "Supplier name and a positive total amount are required.",
+        nextStep: "Please provide the fuel station name and total amount.",
+      }),
     );
   }
 
@@ -2586,14 +3418,18 @@ async function executeLogFuelPurchase(args: any): Promise<string> {
     .order("is_default", { ascending: false })
     .limit(10);
 
-  let vehicleId = vehicles?.find((v: any) => v.is_default)?.id || vehicles?.[0]?.id;
+  let vehicleId =
+    vehicles?.find((v: any) => v.is_default)?.id || vehicles?.[0]?.id;
 
   if (args.vehicleName && vehicles) {
     const clean = String(args.vehicleName).toLowerCase().trim();
     const match = vehicles.find(
       (v: any) =>
         v.vehicle_description.toLowerCase().includes(clean) ||
-        v.registration_number.toLowerCase().replace(/\s/g, "").includes(clean.replace(/\s/g, ""))
+        v.registration_number
+          .toLowerCase()
+          .replace(/\s/g, "")
+          .includes(clean.replace(/\s/g, "")),
     );
     if (match) vehicleId = match.id;
   }
@@ -2610,11 +3446,20 @@ async function executeLogFuelPurchase(args: any): Promise<string> {
     payment_method: args.paymentMethod || "Card",
   };
 
-  const { data: newFuel, error } = await supabase.from("fuel_logs").insert(fuelData).select("id").single();
+  const { data: newFuel, error } = await supabase
+    .from("fuel_logs")
+    .insert(fuelData)
+    .select("id")
+    .single();
   if (error) {
     console.error("[logFuelPurchase] Failed to insert fuel log:", error);
     return wrapWithActionResult(
-      actionFailed({ action: "log_fuel_purchase", targetType: "fuel_log", toolUsed: "logFuelPurchase", error: error.message })
+      actionFailed({
+        action: "log_fuel_purchase",
+        targetType: "fuel_log",
+        toolUsed: "logFuelPurchase",
+        error: error.message,
+      }),
     );
   }
 
@@ -2633,7 +3478,15 @@ async function executeLogFuelPurchase(args: any): Promise<string> {
       summary: `Fuel logged: ${supplierName}, ${fuelData.litres}L at R${fuelData.price_per_litre}/L, total R${totalAmount.toFixed(2)}`,
       verified: verification.status === "confirmed",
     }),
-    { fuelLog: { id: newFuel.id, supplier: supplierName, totalAmount: totalAmount.toFixed(2), litres: fuelData.litres }, verification }
+    {
+      fuelLog: {
+        id: newFuel.id,
+        supplier: supplierName,
+        totalAmount: totalAmount.toFixed(2),
+        litres: fuelData.litres,
+      },
+      verification,
+    },
   );
 }
 
@@ -2651,20 +3504,36 @@ async function executeQueryBusinessData(args: any): Promise<string> {
             .from("invoices")
             .select("total, amount_paid, balance_due, status, due_date")
             .order("created_at", { ascending: false }),
-          supabase.from("credit_notes").select("total").neq("status", "Cancelled"),
+          supabase
+            .from("credit_notes")
+            .select("total")
+            .neq("status", "Cancelled"),
         ]);
 
         const all = invoices || [];
         const allCredits = credits || [];
-        
-        const totalInvoicedRaw = all.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-        const totalCredited = allCredits.reduce((s: number, c: any) => s + Number(c.total || 0), 0);
+
+        const totalInvoicedRaw = all.reduce(
+          (s: number, i: any) => s + Number(i.total || 0),
+          0,
+        );
+        const totalCredited = allCredits.reduce(
+          (s: number, c: any) => s + Number(c.total || 0),
+          0,
+        );
         const totalInvoiced = totalInvoicedRaw - totalCredited;
-        
-        const totalPaid = all.reduce((s: number, i: any) => s + Number(i.amount_paid || 0), 0);
-        const totalOutstanding = all.reduce((s: number, i: any) => s + Number(i.balance_due || 0), 0) - totalCredited;
-        
-        const overdueCount = all.filter((i: any) => i.status !== "Paid" && i.due_date && i.due_date < today).length;
+
+        const totalPaid = all.reduce(
+          (s: number, i: any) => s + Number(i.amount_paid || 0),
+          0,
+        );
+        const totalOutstanding =
+          all.reduce((s: number, i: any) => s + Number(i.balance_due || 0), 0) -
+          totalCredited;
+
+        const overdueCount = all.filter(
+          (i: any) => i.status !== "Paid" && i.due_date && i.due_date < today,
+        ).length;
         const paidCount = all.filter((i: any) => i.status === "Paid").length;
         const draftCount = all.filter((i: any) => i.status === "Draft").length;
         const sentCount = all.filter((i: any) => i.status === "Sent").length;
@@ -2685,7 +3554,9 @@ async function executeQueryBusinessData(args: any): Promise<string> {
       case "invoice_list": {
         let query = supabase
           .from("invoices")
-          .select("id, invoice_number, status, total, balance_due, issue_date, due_date, created_at, clients(company_name)")
+          .select(
+            "id, invoice_number, status, total, balance_due, issue_date, due_date, created_at, clients(company_name)",
+          )
           .order("created_at", { ascending: false })
           .limit(limit);
 
@@ -2694,57 +3565,84 @@ async function executeQueryBusinessData(args: any): Promise<string> {
         if (filters.dateTo) query = query.lte("issue_date", filters.dateTo);
 
         const { data } = await query;
-        return JSON.stringify({ invoices: data || [], count: (data || []).length });
+        return JSON.stringify({
+          invoices: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "overdue_invoices": {
         const { data } = await supabase
           .from("invoices")
-          .select("id, invoice_number, total, balance_due, due_date, clients(company_name)")
+          .select(
+            "id, invoice_number, total, balance_due, due_date, clients(company_name)",
+          )
           .in("status", ["Sent", "Overdue", "Partially Paid"])
           .lt("due_date", today)
           .gt("balance_due", 0)
           .order("due_date", { ascending: true })
           .limit(limit);
 
-        return JSON.stringify({ overdueInvoices: data || [], count: (data || []).length });
+        return JSON.stringify({
+          overdueInvoices: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "quote_list": {
         let query = supabase
           .from("quotes")
-          .select("id, quote_number, status, total, issue_date, expiry_date, clients(company_name)")
+          .select(
+            "id, quote_number, status, total, issue_date, expiry_date, clients(company_name)",
+          )
           .order("created_at", { ascending: false })
           .limit(limit);
 
         if (filters.status) query = query.eq("status", filters.status);
         const { data } = await query;
-        return JSON.stringify({ quotes: data || [], count: (data || []).length });
+        return JSON.stringify({
+          quotes: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "client_list": {
         const { data } = await supabase
           .from("clients")
-          .select("id, company_name, contact_person, email, phone, category, email_missing, is_active")
+          .select(
+            "id, company_name, contact_person, email, phone, category, email_missing, is_active",
+          )
           .eq("is_active", true)
           .order("company_name")
           .limit(limit);
 
-        return JSON.stringify({ clients: data || [], count: (data || []).length });
+        return JSON.stringify({
+          clients: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "client_data_quality": {
         const { data } = await supabase
           .from("clients")
-          .select("id, company_name, contact_person, email, phone, category, is_active, email_missing")
+          .select(
+            "id, company_name, contact_person, email, phone, category, is_active, email_missing",
+          )
           .eq("is_active", true)
           .order("company_name")
           .limit(Math.max(limit, 200));
 
         const clients = data || [];
-        const missingContactName = clients.filter((client: any) => !String(client.contact_person || "").trim());
-        const missingCategory = clients.filter((client: any) => !String(client.category || "").trim());
-        const missingEmail = clients.filter((client: any) => !String(client.email || "").trim() || client.email_missing);
+        const missingContactName = clients.filter(
+          (client: any) => !String(client.contact_person || "").trim(),
+        );
+        const missingCategory = clients.filter(
+          (client: any) => !String(client.category || "").trim(),
+        );
+        const missingEmail = clients.filter(
+          (client: any) =>
+            !String(client.email || "").trim() || client.email_missing,
+        );
 
         return JSON.stringify({
           totalClients: clients.length,
@@ -2776,35 +3674,53 @@ async function executeQueryBusinessData(args: any): Promise<string> {
         const name = filters.clientName || "";
         const { data } = await supabase
           .from("clients")
-          .select("id, company_name, contact_person, email, phone, physical_address, vat_number")
+          .select(
+            "id, company_name, contact_person, email, phone, physical_address, vat_number",
+          )
           .ilike("company_name", `%${name}%`)
           .limit(5);
 
-        return JSON.stringify({ clients: data || [], count: (data || []).length });
+        return JSON.stringify({
+          clients: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "expense_summary": {
         let query = supabase
           .from("expenses")
-          .select("amount_inclusive, category, expense_date, description, supplier_name")
+          .select(
+            "amount_inclusive, category, expense_date, description, supplier_name",
+          )
           .order("expense_date", { ascending: false })
           .limit(limit);
 
-        if (filters.dateFrom) query = query.gte("expense_date", filters.dateFrom);
+        if (filters.dateFrom)
+          query = query.gte("expense_date", filters.dateFrom);
         if (filters.dateTo) query = query.lte("expense_date", filters.dateTo);
 
         const { data } = await query;
         const all = data || [];
-        const totalExpenses = all.reduce((s: number, e: any) => s + Number(e.amount_inclusive || 0), 0);
+        const totalExpenses = all.reduce(
+          (s: number, e: any) => s + Number(e.amount_inclusive || 0),
+          0,
+        );
 
         // Group by category
         const byCategory: Record<string, number> = {};
         all.forEach((e: any) => {
           const cat = e.category || "Uncategorised";
-          byCategory[cat] = (byCategory[cat] || 0) + Number(e.amount_inclusive || 0);
+          byCategory[cat] =
+            (byCategory[cat] || 0) + Number(e.amount_inclusive || 0);
         });
 
-        return JSON.stringify({ totalExpenses: totalExpenses.toFixed(2), count: all.length, byCategory, recentExpenses: all.slice(0, 5), currency: "ZAR" });
+        return JSON.stringify({
+          totalExpenses: totalExpenses.toFixed(2),
+          count: all.length,
+          byCategory,
+          recentExpenses: all.slice(0, 5),
+          currency: "ZAR",
+        });
       }
 
       case "travel_summary": {
@@ -2815,11 +3731,18 @@ async function executeQueryBusinessData(args: any): Promise<string> {
           .limit(100);
 
         const all = data || [];
-        const totalKm = all.reduce((s: number, t: any) => s + Number(t.distance_km || 0), 0);
+        const totalKm = all.reduce(
+          (s: number, t: any) => s + Number(t.distance_km || 0),
+          0,
+        );
         const tripCount = all.length;
 
         // Get fuel price
-        const { data: settings } = await supabase.from("travel_settings").select("fuel_price_per_litre").limit(1).single();
+        const { data: settings } = await supabase
+          .from("travel_settings")
+          .select("fuel_price_per_litre")
+          .limit(1)
+          .single();
         const fuelPrice = Number(settings?.fuel_price_per_litre || 22.5);
         const estimatedFuelCost = (totalKm / 10) * fuelPrice; // rough 10km/l
         const saraRate = 4.64; // SARS rate per km
@@ -2841,38 +3764,56 @@ async function executeQueryBusinessData(args: any): Promise<string> {
           .select("id, po_number, supplier_name, total, status, date_raised")
           .order("created_at", { ascending: false })
           .limit(limit);
-        return JSON.stringify({ purchaseOrders: data || [], count: (data || []).length });
+        return JSON.stringify({
+          purchaseOrders: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "credit_note_list": {
         const { data } = await supabase
           .from("credit_notes")
-          .select("id, cn_number, total, status, date_issued, clients(company_name)")
+          .select(
+            "id, cn_number, total, status, date_issued, clients(company_name)",
+          )
           .order("created_at", { ascending: false })
           .limit(limit);
-        return JSON.stringify({ creditNotes: data || [], count: (data || []).length });
+        return JSON.stringify({
+          creditNotes: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "recurring_invoice_list": {
         const { data } = await supabase
           .from("invoices")
-          .select("id, invoice_number, total, recurring_frequency, recurring_next_date, clients(company_name)")
+          .select(
+            "id, invoice_number, total, recurring_frequency, recurring_next_date, clients(company_name)",
+          )
           .eq("is_recurring", true)
           .order("recurring_next_date", { ascending: true })
           .limit(limit);
-        return JSON.stringify({ recurringInvoices: data || [], count: (data || []).length });
+        return JSON.stringify({
+          recurringInvoices: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "certificate_list": {
         let query = supabase
           .from("certificates")
-          .select("id, certificate_number, certificate_type, status, issue_date, site_name, clients(company_name)")
+          .select(
+            "id, certificate_number, certificate_type, status, issue_date, site_name, clients(company_name)",
+          )
           .order("created_at", { ascending: false })
           .limit(limit);
 
         if (filters.status) query = query.eq("status", filters.status);
         const { data } = await query;
-        return JSON.stringify({ certificates: data || [], count: (data || []).length });
+        return JSON.stringify({
+          certificates: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "communication_log": {
@@ -2892,7 +3833,9 @@ async function executeQueryBusinessData(args: any): Promise<string> {
 
         let query = supabase
           .from("client_communications")
-          .select("id, timestamp, type, subject, status, content, note_type, is_manual, metadata")
+          .select(
+            "id, timestamp, type, subject, status, content, note_type, is_manual, metadata",
+          )
           .order("timestamp", { ascending: false })
           .limit(limit);
 
@@ -2925,12 +3868,24 @@ async function executeQueryBusinessData(args: any): Promise<string> {
           .order("period_start", { ascending: false })
           .limit(6);
 
-        return JSON.stringify({ vatPeriods: data || [], count: (data || []).length });
+        return JSON.stringify({
+          vatPeriods: data || [],
+          count: (data || []).length,
+        });
       }
 
       case "dashboard_stats": {
-        const [invoicesRes, quotesRes, clientsRes, expensesRes, tripsRes, certsRes] = await Promise.all([
-          supabase.from("invoices").select("total, amount_paid, balance_due, status, due_date"),
+        const [
+          invoicesRes,
+          quotesRes,
+          clientsRes,
+          expensesRes,
+          tripsRes,
+          certsRes,
+        ] = await Promise.all([
+          supabase
+            .from("invoices")
+            .select("total, amount_paid, balance_due, status, due_date"),
           supabase.from("quotes").select("total, status"),
           supabase.from("clients").select("id").eq("is_active", true),
           supabase.from("expenses").select("amount_inclusive"),
@@ -2939,24 +3894,43 @@ async function executeQueryBusinessData(args: any): Promise<string> {
         ]);
 
         const invoices = invoicesRes.data || [];
-        const totalRevenue = invoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-        const totalPaid = invoices.reduce((s: number, i: any) => s + Number(i.amount_paid || 0), 0);
-        const totalOutstanding = invoices.reduce((s: number, i: any) => s + Number(i.balance_due || 0), 0);
-        const overdueCount = invoices.filter((i: any) => 
-          ["Sent", "Overdue", "Partially Paid"].includes(i.status) && 
-          i.due_date && 
-          i.due_date < today &&
-          i.balance_due > 0
+        const totalRevenue = invoices.reduce(
+          (s: number, i: any) => s + Number(i.total || 0),
+          0,
+        );
+        const totalPaid = invoices.reduce(
+          (s: number, i: any) => s + Number(i.amount_paid || 0),
+          0,
+        );
+        const totalOutstanding = invoices.reduce(
+          (s: number, i: any) => s + Number(i.balance_due || 0),
+          0,
+        );
+        const overdueCount = invoices.filter(
+          (i: any) =>
+            ["Sent", "Overdue", "Partially Paid"].includes(i.status) &&
+            i.due_date &&
+            i.due_date < today &&
+            i.balance_due > 0,
         ).length;
 
         const quotes = quotesRes.data || [];
-        const totalQuoted = quotes.reduce((s: number, q: any) => s + Number(q.total || 0), 0);
+        const totalQuoted = quotes.reduce(
+          (s: number, q: any) => s + Number(q.total || 0),
+          0,
+        );
 
         const expenses = expensesRes.data || [];
-        const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount_inclusive || 0), 0);
+        const totalExpenses = expenses.reduce(
+          (s: number, e: any) => s + Number(e.amount_inclusive || 0),
+          0,
+        );
 
         const trips = tripsRes.data || [];
-        const totalKm = trips.reduce((s: number, t: any) => s + Number(t.distance_km || 0), 0);
+        const totalKm = trips.reduce(
+          (s: number, t: any) => s + Number(t.distance_km || 0),
+          0,
+        );
 
         return JSON.stringify({
           invoiceCount: invoices.length,
@@ -2977,7 +3951,9 @@ async function executeQueryBusinessData(args: any): Promise<string> {
       }
 
       default:
-        return JSON.stringify({ error: `Unknown queryType: ${args.queryType}` });
+        return JSON.stringify({
+          error: `Unknown queryType: ${args.queryType}`,
+        });
     }
   } catch (err: any) {
     return JSON.stringify({ error: err.message || "Query failed" });
@@ -2990,7 +3966,13 @@ async function executeCreateClient(args: any): Promise<string> {
   const companyName = String(args.companyName || "").trim();
   if (!companyName) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: "Company name is required.", nextStep: "Please provide the client company name." })
+      actionFailed({
+        action: "create_client",
+        targetType: "client",
+        toolUsed: "createClient",
+        error: "Company name is required.",
+        nextStep: "Please provide the client company name.",
+      }),
     );
   }
 
@@ -3003,22 +3985,46 @@ async function executeCreateClient(args: any): Promise<string> {
 
   if (existingError) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: `Database error checking for duplicates: ${existingError.message}`, nextStep: "Please try again." })
+      actionFailed({
+        action: "create_client",
+        targetType: "client",
+        toolUsed: "createClient",
+        error: `Database error checking for duplicates: ${existingError.message}`,
+        nextStep: "Please try again.",
+      }),
     );
   }
 
   if (existing && existing.length > 0) {
     const exactDuplicate = existing.find(
-      (c: any) => c.company_name.toLowerCase() === companyName.toLowerCase()
+      (c: any) => c.company_name.toLowerCase() === companyName.toLowerCase(),
     );
     if (exactDuplicate) {
       return wrapWithActionResult(
-        actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", targetReference: exactDuplicate.company_name, error: `A client named "${exactDuplicate.company_name}" already exists.`, nextStep: "Do you want to create a new invoice for them instead?" })
+        actionFailed({
+          action: "create_client",
+          targetType: "client",
+          toolUsed: "createClient",
+          targetReference: exactDuplicate.company_name,
+          error: `A client named "${exactDuplicate.company_name}" already exists.`,
+          nextStep: "Do you want to create a new invoice for them instead?",
+        }),
       );
     } else {
-      const similarList = existing.map((c: any) => `"${c.company_name}"${c.contact_person ? ` (contact: ${c.contact_person})` : ""}`).join(", ");
+      const similarList = existing
+        .map(
+          (c: any) =>
+            `"${c.company_name}"${c.contact_person ? ` (contact: ${c.contact_person})` : ""}`,
+        )
+        .join(", ");
       return wrapWithActionResult(
-        actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: `Similar client names already exist: ${similarList}.`, nextStep: `Do you still want to create a new client called "${companyName}", or did you mean one of these?` })
+        actionFailed({
+          action: "create_client",
+          targetType: "client",
+          toolUsed: "createClient",
+          error: `Similar client names already exist: ${similarList}.`,
+          nextStep: `Do you still want to create a new client called "${companyName}", or did you mean one of these?`,
+        }),
       );
     }
   }
@@ -3042,11 +4048,18 @@ async function executeCreateClient(args: any): Promise<string> {
 
   if (error) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_client", targetType: "client", toolUsed: "createClient", error: error.message })
+      actionFailed({
+        action: "create_client",
+        targetType: "client",
+        toolUsed: "createClient",
+        error: error.message,
+      }),
     );
   }
 
-  const verification = await verifyClient(supabase, data.id, { company_name: clientData.company_name });
+  const verification = await verifyClient(supabase, data.id, {
+    company_name: clientData.company_name,
+  });
 
   return wrapWithActionResult(
     actionSuccess({
@@ -3066,7 +4079,7 @@ async function executeCreateClient(args: any): Promise<string> {
         phone: clientData.phone,
       },
       verification,
-    }
+    },
   );
 }
 
@@ -3091,7 +4104,13 @@ async function executeUpdateClient(args: any): Promise<string> {
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", error: "Client name is required.", nextStep: "Please provide the client company name." })
+      actionFailed({
+        action: "update_client",
+        targetType: "client",
+        toolUsed: "updateClient",
+        error: "Client name is required.",
+        nextStep: "Please provide the client company name.",
+      }),
     );
   }
 
@@ -3100,7 +4119,13 @@ async function executeUpdateClient(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+      actionFailed({
+        action: "update_client",
+        targetType: "client",
+        toolUsed: "updateClient",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please check the spelling or create the client first.",
+      }),
     );
   }
 
@@ -3113,7 +4138,13 @@ async function executeUpdateClient(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -3162,8 +4193,9 @@ async function executeUpdateClient(args: any): Promise<string> {
         toolUsed: "updateClient",
         targetReference: client.company_name,
         error: "No valid update fields provided.",
-        nextStep: "Allowed fields: contactPerson, email, phone, physicalAddress, vatNumber, category, notes.",
-      })
+        nextStep:
+          "Allowed fields: contactPerson, email, phone, physicalAddress, vatNumber, category, notes.",
+      }),
     );
   }
 
@@ -3175,14 +4207,22 @@ async function executeUpdateClient(args: any): Promise<string> {
 
   if (updateError) {
     return wrapWithActionResult(
-      actionFailed({ action: "update_client", targetType: "client", toolUsed: "updateClient", targetReference: client.company_name, error: updateError.message })
+      actionFailed({
+        action: "update_client",
+        targetType: "client",
+        toolUsed: "updateClient",
+        targetReference: client.company_name,
+        error: updateError.message,
+      }),
     );
   }
 
   // Read-after-write verification
   const { data: verified, error: verifyError } = await supabase
     .from("clients")
-    .select("company_name, contact_person, email, phone, physical_address, vat_number, category")
+    .select(
+      "company_name, contact_person, email, phone, physical_address, vat_number, category",
+    )
     .eq("id", client.id)
     .maybeSingle();
 
@@ -3196,13 +4236,14 @@ async function executeUpdateClient(args: any): Promise<string> {
         summary: `Client "${client.company_name}" updated, but verification could not be completed.`,
         verified: false,
       }),
-      { updates: updatePayload }
+      { updates: updatePayload },
     );
   }
 
   // Build summary of what changed
-  const changedFields = Object.keys(updatePayload).map(k => {
-    const displayKey = Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
+  const changedFields = Object.keys(updatePayload).map((k) => {
+    const displayKey =
+      Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
     return displayKey;
   });
 
@@ -3226,7 +4267,7 @@ async function executeUpdateClient(args: any): Promise<string> {
         category: verified.category,
       },
       updatedFields: changedFields,
-    }
+    },
   );
 }
 
@@ -3234,7 +4275,14 @@ async function executeUpdateClient(args: any): Promise<string> {
 // CLIENT COMMUNICATION LOGGING TOOL
 // ============================================================
 
-const VALID_NOTE_TYPES = ["Phone Call", "Site Visit", "Meeting", "WhatsApp", "Follow-up", "Other"];
+const VALID_NOTE_TYPES = [
+  "Phone Call",
+  "Site Visit",
+  "Meeting",
+  "WhatsApp",
+  "Follow-up",
+  "Other",
+];
 
 async function executeAddClientCommunication(args: any): Promise<string> {
   const supabase = getSupabase();
@@ -3244,13 +4292,25 @@ async function executeAddClientCommunication(args: any): Promise<string> {
 
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: "Client name is required.", nextStep: "Please provide the client company name." })
+      actionFailed({
+        action: "add_communication",
+        targetType: "client_communication",
+        toolUsed: "addClientCommunication",
+        error: "Client name is required.",
+        nextStep: "Please provide the client company name.",
+      }),
     );
   }
 
   if (!content) {
     return wrapWithActionResult(
-      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: "Content is required.", nextStep: "Please provide the note content or call summary." })
+      actionFailed({
+        action: "add_communication",
+        targetType: "client_communication",
+        toolUsed: "addClientCommunication",
+        error: "Content is required.",
+        nextStep: "Please provide the note content or call summary.",
+      }),
     );
   }
 
@@ -3259,7 +4319,13 @@ async function executeAddClientCommunication(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+      actionFailed({
+        action: "add_communication",
+        targetType: "client_communication",
+        toolUsed: "addClientCommunication",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please check the spelling or create the client first.",
+      }),
     );
   }
 
@@ -3272,7 +4338,13 @@ async function executeAddClientCommunication(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -3280,7 +4352,9 @@ async function executeAddClientCommunication(args: any): Promise<string> {
 
   // Validate note type
   const noteType = String(args.noteType || "Other").trim();
-  const validNoteType = VALID_NOTE_TYPES.includes(noteType) ? noteType : "Other";
+  const validNoteType = VALID_NOTE_TYPES.includes(noteType)
+    ? noteType
+    : "Other";
 
   // Build subject
   const subject = args.subject
@@ -3307,7 +4381,12 @@ async function executeAddClientCommunication(args: any): Promise<string> {
 
   if (insertError) {
     return wrapWithActionResult(
-      actionFailed({ action: "add_communication", targetType: "client_communication", toolUsed: "addClientCommunication", error: insertError.message })
+      actionFailed({
+        action: "add_communication",
+        targetType: "client_communication",
+        toolUsed: "addClientCommunication",
+        error: insertError.message,
+      }),
     );
   }
 
@@ -3348,7 +4427,7 @@ async function executeAddClientCommunication(args: any): Promise<string> {
         lastContactAt: updatedClient?.last_contact_at || null,
         lastContactSummary: updatedClient?.last_contact_summary || null,
       },
-    }
+    },
   );
 }
 
@@ -3366,13 +4445,25 @@ async function executeCreateClientContact(args: any): Promise<string> {
 
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: "Client name is required.", nextStep: "Please provide the client company name." })
+      actionFailed({
+        action: "create_contact",
+        targetType: "client_contact",
+        toolUsed: "createClientContact",
+        error: "Client name is required.",
+        nextStep: "Please provide the client company name.",
+      }),
     );
   }
 
   if (!fullName) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: "Contact full name is required.", nextStep: "Please provide the contact person's full name." })
+      actionFailed({
+        action: "create_contact",
+        targetType: "client_contact",
+        toolUsed: "createClientContact",
+        error: "Contact full name is required.",
+        nextStep: "Please provide the contact person's full name.",
+      }),
     );
   }
 
@@ -3381,7 +4472,13 @@ async function executeCreateClientContact(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling or create the client first." })
+      actionFailed({
+        action: "create_contact",
+        targetType: "client_contact",
+        toolUsed: "createClientContact",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please check the spelling or create the client first.",
+      }),
     );
   }
 
@@ -3394,7 +4491,13 @@ async function executeCreateClientContact(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -3409,7 +4512,9 @@ async function executeCreateClientContact(args: any): Promise<string> {
     .limit(5);
 
   if (existingContacts && existingContacts.length > 0) {
-    const exactDupe = existingContacts.find((c: any) => c.full_name.toLowerCase() === fullName.toLowerCase());
+    const exactDupe = existingContacts.find(
+      (c: any) => c.full_name.toLowerCase() === fullName.toLowerCase(),
+    );
     if (exactDupe) {
       return wrapWithActionResult(
         actionFailed({
@@ -3418,15 +4523,18 @@ async function executeCreateClientContact(args: any): Promise<string> {
           toolUsed: "createClientContact",
           targetReference: `${client.company_name} — ${fullName}`,
           error: `A contact named "${exactDupe.full_name}" already exists for ${client.company_name}.`,
-          nextStep: "Use updateClientContact to modify the existing contact instead.",
-        })
+          nextStep:
+            "Use updateClientContact to modify the existing contact instead.",
+        }),
       );
     }
   }
 
   // Validate contact type
   const contactType = String(args.contactType || "General").trim();
-  const validContactType = VALID_CONTACT_TYPES.includes(contactType) ? contactType : "General";
+  const validContactType = VALID_CONTACT_TYPES.includes(contactType)
+    ? contactType
+    : "General";
 
   // Handle isPrimary — if setting as primary, clear existing primary for this client
   const isPrimary = args.isPrimary === true;
@@ -3459,7 +4567,12 @@ async function executeCreateClientContact(args: any): Promise<string> {
 
   if (insertError) {
     return wrapWithActionResult(
-      actionFailed({ action: "create_contact", targetType: "client_contact", toolUsed: "createClientContact", error: insertError.message })
+      actionFailed({
+        action: "create_contact",
+        targetType: "client_contact",
+        toolUsed: "createClientContact",
+        error: insertError.message,
+      }),
     );
   }
 
@@ -3491,7 +4604,7 @@ async function executeCreateClientContact(args: any): Promise<string> {
         cellNumber: inserted.cell_number,
         isPrimary: inserted.is_primary,
       },
-    }
+    },
   );
 }
 
@@ -3519,13 +4632,25 @@ async function executeUpdateClientContact(args: any): Promise<string> {
 
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: "Client name is required.", nextStep: "Please provide the client company name." })
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: "Client name is required.",
+        nextStep: "Please provide the client company name.",
+      }),
     );
   }
 
   if (!contactName) {
     return wrapWithActionResult(
-      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: "Contact name is required to identify the contact.", nextStep: "Please provide the existing contact's full name." })
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: "Contact name is required to identify the contact.",
+        nextStep: "Please provide the existing contact's full name.",
+      }),
     );
   }
 
@@ -3534,7 +4659,13 @@ async function executeUpdateClientContact(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: `Could not find a client matching "${clientName}".`, nextStep: "Please check the spelling." })
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please check the spelling.",
+      }),
     );
   }
 
@@ -3547,7 +4678,13 @@ async function executeUpdateClientContact(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -3569,14 +4706,18 @@ async function executeUpdateClientContact(args: any): Promise<string> {
         toolUsed: "updateClientContact",
         error: `No contact found matching "${contactName}" for ${client.company_name}.`,
         nextStep: "Please check the contact name or create the contact first.",
-      })
+      }),
     );
   }
 
   if (contacts.length > 1) {
-    const exactMatch = contacts.find((c: any) => c.full_name.toLowerCase() === contactName.toLowerCase());
+    const exactMatch = contacts.find(
+      (c: any) => c.full_name.toLowerCase() === contactName.toLowerCase(),
+    );
     if (!exactMatch) {
-      const contactList = contacts.map((c: any) => `"${c.full_name}" (${c.contact_type})`).join(", ");
+      const contactList = contacts
+        .map((c: any) => `"${c.full_name}" (${c.contact_type})`)
+        .join(", ");
       return wrapWithActionResult(
         actionNeedInfo({
           action: "update_contact",
@@ -3585,12 +4726,21 @@ async function executeUpdateClientContact(args: any): Promise<string> {
           missingFields: ["contactName"],
           nextStep: `Multiple contacts match "${contactName}": ${contactList}. Please specify the exact name.`,
         }),
-        { disambiguation: { type: "contact", query: contactName, candidates: contacts } }
+        {
+          disambiguation: {
+            type: "contact",
+            query: contactName,
+            candidates: contacts,
+          },
+        },
       );
     }
   }
 
-  const targetContact = contacts.find((c: any) => c.full_name.toLowerCase() === contactName.toLowerCase()) || contacts[0];
+  const targetContact =
+    contacts.find(
+      (c: any) => c.full_name.toLowerCase() === contactName.toLowerCase(),
+    ) || contacts[0];
 
   // Build update payload from whitelisted fields
   const updatePayload: Record<string, any> = {};
@@ -3612,7 +4762,9 @@ async function executeUpdateClientContact(args: any): Promise<string> {
       if (CONTACT_UPDATE_WHITELIST.has(dbKey)) {
         if (dbKey === "contact_type") {
           const val = String(args[argKey]);
-          updatePayload[dbKey] = VALID_CONTACT_TYPES.includes(val) ? val : "General";
+          updatePayload[dbKey] = VALID_CONTACT_TYPES.includes(val)
+            ? val
+            : "General";
         } else if (dbKey === "is_primary") {
           updatePayload[dbKey] = args[argKey] === true;
         } else if (dbKey === "notes") {
@@ -3641,8 +4793,9 @@ async function executeUpdateClientContact(args: any): Promise<string> {
         targetType: "client_contact",
         toolUsed: "updateClientContact",
         error: "No valid update fields provided.",
-        nextStep: "Allowed fields: fullName, contactType, jobTitle, email, cellNumber, landlineNumber, extension, isPrimary, notes.",
-      })
+        nextStep:
+          "Allowed fields: fullName, contactType, jobTitle, email, cellNumber, landlineNumber, extension, isPrimary, notes.",
+      }),
     );
   }
 
@@ -3664,19 +4817,27 @@ async function executeUpdateClientContact(args: any): Promise<string> {
 
   if (updateError) {
     return wrapWithActionResult(
-      actionFailed({ action: "update_contact", targetType: "client_contact", toolUsed: "updateClientContact", error: updateError.message })
+      actionFailed({
+        action: "update_contact",
+        targetType: "client_contact",
+        toolUsed: "updateClientContact",
+        error: updateError.message,
+      }),
     );
   }
 
   // Verify
   const { data: verified } = await supabase
     .from("client_contacts")
-    .select("id, full_name, contact_type, email, cell_number, job_title, is_primary")
+    .select(
+      "id, full_name, contact_type, email, cell_number, job_title, is_primary",
+    )
     .eq("id", targetContact.id)
     .maybeSingle();
 
-  const changedFields = Object.keys(updatePayload).map(k => {
-    const displayKey = Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
+  const changedFields = Object.keys(updatePayload).map((k) => {
+    const displayKey =
+      Object.entries(fieldMap).find(([, v]) => v === k)?.[0] || k;
     return displayKey;
   });
 
@@ -3701,7 +4862,7 @@ async function executeUpdateClientContact(args: any): Promise<string> {
         isPrimary: verified?.is_primary,
       },
       updatedFields: changedFields,
-    }
+    },
   );
 }
 
@@ -3715,7 +4876,14 @@ async function executeLogExpense(args: any): Promise<string> {
 
   if (!supplierName || !description || amountInclusive <= 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "log_expense", targetType: "expense", toolUsed: "logExpense", error: "Supplier name, description, and a positive amount are required.", nextStep: "Please provide all three details." })
+      actionFailed({
+        action: "log_expense",
+        targetType: "expense",
+        toolUsed: "logExpense",
+        error:
+          "Supplier name, description, and a positive amount are required.",
+        nextStep: "Please provide all three details.",
+      }),
     );
   }
 
@@ -3741,7 +4909,12 @@ async function executeLogExpense(args: any): Promise<string> {
 
   if (error) {
     return wrapWithActionResult(
-      actionFailed({ action: "log_expense", targetType: "expense", toolUsed: "logExpense", error: error.message })
+      actionFailed({
+        action: "log_expense",
+        targetType: "expense",
+        toolUsed: "logExpense",
+        error: error.message,
+      }),
     );
   }
 
@@ -3773,7 +4946,7 @@ async function executeLogExpense(args: any): Promise<string> {
       },
       verification,
       currency: "ZAR",
-    }
+    },
   );
 }
 
@@ -3781,12 +4954,21 @@ async function executeRecordPayment(args: any): Promise<string> {
   const supabase = getSupabase();
   const today = new Date().toISOString().split("T")[0];
 
-  const invoiceRef = String(args.invoiceReference || "").trim().toUpperCase();
+  const invoiceRef = String(args.invoiceReference || "")
+    .trim()
+    .toUpperCase();
   const amount = Number(args.amount) || 0;
 
   if (!invoiceRef || amount <= 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", error: "Invoice reference and a positive payment amount are required.", nextStep: "Please provide the invoice number (e.g., INV-0001) and payment amount." })
+      actionFailed({
+        action: "record_payment",
+        targetType: "payment",
+        toolUsed: "recordPayment",
+        error: "Invoice reference and a positive payment amount are required.",
+        nextStep:
+          "Please provide the invoice number (e.g., INV-0001) and payment amount.",
+      }),
     );
   }
 
@@ -3795,7 +4977,14 @@ async function executeRecordPayment(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: `Invoice "${invoiceRef}" not found.`, nextStep: "Please check the invoice reference number." })
+      actionFailed({
+        action: "record_payment",
+        targetType: "payment",
+        toolUsed: "recordPayment",
+        targetReference: invoiceRef,
+        error: `Invoice "${invoiceRef}" not found.`,
+        nextStep: "Please check the invoice reference number.",
+      }),
     );
   }
 
@@ -3808,31 +4997,55 @@ async function executeRecordPayment(args: any): Promise<string> {
         missingFields: ["invoiceReference"],
         nextStep: `Multiple invoices match "${invoiceRef}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.invoice_number} — ${c.client_name} (R${c.total}, ${c.status})`).join("; ")}`,
       }),
-      { disambiguation: { type: "invoice", query: invoiceRef, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "invoice",
+          query: invoiceRef,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
   const invoice = resolved.kind === "exact" ? resolved.record : resolved.record;
 
   // Atomic payment recording via DB function
-  const { data: result, error: rpcError } = await supabase.rpc("record_invoice_payment", {
-    p_invoice_id: invoice.id,
-    p_amount: amount,
-    p_payment_date: args.paymentDate || today,
-    p_payment_method: args.paymentMethod || "EFT",
-    p_reference: args.reference || null,
-    p_notes: args.notes || `Recorded via AI on ${today}`,
-  });
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "record_invoice_payment",
+    {
+      p_invoice_id: invoice.id,
+      p_amount: amount,
+      p_payment_date: args.paymentDate || today,
+      p_payment_method: args.paymentMethod || "EFT",
+      p_reference: args.reference || null,
+      p_notes: args.notes || `Recorded via AI on ${today}`,
+    },
+  );
 
   if (rpcError) {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: rpcError.message, nextStep: rpcError.message.includes("overpayment") ? "The payment amount exceeds the remaining balance." : "Please check the invoice and try again." })
+      actionFailed({
+        action: "record_payment",
+        targetType: "payment",
+        toolUsed: "recordPayment",
+        targetReference: invoiceRef,
+        error: rpcError.message,
+        nextStep: rpcError.message.includes("overpayment")
+          ? "The payment amount exceeds the remaining balance."
+          : "Please check the invoice and try again.",
+      }),
     );
   }
 
   if (!result || !result.success) {
     return wrapWithActionResult(
-      actionFailed({ action: "record_payment", targetType: "payment", toolUsed: "recordPayment", targetReference: invoiceRef, error: result?.error || "Payment recording failed." })
+      actionFailed({
+        action: "record_payment",
+        targetType: "payment",
+        toolUsed: "recordPayment",
+        targetReference: invoiceRef,
+        error: result?.error || "Payment recording failed.",
+      }),
     );
   }
 
@@ -3866,7 +5079,7 @@ async function executeRecordPayment(args: any): Promise<string> {
       },
       verification,
       currency: "ZAR",
-    }
+    },
   );
 }
 
@@ -3876,14 +5089,27 @@ async function executeDraftQuote(args: any): Promise<string> {
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: "Client name is required.", nextStep: "Please provide the client name." })
+      actionFailed({
+        action: "draft_quote",
+        targetType: "quote",
+        toolUsed: "draftQuote",
+        error: "Client name is required.",
+        nextStep: "Please provide the client name.",
+      }),
     );
   }
 
   const lineItems = args.lineItems || [];
   if (!Array.isArray(lineItems) || lineItems.length === 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
+      actionFailed({
+        action: "draft_quote",
+        targetType: "quote",
+        toolUsed: "draftQuote",
+        error: "At least one line item is required.",
+        nextStep:
+          "Please provide line items with description, quantity, and unitPrice.",
+      }),
     );
   }
 
@@ -3892,7 +5118,13 @@ async function executeDraftQuote(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: `Could not find a client matching "${clientName}".`, nextStep: "Please create the client first or check the spelling." })
+      actionFailed({
+        action: "draft_quote",
+        targetType: "quote",
+        toolUsed: "draftQuote",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please create the client first or check the spelling.",
+      }),
     );
   }
 
@@ -3905,7 +5137,13 @@ async function executeDraftQuote(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -3919,24 +5157,38 @@ async function executeDraftQuote(args: any): Promise<string> {
   }));
 
   // Call atomic DB function — header + items + totals in one transaction
-  const { data: result, error: rpcError } = await supabase.rpc("create_quote_with_items", {
-    p_client_id: client.id,
-    p_line_items: itemsJson,
-    p_notes: args.notes || null,
-    p_internal_notes: `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
-  });
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "create_quote_with_items",
+    {
+      p_client_id: client.id,
+      p_line_items: itemsJson,
+      p_notes: args.notes || null,
+      p_internal_notes: `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
+    },
+  );
 
   if (rpcError || !result) {
     console.error("[draftQuote] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_quote", targetType: "quote", toolUsed: "draftQuote", error: rpcError?.message || "Quote creation failed.", nextStep: "Please try again or check the quote list." })
+      actionFailed({
+        action: "draft_quote",
+        targetType: "quote",
+        toolUsed: "draftQuote",
+        error: rpcError?.message || "Quote creation failed.",
+        nextStep: "Please try again or check the quote list.",
+      }),
     );
   }
 
   const quoteNumber = result.document_number;
   const total = Number(result.total) || 0;
 
-  console.log("[draftQuote] Atomically created quote:", quoteNumber, "for client:", client.company_name);
+  console.log(
+    "[draftQuote] Atomically created quote:",
+    quoteNumber,
+    "for client:",
+    client.company_name,
+  );
 
   const verification = await verifyQuote(supabase, result.id, {
     quote_number: quoteNumber,
@@ -3953,9 +5205,15 @@ async function executeDraftQuote(args: any): Promise<string> {
       verified: verification.status === "confirmed",
     }),
     {
-      quote: { id: result.id, quoteNumber, clientName: result.client_name, total: total.toFixed(2), status: result.status },
+      quote: {
+        id: result.id,
+        quoteNumber,
+        clientName: result.client_name,
+        total: total.toFixed(2),
+        status: result.status,
+      },
       verification,
-    }
+    },
   );
 }
 
@@ -3965,25 +5223,32 @@ async function executeDraftInvoice(args: any): Promise<string> {
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: "Client name is required.", nextStep: "Please provide the client name." })
+      actionFailed({
+        action: "draft_invoice",
+        targetType: "invoice",
+        toolUsed: "draftInvoice",
+        error: "Client name is required.",
+        nextStep: "Please provide the client name.",
+      }),
     );
   }
 
   const lineItems = args.lineItems || [];
   if (!Array.isArray(lineItems) || lineItems.length === 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
+      actionFailed({
+        action: "draft_invoice",
+        targetType: "invoice",
+        toolUsed: "draftInvoice",
+        error: "At least one line item is required.",
+        nextStep:
+          "Please provide line items with description, quantity, and unitPrice.",
+      }),
     );
   }
 
   // Resolve client — safe exact-match-first lookup
   const resolved = await resolveClientForWrite(supabase, clientName);
-
-  if (resolved.kind === "not_found") {
-    return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: `Could not find a client matching "${clientName}".`, nextStep: "Please create the client first or check the spelling." })
-    );
-  }
 
   if (resolved.kind === "ambiguous") {
     return wrapWithActionResult(
@@ -3994,11 +5259,22 @@ async function executeDraftInvoice(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
-  const client = resolved.kind === "exact" ? resolved.record : resolved.record;
+  // Determine if we're using a matched client or quick-client mode
+  const isQuickClient = resolved.kind === "not_found";
+  const client =
+    resolved.kind === "exact" || resolved.kind === "fuzzy_single"
+      ? resolved.record
+      : null;
 
   const itemsJson = lineItems.map((item: any) => ({
     description: String(item.description || "").trim(),
@@ -4006,26 +5282,51 @@ async function executeDraftInvoice(args: any): Promise<string> {
     unit_price: Number(item.unitPrice) || 0,
   }));
 
-  const { data: result, error: rpcError } = await supabase.rpc("create_invoice_with_items", {
-    p_client_id: client.id,
-    p_line_items: itemsJson,
-    p_notes: args.notes || null,
-    p_internal_notes: `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
-    p_is_recurring: !!args.isRecurring,
-    p_recurring_freq: args.recurringFrequency || null,
-  });
+  // Build internal notes — include quick client context when no DB match
+  const internalNotes = isQuickClient
+    ? [
+        `Drafted by AI on ${new Date().toISOString().split("T")[0]}`,
+        `Quick Client: ${clientName}`,
+        "(Client not in database — created with quick client details)",
+      ].join("\n")
+    : `Drafted by AI on ${new Date().toISOString().split("T")[0]}`;
+
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "create_invoice_with_items",
+    {
+      p_client_id: client?.id ?? null,
+      p_line_items: itemsJson,
+      p_notes: args.notes || null,
+      p_internal_notes: internalNotes,
+      p_is_recurring: !!args.isRecurring,
+      p_recurring_freq: args.recurringFrequency || null,
+    },
+  );
 
   if (rpcError || !result) {
     console.error("[draftInvoice] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_invoice", targetType: "invoice", toolUsed: "draftInvoice", error: rpcError?.message || "Invoice creation failed.", nextStep: "Please try again or check the invoice list." })
+      actionFailed({
+        action: "draft_invoice",
+        targetType: "invoice",
+        toolUsed: "draftInvoice",
+        error: rpcError?.message || "Invoice creation failed.",
+        nextStep: "Please try again or check the invoice list.",
+      }),
     );
   }
 
   const invoiceNumber = result.document_number;
   const total = Number(result.total) || 0;
+  const displayName = client?.company_name || clientName;
 
-  console.log("[draftInvoice] Atomically created invoice:", invoiceNumber, "for client:", client.company_name);
+  console.log(
+    "[draftInvoice] Atomically created invoice:",
+    invoiceNumber,
+    "for client:",
+    displayName,
+    isQuickClient ? "(quick client)" : "",
+  );
 
   const verification = await verifyInvoice(supabase, result.id, {
     invoice_number: invoiceNumber,
@@ -4033,19 +5334,32 @@ async function executeDraftInvoice(args: any): Promise<string> {
     lineItemCount: result.line_item_count,
   });
 
+  const quickClientSuffix = isQuickClient
+    ? `\n\nClient not found in database — creating invoice with quick client details. Would you like me to save **${clientName}** to your client database?`
+    : "";
+
   return wrapWithActionResult(
     actionSuccess({
       action: "draft_invoice",
       targetType: "invoice",
       targetReference: invoiceNumber,
       toolUsed: "draftInvoice",
-      summary: `Invoice ${invoiceNumber} created for ${client.company_name} — R${total.toFixed(2)}`,
+      summary:
+        `Invoice ${invoiceNumber} created for ${displayName} — R${total.toFixed(2)}` +
+        quickClientSuffix,
       verified: verification.status === "confirmed",
     }),
     {
-      invoice: { id: result.id, invoiceNumber, clientName: result.client_name, total: total.toFixed(2), status: result.status },
+      invoice: {
+        id: result.id,
+        invoiceNumber,
+        clientName: displayName,
+        total: total.toFixed(2),
+        status: result.status,
+        isQuickClient,
+      },
       verification,
-    }
+    },
   );
 }
 
@@ -4055,14 +5369,27 @@ async function executeDraftPurchaseOrder(args: any): Promise<string> {
   const supplierName = String(args.supplierName || "").trim();
   if (!supplierName) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: "Supplier name is required.", nextStep: "Please provide the supplier name." })
+      actionFailed({
+        action: "draft_purchase_order",
+        targetType: "purchase_order",
+        toolUsed: "draftPurchaseOrder",
+        error: "Supplier name is required.",
+        nextStep: "Please provide the supplier name.",
+      }),
     );
   }
 
   const lineItems = args.lineItems || [];
   if (!Array.isArray(lineItems) || lineItems.length === 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
+      actionFailed({
+        action: "draft_purchase_order",
+        targetType: "purchase_order",
+        toolUsed: "draftPurchaseOrder",
+        error: "At least one line item is required.",
+        nextStep:
+          "Please provide line items with description, quantity, and unitPrice.",
+      }),
     );
   }
 
@@ -4072,24 +5399,38 @@ async function executeDraftPurchaseOrder(args: any): Promise<string> {
     unit_price: Number(item.unitPrice) || 0,
   }));
 
-  const { data: result, error: rpcError } = await supabase.rpc("create_purchase_order_with_items", {
-    p_supplier_name: supplierName,
-    p_line_items: itemsJson,
-    p_notes: args.notes || null,
-    p_date_raised: null,
-  });
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "create_purchase_order_with_items",
+    {
+      p_supplier_name: supplierName,
+      p_line_items: itemsJson,
+      p_notes: args.notes || null,
+      p_date_raised: null,
+    },
+  );
 
   if (rpcError || !result) {
     console.error("[draftPurchaseOrder] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_purchase_order", targetType: "purchase_order", toolUsed: "draftPurchaseOrder", error: rpcError?.message || "Purchase order creation failed.", nextStep: "Please try again or check the PO list." })
+      actionFailed({
+        action: "draft_purchase_order",
+        targetType: "purchase_order",
+        toolUsed: "draftPurchaseOrder",
+        error: rpcError?.message || "Purchase order creation failed.",
+        nextStep: "Please try again or check the PO list.",
+      }),
     );
   }
 
   const poNumber = result.document_number;
   const total = Number(result.total) || 0;
 
-  console.log("[draftPurchaseOrder] Atomically created PO:", poNumber, "for supplier:", supplierName);
+  console.log(
+    "[draftPurchaseOrder] Atomically created PO:",
+    poNumber,
+    "for supplier:",
+    supplierName,
+  );
 
   const verification = await verifyPurchaseOrder(supabase, result.id, {
     po_number: poNumber,
@@ -4105,7 +5446,15 @@ async function executeDraftPurchaseOrder(args: any): Promise<string> {
       summary: `PO ${poNumber} created for ${supplierName} — R${total.toFixed(2)}`,
       verified: verification.status === "confirmed",
     }),
-    { po: { id: result.id, poNumber, supplierName: result.supplier_name, total: total.toFixed(2) }, verification }
+    {
+      po: {
+        id: result.id,
+        poNumber,
+        supplierName: result.supplier_name,
+        total: total.toFixed(2),
+      },
+      verification,
+    },
   );
 }
 
@@ -4115,14 +5464,27 @@ async function executeDraftCreditNote(args: any): Promise<string> {
   const clientName = String(args.clientName || "").trim();
   if (!clientName) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: "Client name is required.", nextStep: "Please provide the client name." })
+      actionFailed({
+        action: "draft_credit_note",
+        targetType: "credit_note",
+        toolUsed: "draftCreditNote",
+        error: "Client name is required.",
+        nextStep: "Please provide the client name.",
+      }),
     );
   }
 
   const lineItems = args.lineItems || [];
   if (!Array.isArray(lineItems) || lineItems.length === 0) {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: "At least one line item is required.", nextStep: "Please provide line items with description, quantity, and unitPrice." })
+      actionFailed({
+        action: "draft_credit_note",
+        targetType: "credit_note",
+        toolUsed: "draftCreditNote",
+        error: "At least one line item is required.",
+        nextStep:
+          "Please provide line items with description, quantity, and unitPrice.",
+      }),
     );
   }
 
@@ -4130,7 +5492,13 @@ async function executeDraftCreditNote(args: any): Promise<string> {
 
   if (resolved.kind === "not_found") {
     return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: `Could not find a client matching "${clientName}".`, nextStep: "Please create the client first or check the spelling." })
+      actionFailed({
+        action: "draft_credit_note",
+        targetType: "credit_note",
+        toolUsed: "draftCreditNote",
+        error: `Could not find a client matching "${clientName}".`,
+        nextStep: "Please create the client first or check the spelling.",
+      }),
     );
   }
 
@@ -4143,7 +5511,13 @@ async function executeDraftCreditNote(args: any): Promise<string> {
         missingFields: ["clientName"],
         nextStep: `Multiple clients match "${clientName}". Please specify which one: ${resolved.candidates.map((c: any) => `${c.company_name} (${c.email || "no email"})`).join("; ")}`,
       }),
-      { disambiguation: { type: "client", query: clientName, candidates: resolved.candidates } }
+      {
+        disambiguation: {
+          type: "client",
+          query: clientName,
+          candidates: resolved.candidates,
+        },
+      },
     );
   }
 
@@ -4155,24 +5529,38 @@ async function executeDraftCreditNote(args: any): Promise<string> {
     unit_price: Number(item.unitPrice) || 0,
   }));
 
-  const { data: result, error: rpcError } = await supabase.rpc("create_credit_note_with_items", {
-    p_client_id: client.id,
-    p_line_items: itemsJson,
-    p_reason: args.reason || null,
-    p_notes: args.notes || null,
-  });
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "create_credit_note_with_items",
+    {
+      p_client_id: client.id,
+      p_line_items: itemsJson,
+      p_reason: args.reason || null,
+      p_notes: args.notes || null,
+    },
+  );
 
   if (rpcError || !result) {
     console.error("[draftCreditNote] Atomic creation failed:", rpcError);
     return wrapWithActionResult(
-      actionFailed({ action: "draft_credit_note", targetType: "credit_note", toolUsed: "draftCreditNote", error: rpcError?.message || "Credit note creation failed.", nextStep: "Please try again or check the credit note list." })
+      actionFailed({
+        action: "draft_credit_note",
+        targetType: "credit_note",
+        toolUsed: "draftCreditNote",
+        error: rpcError?.message || "Credit note creation failed.",
+        nextStep: "Please try again or check the credit note list.",
+      }),
     );
   }
 
   const cnNumber = result.document_number;
   const total = Number(result.total) || 0;
 
-  console.log("[draftCreditNote] Atomically created CN:", cnNumber, "for client:", client.company_name);
+  console.log(
+    "[draftCreditNote] Atomically created CN:",
+    cnNumber,
+    "for client:",
+    client.company_name,
+  );
 
   const verification = await verifyCreditNote(supabase, result.id, {
     cn_number: cnNumber,
@@ -4188,7 +5576,15 @@ async function executeDraftCreditNote(args: any): Promise<string> {
       summary: `Credit Note ${cnNumber} created for ${client.company_name} — R${total.toFixed(2)}`,
       verified: verification.status === "confirmed",
     }),
-    { creditNote: { id: result.id, cnNumber, clientName: result.client_name, total: total.toFixed(2) }, verification }
+    {
+      creditNote: {
+        id: result.id,
+        cnNumber,
+        clientName: result.client_name,
+        total: total.toFixed(2),
+      },
+      verification,
+    },
   );
 }
 
@@ -4196,26 +5592,39 @@ async function executeDraftCreditNote(args: any): Promise<string> {
 // INVOICE STATUS MANAGEMENT TOOLS
 // ============================================================
 
-async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newStatus: string }): Promise<string> {
+async function executeUpdateInvoiceStatus(args: {
+  invoiceReference: string;
+  newStatus: string;
+}): Promise<string> {
   const supabase = getSupabase();
   try {
     const allowedStatuses = ["Draft", "Sent", "Overdue"];
     if (!allowedStatuses.includes(args.newStatus)) {
       return JSON.stringify({
-        error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}. Use markInvoicePaid to mark as paid, or voidInvoice to cancel.`
+        error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}. Use markInvoicePaid to mark as paid, or voidInvoice to cancel.`,
       });
     }
 
-    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+    const resolved = await resolveInvoiceForWrite(
+      supabase,
+      args.invoiceReference,
+    );
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+      return JSON.stringify({
+        error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      const matches = resolved.candidates
+        .map(
+          (inv: any) =>
+            `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`,
+        )
+        .join(", ");
       return JSON.stringify({
-        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`,
       });
     }
 
@@ -4223,13 +5632,13 @@ async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newS
 
     if (targetInvoice.status === "Cancelled") {
       return JSON.stringify({
-        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be updated. Create a new invoice instead.`
+        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be updated. Create a new invoice instead.`,
       });
     }
 
     if (targetInvoice.status === "Paid") {
       return JSON.stringify({
-        error: `Invoice ${targetInvoice.invoice_number} is already marked as paid. It cannot be changed to '${args.newStatus}'.`
+        error: `Invoice ${targetInvoice.invoice_number} is already marked as paid. It cannot be changed to '${args.newStatus}'.`,
       });
     }
 
@@ -4238,7 +5647,7 @@ async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newS
         success: true,
         message: `Invoice ${targetInvoice.invoice_number} is already '${args.newStatus}'. No change needed.`,
         invoice_number: targetInvoice.invoice_number,
-        status: targetInvoice.status
+        status: targetInvoice.status,
       });
     }
 
@@ -4248,7 +5657,9 @@ async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newS
       .eq("id", targetInvoice.id);
 
     if (updateError) {
-      return JSON.stringify({ error: `Failed to update invoice status: ${updateError.message}` });
+      return JSON.stringify({
+        error: `Failed to update invoice status: ${updateError.message}`,
+      });
     }
 
     // Read-after-write verification
@@ -4260,7 +5671,7 @@ async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newS
 
     if (verifyError || verified.status !== args.newStatus) {
       return JSON.stringify({
-        error: `Update was attempted but verification failed. Please check invoice ${targetInvoice.invoice_number} manually.`
+        error: `Update was attempted but verification failed. Please check invoice ${targetInvoice.invoice_number} manually.`,
       });
     }
 
@@ -4269,18 +5680,26 @@ async function executeUpdateInvoiceStatus(args: { invoiceReference: string; newS
       invoice_number: verified.invoice_number,
       previous_status: targetInvoice.status,
       new_status: verified.status,
-      message: `Invoice ${verified.invoice_number} status changed from '${targetInvoice.status}' to '${verified.status}'.`
+      message: `Invoice ${verified.invoice_number} status changed from '${targetInvoice.status}' to '${verified.status}'.`,
     });
-
   } catch (err: any) {
     return JSON.stringify({ error: `Unexpected error: ${err.message}` });
   }
 }
 
-async function executeUpdatePurchaseOrderStatus(args: { poReference: string; newStatus: string }): Promise<string> {
+async function executeUpdatePurchaseOrderStatus(args: {
+  poReference: string;
+  newStatus: string;
+}): Promise<string> {
   const supabase = getSupabase();
   try {
-    const allowedStatuses = ["Draft", "Sent", "Acknowledged", "Delivered", "Cancelled"];
+    const allowedStatuses = [
+      "Draft",
+      "Sent",
+      "Acknowledged",
+      "Delivered",
+      "Cancelled",
+    ];
     if (!allowedStatuses.includes(args.newStatus)) {
       return JSON.stringify({
         error: `Status '${args.newStatus}' is not allowed via this tool. Allowed: ${allowedStatuses.join(", ")}.`,
@@ -4290,11 +5709,18 @@ async function executeUpdatePurchaseOrderStatus(args: { poReference: string; new
     const resolved = await resolvePOForWrite(supabase, args.poReference);
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No purchase order found matching '${args.poReference}'. Please check the PO number.` });
+      return JSON.stringify({
+        error: `No purchase order found matching '${args.poReference}'. Please check the PO number.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((po: any) => `${po.po_number} (status: ${po.status}, total: R${po.total})`).join(", ");
+      const matches = resolved.candidates
+        .map(
+          (po: any) =>
+            `${po.po_number} (status: ${po.status}, total: R${po.total})`,
+        )
+        .join(", ");
       return JSON.stringify({
         error: `Multiple purchase orders match '${args.poReference}': ${matches}. Please provide the exact PO number.`,
       });
@@ -4308,7 +5734,10 @@ async function executeUpdatePurchaseOrderStatus(args: { poReference: string; new
       });
     }
 
-    if (targetPO.status === "Delivered" && ["Draft", "Sent"].includes(args.newStatus)) {
+    if (
+      targetPO.status === "Delivered" &&
+      ["Draft", "Sent"].includes(args.newStatus)
+    ) {
       return JSON.stringify({
         error: `Purchase order ${targetPO.po_number} is Delivered and cannot be moved back to '${args.newStatus}'.`,
       });
@@ -4329,7 +5758,9 @@ async function executeUpdatePurchaseOrderStatus(args: { poReference: string; new
       .eq("id", targetPO.id);
 
     if (updateError) {
-      return JSON.stringify({ error: `Failed to update purchase order status: ${updateError.message}` });
+      return JSON.stringify({
+        error: `Failed to update purchase order status: ${updateError.message}`,
+      });
     }
 
     const { data: verified, error: verifyError } = await supabase
@@ -4357,7 +5788,10 @@ async function executeUpdatePurchaseOrderStatus(args: { poReference: string; new
   }
 }
 
-async function executeUpdateCreditNoteStatus(args: { creditNoteReference: string; newStatus: string }): Promise<string> {
+async function executeUpdateCreditNoteStatus(args: {
+  creditNoteReference: string;
+  newStatus: string;
+}): Promise<string> {
   const supabase = getSupabase();
   try {
     const allowedStatuses = ["Draft", "Sent", "Issued", "Applied", "Cancelled"];
@@ -4375,11 +5809,18 @@ async function executeUpdateCreditNoteStatus(args: { creditNoteReference: string
     const resolved = await resolveCreditNoteForWrite(supabase, ref);
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No credit note found matching '${ref}'. Please check the credit note number.` });
+      return JSON.stringify({
+        error: `No credit note found matching '${ref}'. Please check the credit note number.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((cn: any) => `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`).join(", ");
+      const matches = resolved.candidates
+        .map(
+          (cn: any) =>
+            `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`,
+        )
+        .join(", ");
       return JSON.stringify({
         error: `Multiple credit notes match '${ref}': ${matches}. Please provide the exact credit note number.`,
       });
@@ -4415,7 +5856,9 @@ async function executeUpdateCreditNoteStatus(args: { creditNoteReference: string
       .eq("id", targetCN.id);
 
     if (updateError) {
-      return JSON.stringify({ error: `Failed to update credit note status: ${updateError.message}` });
+      return JSON.stringify({
+        error: `Failed to update credit note status: ${updateError.message}`,
+      });
     }
 
     const { data: verified, error: verifyError } = await supabase
@@ -4445,19 +5888,31 @@ async function executeUpdateCreditNoteStatus(args: { creditNoteReference: string
   }
 }
 
-async function executeMarkInvoicePaid(args: { invoiceReference: string }): Promise<string> {
+async function executeMarkInvoicePaid(args: {
+  invoiceReference: string;
+}): Promise<string> {
   const supabase = getSupabase();
   try {
-    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+    const resolved = await resolveInvoiceForWrite(
+      supabase,
+      args.invoiceReference,
+    );
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+      return JSON.stringify({
+        error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      const matches = resolved.candidates
+        .map(
+          (inv: any) =>
+            `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`,
+        )
+        .join(", ");
       return JSON.stringify({
-        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`,
       });
     }
 
@@ -4468,43 +5923,52 @@ async function executeMarkInvoicePaid(args: { invoiceReference: string }): Promi
         success: true,
         message: `Invoice ${targetInvoice.invoice_number} is already marked as Paid.`,
         invoice_number: targetInvoice.invoice_number,
-        status: "Paid"
+        status: "Paid",
       });
     }
 
     if (targetInvoice.status === "Cancelled") {
       return JSON.stringify({
-        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be marked as paid.`
+        error: `Invoice ${targetInvoice.invoice_number} is cancelled and cannot be marked as paid.`,
       });
     }
 
     // Use record_invoice_payment for proper audit trail instead of direct update
-    const remainingBalance = Number(targetInvoice.balance_due) || (Number(targetInvoice.total) - Number(targetInvoice.amount_paid));
-    
+    const remainingBalance =
+      Number(targetInvoice.balance_due) ||
+      Number(targetInvoice.total) - Number(targetInvoice.amount_paid);
+
     if (remainingBalance <= 0) {
       return JSON.stringify({
         success: true,
         message: `Invoice ${targetInvoice.invoice_number} already has zero balance.`,
         invoice_number: targetInvoice.invoice_number,
-        status: targetInvoice.status
+        status: targetInvoice.status,
       });
     }
 
-    const { data: result, error: rpcError } = await supabase.rpc("record_invoice_payment", {
-      p_invoice_id: targetInvoice.id,
-      p_amount: remainingBalance,
-      p_payment_date: new Date().toISOString().split("T")[0],
-      p_payment_method: "EFT",
-      p_reference: "Full settlement",
-      p_notes: "Marked as paid via AI assistant"
-    });
+    const { data: result, error: rpcError } = await supabase.rpc(
+      "record_invoice_payment",
+      {
+        p_invoice_id: targetInvoice.id,
+        p_amount: remainingBalance,
+        p_payment_date: new Date().toISOString().split("T")[0],
+        p_payment_method: "EFT",
+        p_reference: "Full settlement",
+        p_notes: "Marked as paid via AI assistant",
+      },
+    );
 
     if (rpcError) {
-      return JSON.stringify({ error: `Failed to mark invoice as paid: ${rpcError.message}` });
+      return JSON.stringify({
+        error: `Failed to mark invoice as paid: ${rpcError.message}`,
+      });
     }
 
     if (!result || !result.success) {
-      return JSON.stringify({ error: result?.error || "Payment recording failed." });
+      return JSON.stringify({
+        error: result?.error || "Payment recording failed.",
+      });
     }
 
     return JSON.stringify({
@@ -4515,27 +5979,38 @@ async function executeMarkInvoicePaid(args: { invoiceReference: string }): Promi
       total: result.invoice_total,
       amount_paid: result.amount_paid,
       balance_due: result.balance_due,
-      message: `Invoice ${result.invoice_number} has been marked as Paid. Total: R${result.invoice_total}, Balance due: R${result.balance_due}.`
+      message: `Invoice ${result.invoice_number} has been marked as Paid. Total: R${result.invoice_total}, Balance due: R${result.balance_due}.`,
     });
-
   } catch (err: any) {
     return JSON.stringify({ error: `Unexpected error: ${err.message}` });
   }
 }
 
-async function executeVoidInvoice(args: { invoiceReference: string }): Promise<string> {
+async function executeVoidInvoice(args: {
+  invoiceReference: string;
+}): Promise<string> {
   const supabase = getSupabase();
   try {
-    const resolved = await resolveInvoiceForWrite(supabase, args.invoiceReference);
+    const resolved = await resolveInvoiceForWrite(
+      supabase,
+      args.invoiceReference,
+    );
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.` });
+      return JSON.stringify({
+        error: `No invoice found matching '${args.invoiceReference}'. Please check the invoice number.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((inv: any) => `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`).join(", ");
+      const matches = resolved.candidates
+        .map(
+          (inv: any) =>
+            `${inv.invoice_number} (status: ${inv.status}, total: R${inv.total}, balance: R${inv.balance_due})`,
+        )
+        .join(", ");
       return JSON.stringify({
-        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`
+        error: `Multiple invoices match '${args.invoiceReference}': ${matches}. Please provide the exact invoice number.`,
       });
     }
 
@@ -4546,22 +6021,29 @@ async function executeVoidInvoice(args: { invoiceReference: string }): Promise<s
         success: true,
         message: `Invoice ${targetInvoice.invoice_number} is already cancelled.`,
         invoice_number: targetInvoice.invoice_number,
-        status: "Cancelled"
+        status: "Cancelled",
       });
     }
 
     // Use the hardened void function with proper guards
-    const { data: result, error: rpcError } = await supabase.rpc("void_invoice_with_reversal", {
-      p_invoice_id: targetInvoice.id,
-      p_reason: "Voided via AI assistant"
-    });
+    const { data: result, error: rpcError } = await supabase.rpc(
+      "void_invoice_with_reversal",
+      {
+        p_invoice_id: targetInvoice.id,
+        p_reason: "Voided via AI assistant",
+      },
+    );
 
     if (rpcError) {
-      return JSON.stringify({ error: `Failed to void invoice: ${rpcError.message}` });
+      return JSON.stringify({
+        error: `Failed to void invoice: ${rpcError.message}`,
+      });
     }
 
     if (!result || !result.success) {
-      return JSON.stringify({ error: result?.error || "Invoice voiding failed." });
+      return JSON.stringify({
+        error: result?.error || "Invoice voiding failed.",
+      });
     }
 
     return JSON.stringify({
@@ -4569,9 +6051,8 @@ async function executeVoidInvoice(args: { invoiceReference: string }): Promise<s
       invoice_number: result.invoice_number,
       previous_status: result.previous_status,
       new_status: result.new_status,
-      message: `Invoice ${result.invoice_number} has been voided (status: Cancelled).`
+      message: `Invoice ${result.invoice_number} has been voided (status: Cancelled).`,
     });
-
   } catch (err: any) {
     return JSON.stringify({ error: `Unexpected error: ${err.message}` });
   }
@@ -4581,110 +6062,221 @@ async function executeVoidInvoice(args: { invoiceReference: string }): Promise<s
 // STATUS TRANSITION EXECUTORS
 // ============================================================
 
-async function executeMarkInvoiceSent(args: { invoiceReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "invoice", reference: args.invoiceReference, action: "mark_sent" });
+async function executeMarkInvoiceSent(args: {
+  invoiceReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "invoice",
+    reference: args.invoiceReference,
+    action: "mark_sent",
+  });
 }
 
-async function executeReopenInvoice(args: { invoiceReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "invoice", reference: args.invoiceReference, action: "reopen" });
+async function executeReopenInvoice(args: {
+  invoiceReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "invoice",
+    reference: args.invoiceReference,
+    action: "reopen",
+  });
 }
 
-async function executeMarkQuoteSent(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "mark_sent" });
+async function executeMarkQuoteSent(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "mark_sent",
+  });
 }
 
-async function executeAcceptQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "accept" });
+async function executeAcceptQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "accept",
+  });
 }
 
-async function executeDeclineQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "decline" });
+async function executeDeclineQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "decline",
+  });
 }
 
-async function executeExpireQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "expire" });
+async function executeExpireQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "expire",
+  });
 }
 
-async function executeReopenQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "reopen" });
+async function executeReopenQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "reopen",
+  });
 }
 
-async function executeRejectQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "reject" });
+async function executeRejectQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "reject",
+  });
 }
 
-async function executeIssueQuote(args: { quoteReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "quote", reference: args.quoteReference, action: "issue" });
+async function executeIssueQuote(args: {
+  quoteReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "quote",
+    reference: args.quoteReference,
+    action: "issue",
+  });
 }
 
-async function executeMarkPOSent(args: { poReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "mark_sent" });
+async function executeMarkPOSent(args: {
+  poReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "purchase_order",
+    reference: args.poReference,
+    action: "mark_sent",
+  });
 }
 
-async function executeAcknowledgePO(args: { poReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "acknowledge" });
+async function executeAcknowledgePO(args: {
+  poReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "purchase_order",
+    reference: args.poReference,
+    action: "acknowledge",
+  });
 }
 
-async function executeMarkPODelivered(args: { poReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "mark_delivered" });
+async function executeMarkPODelivered(args: {
+  poReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "purchase_order",
+    reference: args.poReference,
+    action: "mark_delivered",
+  });
 }
 
 async function executeCancelPO(args: { poReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "purchase_order", reference: args.poReference, action: "cancel" });
+  return executeDocumentTransition({
+    documentType: "purchase_order",
+    reference: args.poReference,
+    action: "cancel",
+  });
 }
 
-async function executeIssueCreditNote(args: { cnReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "issue" });
+async function executeIssueCreditNote(args: {
+  cnReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "credit_note",
+    reference: args.cnReference,
+    action: "issue",
+  });
 }
 
-async function executeSendCreditNote(args: { cnReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "send" });
+async function executeSendCreditNote(args: {
+  cnReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "credit_note",
+    reference: args.cnReference,
+    action: "send",
+  });
 }
 
-async function executeApplyCreditNote(args: { cnReference: string }): Promise<string> {
+async function executeApplyCreditNote(args: {
+  cnReference: string;
+}): Promise<string> {
   const supabase = getSupabase();
 
   try {
-    const resolved = await resolveCreditNoteForWrite(supabase, args.cnReference);
+    const resolved = await resolveCreditNoteForWrite(
+      supabase,
+      args.cnReference,
+    );
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No credit note found matching '${args.cnReference}'.` });
+      return JSON.stringify({
+        error: `No credit note found matching '${args.cnReference}'.`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((cn: any) => `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`).join(", ");
-      return JSON.stringify({ error: `Multiple credit notes match '${args.cnReference}': ${matches}. Provide the exact number.` });
+      const matches = resolved.candidates
+        .map(
+          (cn: any) =>
+            `${cn.cn_number} (status: ${cn.status}, total: R${cn.total})`,
+        )
+        .join(", ");
+      return JSON.stringify({
+        error: `Multiple credit notes match '${args.cnReference}': ${matches}. Provide the exact number.`,
+      });
     }
 
     const cn = resolved.record;
 
     if (cn.status !== "Issued") {
-      return JSON.stringify({ error: `Credit note ${cn.cn_number} is in status "${cn.status}" and cannot be applied. Only Issued credit notes can be applied.` });
+      return JSON.stringify({
+        error: `Credit note ${cn.cn_number} is in status "${cn.status}" and cannot be applied. Only Issued credit notes can be applied.`,
+      });
     }
 
     if (!cn.invoice_id) {
-      return JSON.stringify({ error: `Credit note ${cn.cn_number} is not linked to any invoice. Link it to an invoice first.` });
+      return JSON.stringify({
+        error: `Credit note ${cn.cn_number} is not linked to any invoice. Link it to an invoice first.`,
+      });
     }
 
     // Call the atomic application function
-    const { data: result, error: rpcError } = await supabase.rpc("apply_credit_note_to_invoice", {
-      p_credit_note_id: cn.id,
-    });
+    const { data: result, error: rpcError } = await supabase.rpc(
+      "apply_credit_note_to_invoice",
+      {
+        p_credit_note_id: cn.id,
+      },
+    );
 
     if (rpcError) {
       return JSON.stringify({ error: rpcError.message });
     }
 
     if (!result || !result.success) {
-      return JSON.stringify({ error: result?.error || "Credit note application failed." });
+      return JSON.stringify({
+        error: result?.error || "Credit note application failed.",
+      });
     }
 
     // Read-after-write verification
-    const { data: verified } = await supabase
+    const { data: verified } = (await supabase
       .from("credit_notes")
       .select("cn_number, status")
       .eq("id", cn.id)
-      .single() as { data: Record<string, any> | null; error: any };
+      .single()) as { data: Record<string, any> | null; error: any };
 
     const isVerified = (verified as any)?.status === "Applied";
 
@@ -4714,11 +6306,20 @@ async function executeApplyCreditNote(args: { cnReference: string }): Promise<st
   }
 }
 
-async function executeCancelCreditNote(args: { cnReference: string }): Promise<string> {
-  return executeDocumentTransition({ documentType: "credit_note", reference: args.cnReference, action: "cancel" });
+async function executeCancelCreditNote(args: {
+  cnReference: string;
+}): Promise<string> {
+  return executeDocumentTransition({
+    documentType: "credit_note",
+    reference: args.cnReference,
+    action: "cancel",
+  });
 }
 
-async function executeConvertQuoteToInvoice(args: { quoteReference: string; paymentTermsDays?: number }): Promise<string> {
+async function executeConvertQuoteToInvoice(args: {
+  quoteReference: string;
+  paymentTermsDays?: number;
+}): Promise<string> {
   const supabase = getSupabase();
 
   try {
@@ -4726,55 +6327,66 @@ async function executeConvertQuoteToInvoice(args: { quoteReference: string; paym
     const resolved = await resolveQuoteForWrite(supabase, args.quoteReference);
 
     if (resolved.kind === "not_found") {
-      return wrapWithActionResult(actionFailed({ 
-        action: "convert_quote_to_invoice", 
-        targetType: "invoice", 
-        toolUsed: "convertQuoteToInvoice", 
-        error: `No quote found matching '${args.quoteReference}'. Please check the quote number.` 
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "convert_quote_to_invoice",
+          targetType: "invoice",
+          toolUsed: "convertQuoteToInvoice",
+          error: `No quote found matching '${args.quoteReference}'. Please check the quote number.`,
+        }),
+      );
     }
 
     if (resolved.kind === "ambiguous") {
-      return wrapWithActionResult(actionNeedInfo({ 
-        action: "convert_quote_to_invoice", 
-        targetType: "invoice", 
-        toolUsed: "convertQuoteToInvoice", 
-        missingFields: ["quoteReference"], 
-        nextStep: `Multiple quotes match '${args.quoteReference}': ${resolved.candidates.map((c: any) => `${c.quote_number} (${c.status})`).join("; ")}. Please provide the exact quote number.` 
-      }));
+      return wrapWithActionResult(
+        actionNeedInfo({
+          action: "convert_quote_to_invoice",
+          targetType: "invoice",
+          toolUsed: "convertQuoteToInvoice",
+          missingFields: ["quoteReference"],
+          nextStep: `Multiple quotes match '${args.quoteReference}': ${resolved.candidates.map((c: any) => `${c.quote_number} (${c.status})`).join("; ")}. Please provide the exact quote number.`,
+        }),
+      );
     }
 
     const quote = resolved.record;
 
     // 2. Call atomic DB function — all guards and operations in one transaction
-    const { data: result, error: rpcError } = await supabase.rpc("convert_quote_to_invoice", {
-      p_quote_id: quote.id,
-      p_payment_days: args.paymentTermsDays || null,
-      p_notes: null,
-    });
+    const { data: result, error: rpcError } = await supabase.rpc(
+      "convert_quote_to_invoice",
+      {
+        p_quote_id: quote.id,
+        p_payment_days: args.paymentTermsDays || null,
+        p_notes: null,
+      },
+    );
 
     if (rpcError) {
       console.error("[convertQuoteToInvoice] RPC failed:", rpcError);
-      return wrapWithActionResult(actionFailed({ 
-        action: "convert_quote_to_invoice", 
-        targetType: "invoice", 
-        toolUsed: "convertQuoteToInvoice", 
-        error: rpcError.message,
-        nextStep: rpcError.message.includes("already been converted") 
-          ? "This quote has already been converted. Check the invoices list."
-          : rpcError.message.includes("Draft") 
-            ? "Send the quote to the client and mark it as Accepted before converting."
-            : "Please check the quote status and try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "convert_quote_to_invoice",
+          targetType: "invoice",
+          toolUsed: "convertQuoteToInvoice",
+          error: rpcError.message,
+          nextStep: rpcError.message.includes("already been converted")
+            ? "This quote has already been converted. Check the invoices list."
+            : rpcError.message.includes("Draft")
+              ? "Send the quote to the client and mark it as Accepted before converting."
+              : "Please check the quote status and try again.",
+        }),
+      );
     }
 
     if (!result || !result.success) {
-      return wrapWithActionResult(actionFailed({ 
-        action: "convert_quote_to_invoice", 
-        targetType: "invoice", 
-        toolUsed: "convertQuoteToInvoice", 
-        error: result?.error || "Conversion failed." 
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "convert_quote_to_invoice",
+          targetType: "invoice",
+          toolUsed: "convertQuoteToInvoice",
+          error: result?.error || "Conversion failed.",
+        }),
+      );
     }
 
     // 3. Verify the invoice was created
@@ -4784,9 +6396,16 @@ async function executeConvertQuoteToInvoice(args: { quoteReference: string; paym
       .eq("id", result.invoice_id)
       .single();
 
-    const isVerified = verified?.invoice_number === result.invoice_number && verified?.quote_id === result.quote_id;
+    const isVerified =
+      verified?.invoice_number === result.invoice_number &&
+      verified?.quote_id === result.quote_id;
 
-    console.log("[convertQuoteToInvoice] Converted", result.quote_number, "→", result.invoice_number);
+    console.log(
+      "[convertQuoteToInvoice] Converted",
+      result.quote_number,
+      "→",
+      result.invoice_number,
+    );
 
     return wrapWithActionResult(
       actionSuccess({
@@ -4812,16 +6431,18 @@ async function executeConvertQuoteToInvoice(args: { quoteReference: string; paym
           paymentTermsDays: result.payment_terms_days,
           lineItemCount: result.line_item_count,
         },
-      }
+      },
     );
   } catch (err: any) {
     console.error("[convertQuoteToInvoice] Unexpected error:", err);
-    return wrapWithActionResult(actionFailed({ 
-      action: "convert_quote_to_invoice", 
-      targetType: "invoice", 
-      toolUsed: "convertQuoteToInvoice", 
-      error: `Unexpected error: ${err.message}` 
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "convert_quote_to_invoice",
+        targetType: "invoice",
+        toolUsed: "convertQuoteToInvoice",
+        error: `Unexpected error: ${err.message}`,
+      }),
+    );
   }
 }
 
@@ -4841,7 +6462,7 @@ async function executeCreateTask(
     tags?: string[];
     notes?: string;
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -4857,13 +6478,15 @@ async function executeCreateTask(
         .limit(5);
 
       if (clientError) {
-        return wrapWithActionResult(actionFailed({
-          action: "create_task",
-          targetType: "task",
-          toolUsed: "createTask",
-          error: `Error looking up client: ${clientError.message}`,
-          nextStep: "Please check the client name and try again."
-        }));
+        return wrapWithActionResult(
+          actionFailed({
+            action: "create_task",
+            targetType: "task",
+            toolUsed: "createTask",
+            error: `Error looking up client: ${clientError.message}`,
+            nextStep: "Please check the client name and try again.",
+          }),
+        );
       }
 
       if (clients && clients.length === 1) {
@@ -4871,20 +6494,25 @@ async function executeCreateTask(
         clientCompanyName = clients[0].company_name;
       } else if (clients && clients.length > 1) {
         const exactMatch = clients.find(
-          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+          (c: any) =>
+            c.company_name.toLowerCase() === args.clientName!.toLowerCase(),
         );
         if (exactMatch) {
           clientId = exactMatch.id;
           clientCompanyName = exactMatch.company_name;
         } else {
-          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
-          return wrapWithActionResult(actionNeedInfo({
-            action: "create_task",
-            targetType: "task",
-            toolUsed: "createTask",
-            missingFields: ["clientName"],
-            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
-          }));
+          const matchList = clients
+            .map((c: any) => `"${c.company_name}"`)
+            .join(", ");
+          return wrapWithActionResult(
+            actionNeedInfo({
+              action: "create_task",
+              targetType: "task",
+              toolUsed: "createTask",
+              missingFields: ["clientName"],
+              nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`,
+            }),
+          );
         }
       }
     }
@@ -4908,13 +6536,15 @@ async function executeCreateTask(
       .single();
 
     if (insertError) {
-      return wrapWithActionResult(actionFailed({
-        action: "create_task",
-        targetType: "task",
-        toolUsed: "createTask",
-        error: `Failed to create task: ${insertError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_task",
+          targetType: "task",
+          toolUsed: "createTask",
+          error: `Failed to create task: ${insertError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     let message = `Task created: "${task.title}"`;
@@ -4943,16 +6573,18 @@ async function executeCreateTask(
           category: task.category,
           client_name: clientCompanyName,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "create_task",
-      targetType: "task",
-      toolUsed: "createTask",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "create_task",
+        targetType: "task",
+        toolUsed: "createTask",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -4968,7 +6600,7 @@ async function executeUpdateTask(
     category?: string;
     notes?: string;
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -4981,23 +6613,27 @@ async function executeUpdateTask(
       .limit(10);
 
     if (searchError) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_task",
-        targetType: "task",
-        toolUsed: "updateTask",
-        error: `Error searching for task: ${searchError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_task",
+          targetType: "task",
+          toolUsed: "updateTask",
+          error: `Error searching for task: ${searchError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     if (!tasks || tasks.length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_task",
-        targetType: "task",
-        toolUsed: "updateTask",
-        error: `No task found matching "${args.taskIdentifier}".`,
-        nextStep: "Please check the task name and try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_task",
+          targetType: "task",
+          toolUsed: "updateTask",
+          error: `No task found matching "${args.taskIdentifier}".`,
+          nextStep: "Please check the task name and try again.",
+        }),
+      );
     }
 
     let task: any;
@@ -5005,19 +6641,26 @@ async function executeUpdateTask(
       task = tasks[0];
     } else {
       const exactMatch = tasks.find(
-        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase(),
       );
       if (exactMatch) {
         task = exactMatch;
       } else {
-        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
-        return wrapWithActionResult(actionNeedInfo({
-          action: "update_task",
-          targetType: "task",
-          toolUsed: "updateTask",
-          missingFields: ["taskIdentifier"],
-          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
-        }));
+        const matchList = tasks
+          .map(
+            (t: any) =>
+              `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`,
+          )
+          .join("; ");
+        return wrapWithActionResult(
+          actionNeedInfo({
+            action: "update_task",
+            targetType: "task",
+            toolUsed: "updateTask",
+            missingFields: ["taskIdentifier"],
+            nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`,
+          }),
+        );
       }
     }
 
@@ -5039,13 +6682,15 @@ async function executeUpdateTask(
     }
 
     if (Object.keys(updates).length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_task",
-        targetType: "task",
-        toolUsed: "updateTask",
-        error: "No fields to update.",
-        nextStep: "Please specify what to change."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_task",
+          targetType: "task",
+          toolUsed: "updateTask",
+          error: "No fields to update.",
+          nextStep: "Please specify what to change.",
+        }),
+      );
     }
 
     const { data: updatedTask, error: updateError } = await supabase
@@ -5056,18 +6701,20 @@ async function executeUpdateTask(
       .single();
 
     if (updateError) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_task",
-        targetType: "task",
-        toolUsed: "updateTask",
-        error: `Failed to update task: ${updateError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_task",
+          targetType: "task",
+          toolUsed: "updateTask",
+          error: `Failed to update task: ${updateError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     const changes = Object.keys(updates)
-      .filter(k => k !== "completed_at")
-      .map(k => `${k}: ${updates[k]}`)
+      .filter((k) => k !== "completed_at")
+      .map((k) => `${k}: ${updates[k]}`)
       .join(", ");
 
     return wrapWithActionResult(
@@ -5088,22 +6735,24 @@ async function executeUpdateTask(
           due_date: updatedTask.due_date,
           category: updatedTask.category,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "update_task",
-      targetType: "task",
-      toolUsed: "updateTask",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_task",
+        targetType: "task",
+        toolUsed: "updateTask",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
 async function executeCompleteTask(
   args: { taskIdentifier: string },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -5116,23 +6765,27 @@ async function executeCompleteTask(
       .limit(10);
 
     if (searchError) {
-      return wrapWithActionResult(actionFailed({
-        action: "complete_task",
-        targetType: "task",
-        toolUsed: "completeTask",
-        error: `Error searching for task: ${searchError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          error: `Error searching for task: ${searchError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     if (!tasks || tasks.length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "complete_task",
-        targetType: "task",
-        toolUsed: "completeTask",
-        error: `No task found matching "${args.taskIdentifier}".`,
-        nextStep: "Please check the task name and try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          error: `No task found matching "${args.taskIdentifier}".`,
+          nextStep: "Please check the task name and try again.",
+        }),
+      );
     }
 
     let task: any;
@@ -5140,40 +6793,51 @@ async function executeCompleteTask(
       task = tasks[0];
     } else {
       const exactMatch = tasks.find(
-        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase(),
       );
       if (exactMatch) {
         task = exactMatch;
       } else {
-        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
-        return wrapWithActionResult(actionNeedInfo({
-          action: "complete_task",
-          targetType: "task",
-          toolUsed: "completeTask",
-          missingFields: ["taskIdentifier"],
-          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
-        }));
+        const matchList = tasks
+          .map(
+            (t: any) =>
+              `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`,
+          )
+          .join("; ");
+        return wrapWithActionResult(
+          actionNeedInfo({
+            action: "complete_task",
+            targetType: "task",
+            toolUsed: "completeTask",
+            missingFields: ["taskIdentifier"],
+            nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`,
+          }),
+        );
       }
     }
 
     if (task.status === "done") {
-      return wrapWithActionResult(actionFailed({
-        action: "complete_task",
-        targetType: "task",
-        toolUsed: "completeTask",
-        error: `Task "${task.title}" is already completed.`,
-        nextStep: "No action needed."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          error: `Task "${task.title}" is already completed.`,
+          nextStep: "No action needed.",
+        }),
+      );
     }
 
     if (task.status === "cancelled") {
-      return wrapWithActionResult(actionFailed({
-        action: "complete_task",
-        targetType: "task",
-        toolUsed: "completeTask",
-        error: `Task "${task.title}" was cancelled and cannot be completed.`,
-        nextStep: "You may want to create a new task instead."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          error: `Task "${task.title}" was cancelled and cannot be completed.`,
+          nextStep: "You may want to create a new task instead.",
+        }),
+      );
     }
 
     const completedAt = new Date().toISOString();
@@ -5186,13 +6850,15 @@ async function executeCompleteTask(
       .single();
 
     if (updateError) {
-      return wrapWithActionResult(actionFailed({
-        action: "complete_task",
-        targetType: "task",
-        toolUsed: "completeTask",
-        error: `Failed to complete task: ${updateError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "complete_task",
+          targetType: "task",
+          toolUsed: "completeTask",
+          error: `Failed to complete task: ${updateError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     return wrapWithActionResult(
@@ -5211,16 +6877,18 @@ async function executeCompleteTask(
           previous_status: task.status,
           completed_at: completedAt,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "complete_task",
-      targetType: "task",
-      toolUsed: "completeTask",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "complete_task",
+        targetType: "task",
+        toolUsed: "completeTask",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -5232,13 +6900,15 @@ async function executeQueryTasks(
     category?: string;
     searchTerm?: string;
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
   try {
     const today = new Date().toISOString().split("T")[0];
-    const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     if (args.queryType === "stats") {
       const { data: allTasks } = await supabase
@@ -5250,11 +6920,28 @@ async function executeQueryTasks(
       const stats = {
         total: tasks.length,
         todo: tasks.filter((t: any) => t.status === "todo").length,
-        in_progress: tasks.filter((t: any) => t.status === "in_progress").length,
+        in_progress: tasks.filter((t: any) => t.status === "in_progress")
+          .length,
         done: tasks.filter((t: any) => t.status === "done").length,
-        overdue: tasks.filter((t: any) => t.due_date && t.due_date < today && t.status !== "done" && t.status !== "cancelled").length,
-        due_today: tasks.filter((t: any) => t.due_date === today && t.status !== "done" && t.status !== "cancelled").length,
-        urgent: tasks.filter((t: any) => t.priority === "urgent" && t.status !== "done" && t.status !== "cancelled").length,
+        overdue: tasks.filter(
+          (t: any) =>
+            t.due_date &&
+            t.due_date < today &&
+            t.status !== "done" &&
+            t.status !== "cancelled",
+        ).length,
+        due_today: tasks.filter(
+          (t: any) =>
+            t.due_date === today &&
+            t.status !== "done" &&
+            t.status !== "cancelled",
+        ).length,
+        urgent: tasks.filter(
+          (t: any) =>
+            t.priority === "urgent" &&
+            t.status !== "done" &&
+            t.status !== "cancelled",
+        ).length,
       };
 
       return wrapWithActionResult(
@@ -5266,33 +6953,48 @@ async function executeQueryTasks(
           summary: `You have ${stats.total} total tasks: ${stats.todo} to do, ${stats.in_progress} in progress, ${stats.done} completed. ${stats.overdue} overdue, ${stats.due_today} due today, ${stats.urgent} urgent.`,
           verified: true,
         }),
-        { stats }
+        { stats },
       );
     }
 
     let query = supabase
       .from("tasks")
-      .select("id, title, status, priority, due_date, due_time, category, client_id, clients(company_name)")
+      .select(
+        "id, title, status, priority, due_date, due_time, category, client_id, clients(company_name)",
+      )
       .eq("user_id", user.id)
       .order("due_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
 
     switch (args.queryType) {
       case "today":
-        query = query.eq("due_date", today).neq("status", "done").neq("status", "cancelled");
+        query = query
+          .eq("due_date", today)
+          .neq("status", "done")
+          .neq("status", "cancelled");
         break;
       case "overdue":
-        query = query.lt("due_date", today).neq("status", "done").neq("status", "cancelled");
+        query = query
+          .lt("due_date", today)
+          .neq("status", "done")
+          .neq("status", "cancelled");
         break;
       case "this_week":
-        query = query.gte("due_date", today).lte("due_date", weekEnd).neq("status", "done").neq("status", "cancelled");
+        query = query
+          .gte("due_date", today)
+          .lte("due_date", weekEnd)
+          .neq("status", "done")
+          .neq("status", "cancelled");
         break;
       case "all_open":
         query = query.neq("status", "done").neq("status", "cancelled");
         break;
       case "by_priority":
         if (args.priority) {
-          query = query.eq("priority", args.priority).neq("status", "done").neq("status", "cancelled");
+          query = query
+            .eq("priority", args.priority)
+            .neq("status", "done")
+            .neq("status", "cancelled");
         }
         break;
       case "by_client":
@@ -5314,19 +7016,24 @@ async function executeQueryTasks(
                 summary: `No client found matching '${args.clientName}'.`,
                 verified: true,
               }),
-              { tasks: [], count: 0 }
+              { tasks: [], count: 0 },
             );
           }
         }
         break;
       case "by_category":
         if (args.category) {
-          query = query.eq("category", args.category).neq("status", "done").neq("status", "cancelled");
+          query = query
+            .eq("category", args.category)
+            .neq("status", "done")
+            .neq("status", "cancelled");
         }
         break;
       case "search":
         if (args.searchTerm) {
-          query = query.or(`title.ilike.%${args.searchTerm}%,description.ilike.%${args.searchTerm}%`);
+          query = query.or(
+            `title.ilike.%${args.searchTerm}%,description.ilike.%${args.searchTerm}%`,
+          );
         }
         break;
     }
@@ -5334,13 +7041,15 @@ async function executeQueryTasks(
     const { data: tasks, error } = await query.limit(25);
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "query_tasks",
-        targetType: "task_query",
-        toolUsed: "queryTasks",
-        error: `Failed to query tasks: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "query_tasks",
+          targetType: "task_query",
+          toolUsed: "queryTasks",
+          error: `Failed to query tasks: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     const formattedTasks = (tasks || []).map((t: any) => ({
@@ -5369,31 +7078,34 @@ async function executeQueryTasks(
         targetType: "task_query",
         targetReference: args.queryType,
         toolUsed: "queryTasks",
-        summary: formattedTasks.length === 0
-          ? `No ${queryLabels[args.queryType] || ""} tasks found.`
-          : `Found ${formattedTasks.length} ${queryLabels[args.queryType] || ""} task(s).`,
+        summary:
+          formattedTasks.length === 0
+            ? `No ${queryLabels[args.queryType] || ""} tasks found.`
+            : `Found ${formattedTasks.length} ${queryLabels[args.queryType] || ""} task(s).`,
         verified: true,
       }),
       {
         queryType: args.queryType,
         count: formattedTasks.length,
         tasks: formattedTasks,
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "query_tasks",
-      targetType: "task_query",
-      toolUsed: "queryTasks",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "query_tasks",
+        targetType: "task_query",
+        toolUsed: "queryTasks",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
 async function executeDeleteTask(
   args: { taskIdentifier: string },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -5406,23 +7118,27 @@ async function executeDeleteTask(
       .limit(10);
 
     if (searchError) {
-      return wrapWithActionResult(actionFailed({
-        action: "delete_task",
-        targetType: "task",
-        toolUsed: "deleteTask",
-        error: `Error searching for task: ${searchError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "delete_task",
+          targetType: "task",
+          toolUsed: "deleteTask",
+          error: `Error searching for task: ${searchError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     if (!tasks || tasks.length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "delete_task",
-        targetType: "task",
-        toolUsed: "deleteTask",
-        error: `No task found matching "${args.taskIdentifier}".`,
-        nextStep: "Please check the task name and try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "delete_task",
+          targetType: "task",
+          toolUsed: "deleteTask",
+          error: `No task found matching "${args.taskIdentifier}".`,
+          nextStep: "Please check the task name and try again.",
+        }),
+      );
     }
 
     let task: any;
@@ -5430,19 +7146,26 @@ async function executeDeleteTask(
       task = tasks[0];
     } else {
       const exactMatch = tasks.find(
-        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase()
+        (t: any) => t.title.toLowerCase() === args.taskIdentifier.toLowerCase(),
       );
       if (exactMatch) {
         task = exactMatch;
       } else {
-        const matchList = tasks.map((t: any) => `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`).join("; ");
-        return wrapWithActionResult(actionNeedInfo({
-          action: "delete_task",
-          targetType: "task",
-          toolUsed: "deleteTask",
-          missingFields: ["taskIdentifier"],
-          nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`
-        }));
+        const matchList = tasks
+          .map(
+            (t: any) =>
+              `"${t.title}" (${t.priority}, due: ${t.due_date || "no date"})`,
+          )
+          .join("; ");
+        return wrapWithActionResult(
+          actionNeedInfo({
+            action: "delete_task",
+            targetType: "task",
+            toolUsed: "deleteTask",
+            missingFields: ["taskIdentifier"],
+            nextStep: `Multiple tasks match "${args.taskIdentifier}": ${matchList}. Please be more specific.`,
+          }),
+        );
       }
     }
 
@@ -5452,13 +7175,15 @@ async function executeDeleteTask(
       .eq("id", task.id);
 
     if (deleteError) {
-      return wrapWithActionResult(actionFailed({
-        action: "delete_task",
-        targetType: "task",
-        toolUsed: "deleteTask",
-        error: `Failed to delete task: ${deleteError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "delete_task",
+          targetType: "task",
+          toolUsed: "deleteTask",
+          error: `Failed to delete task: ${deleteError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     const { data: verifyTasks } = await supabase
@@ -5484,16 +7209,18 @@ async function executeDeleteTask(
           priority: task.priority,
           due_date: task.due_date,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "delete_task",
-      targetType: "task",
-      toolUsed: "deleteTask",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "delete_task",
+        targetType: "task",
+        toolUsed: "deleteTask",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -5517,7 +7244,7 @@ async function executeCreateNote(
     followUpNotes?: string;
     tags?: string[];
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -5533,13 +7260,15 @@ async function executeCreateNote(
         .limit(5);
 
       if (clientError) {
-        return wrapWithActionResult(actionFailed({
-          action: "create_note",
-          targetType: "note",
-          toolUsed: "createNote",
-          error: `Error looking up client: ${clientError.message}`,
-          nextStep: "Please check the client name and try again."
-        }));
+        return wrapWithActionResult(
+          actionFailed({
+            action: "create_note",
+            targetType: "note",
+            toolUsed: "createNote",
+            error: `Error looking up client: ${clientError.message}`,
+            nextStep: "Please check the client name and try again.",
+          }),
+        );
       }
 
       if (clients && clients.length === 1) {
@@ -5547,25 +7276,32 @@ async function executeCreateNote(
         clientCompanyName = clients[0].company_name;
       } else if (clients && clients.length > 1) {
         const exactMatch = clients.find(
-          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+          (c: any) =>
+            c.company_name.toLowerCase() === args.clientName!.toLowerCase(),
         );
         if (exactMatch) {
           clientId = exactMatch.id;
           clientCompanyName = exactMatch.company_name;
         } else {
-          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
-          return wrapWithActionResult(actionNeedInfo({
-            action: "create_note",
-            targetType: "note",
-            toolUsed: "createNote",
-            missingFields: ["clientName"],
-            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
-          }));
+          const matchList = clients
+            .map((c: any) => `"${c.company_name}"`)
+            .join(", ");
+          return wrapWithActionResult(
+            actionNeedInfo({
+              action: "create_note",
+              targetType: "note",
+              toolUsed: "createNote",
+              missingFields: ["clientName"],
+              nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`,
+            }),
+          );
         }
       }
     }
 
-    const autoTitle = args.title || args.content.slice(0, 60) + (args.content.length > 60 ? "..." : "");
+    const autoTitle =
+      args.title ||
+      args.content.slice(0, 60) + (args.content.length > 60 ? "..." : "");
 
     const { data: note, error: insertError } = await supabase
       .from("notes")
@@ -5589,13 +7325,15 @@ async function executeCreateNote(
       .single();
 
     if (insertError) {
-      return wrapWithActionResult(actionFailed({
-        action: "create_note",
-        targetType: "note",
-        toolUsed: "createNote",
-        error: `Failed to create note: ${insertError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_note",
+          targetType: "note",
+          toolUsed: "createNote",
+          error: `Failed to create note: ${insertError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     let message = `Note created: "${note.title}"`;
@@ -5624,16 +7362,18 @@ async function executeCreateNote(
           follow_up_required: note.follow_up_required,
           follow_up_date: note.follow_up_date,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "create_note",
-      targetType: "note",
-      toolUsed: "createNote",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "create_note",
+        targetType: "note",
+        toolUsed: "createNote",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -5645,7 +7385,7 @@ async function executeSearchNotes(
     followUpPending?: boolean;
     limit?: number;
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -5670,21 +7410,25 @@ async function executeSearchNotes(
             summary: `No client found matching '${args.clientName}'.`,
             verified: true,
           }),
-          { notes: [], count: 0 }
+          { notes: [], count: 0 },
         );
       }
     }
 
     let query = supabase
       .from("notes")
-      .select("id, title, content, note_type, created_at, client_id, clients(company_name), follow_up_required, follow_up_completed, follow_up_date, tags")
+      .select(
+        "id, title, content, note_type, created_at, client_id, clients(company_name), follow_up_required, follow_up_completed, follow_up_date, tags",
+      )
       .eq("user_id", user.id)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(args.limit || 10);
 
     if (args.searchTerm) {
-      query = query.or(`title.ilike.%${args.searchTerm}%,content.ilike.%${args.searchTerm}%`);
+      query = query.or(
+        `title.ilike.%${args.searchTerm}%,content.ilike.%${args.searchTerm}%`,
+      );
     }
     if (args.noteType && args.noteType !== "all") {
       query = query.eq("note_type", args.noteType);
@@ -5693,19 +7437,23 @@ async function executeSearchNotes(
       query = query.eq("client_id", clientId);
     }
     if (args.followUpPending) {
-      query = query.eq("follow_up_required", true).eq("follow_up_completed", false);
+      query = query
+        .eq("follow_up_required", true)
+        .eq("follow_up_completed", false);
     }
 
     const { data: notes, error } = await query;
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "search_notes",
-        targetType: "note_query",
-        toolUsed: "searchNotes",
-        error: `Failed to search notes: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "search_notes",
+          targetType: "note_query",
+          toolUsed: "searchNotes",
+          error: `Failed to search notes: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     const formattedNotes = (notes || []).map((n: any) => ({
@@ -5715,7 +7463,8 @@ async function executeSearchNotes(
       client: n.clients?.company_name || null,
       follow_up_required: n.follow_up_required,
       follow_up_date: n.follow_up_date,
-      content_preview: n.content.slice(0, 150) + (n.content.length > 150 ? "..." : ""),
+      content_preview:
+        n.content.slice(0, 150) + (n.content.length > 150 ? "..." : ""),
       tags: n.tags || [],
     }));
 
@@ -5735,24 +7484,27 @@ async function executeSearchNotes(
         targetType: "note_query",
         targetReference: args.searchTerm || args.clientName || "all",
         toolUsed: "searchNotes",
-        summary: formattedNotes.length === 0
-          ? `No notes found ${searchDesc}.`
-          : `Found ${formattedNotes.length} note(s) ${searchDesc}.`,
+        summary:
+          formattedNotes.length === 0
+            ? `No notes found ${searchDesc}.`
+            : `Found ${formattedNotes.length} note(s) ${searchDesc}.`,
         verified: true,
       }),
       {
         count: formattedNotes.length,
         notes: formattedNotes,
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "search_notes",
-      targetType: "note_query",
-      toolUsed: "searchNotes",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "search_notes",
+        targetType: "note_query",
+        toolUsed: "searchNotes",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -5766,7 +7518,7 @@ async function executeLogCallNote(
     followUpDate?: string;
     followUpNotes?: string;
   },
-  user: { id: string }
+  user: { id: string },
 ): Promise<string> {
   const supabase = getSupabase();
 
@@ -5782,13 +7534,15 @@ async function executeLogCallNote(
         .limit(5);
 
       if (clientError) {
-        return wrapWithActionResult(actionFailed({
-          action: "log_call_note",
-          targetType: "note",
-          toolUsed: "logCallNote",
-          error: `Error looking up client: ${clientError.message}`,
-          nextStep: "Please check the client name and try again."
-        }));
+        return wrapWithActionResult(
+          actionFailed({
+            action: "log_call_note",
+            targetType: "note",
+            toolUsed: "logCallNote",
+            error: `Error looking up client: ${clientError.message}`,
+            nextStep: "Please check the client name and try again.",
+          }),
+        );
       }
 
       if (clients && clients.length === 1) {
@@ -5796,20 +7550,25 @@ async function executeLogCallNote(
         clientCompanyName = clients[0].company_name;
       } else if (clients && clients.length > 1) {
         const exactMatch = clients.find(
-          (c: any) => c.company_name.toLowerCase() === args.clientName!.toLowerCase()
+          (c: any) =>
+            c.company_name.toLowerCase() === args.clientName!.toLowerCase(),
         );
         if (exactMatch) {
           clientId = exactMatch.id;
           clientCompanyName = exactMatch.company_name;
         } else {
-          const matchList = clients.map((c: any) => `"${c.company_name}"`).join(", ");
-          return wrapWithActionResult(actionNeedInfo({
-            action: "log_call_note",
-            targetType: "note",
-            toolUsed: "logCallNote",
-            missingFields: ["clientName"],
-            nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`
-          }));
+          const matchList = clients
+            .map((c: any) => `"${c.company_name}"`)
+            .join(", ");
+          return wrapWithActionResult(
+            actionNeedInfo({
+              action: "log_call_note",
+              targetType: "note",
+              toolUsed: "logCallNote",
+              missingFields: ["clientName"],
+              nextStep: `Multiple clients match '${args.clientName}': ${matchList}. Please specify the exact client name.`,
+            }),
+          );
         }
       }
     }
@@ -5834,27 +7593,27 @@ async function executeLogCallNote(
       .single();
 
     if (insertError) {
-      return wrapWithActionResult(actionFailed({
-        action: "log_call_note",
-        targetType: "note",
-        toolUsed: "logCallNote",
-        error: `Failed to log call note: ${insertError.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "log_call_note",
+          targetType: "note",
+          toolUsed: "logCallNote",
+          error: `Failed to log call note: ${insertError.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     if (clientId) {
-      await supabase
-        .from("client_communications")
-        .insert({
-          client_id: clientId,
-          type: "call",
-          subject: title,
-          content: args.content,
-          note_type: args.callDirection || "outbound",
-          is_manual: true,
-          timestamp: new Date().toISOString(),
-        });
+      await supabase.from("client_communications").insert({
+        client_id: clientId,
+        type: "call",
+        subject: title,
+        content: args.content,
+        note_type: args.callDirection || "outbound",
+        is_manual: true,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     let message = `Call note logged: "${title}"`;
@@ -5883,34 +7642,39 @@ async function executeLogCallNote(
           follow_up_required: note.follow_up_required,
           follow_up_date: note.follow_up_date,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "log_call_note",
-      targetType: "note",
-      toolUsed: "logCallNote",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "log_call_note",
+        targetType: "note",
+        toolUsed: "logCallNote",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeCreateCalendarEvent(args: {
-  title: string;
-  description?: string;
-  eventType?: string;
-  startDate: string;
-  startTime?: string;
-  endDate?: string;
-  endTime?: string;
-  allDay?: boolean;
-  location?: string;
-  clientName?: string;
-  status?: string;
-  colour?: string;
-  notes?: string;
-}, user: { id: string }) {
+async function executeCreateCalendarEvent(
+  args: {
+    title: string;
+    description?: string;
+    eventType?: string;
+    startDate: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+    allDay?: boolean;
+    location?: string;
+    clientName?: string;
+    status?: string;
+    colour?: string;
+    notes?: string;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
     let clientId: string | null = null;
@@ -5950,13 +7714,15 @@ async function executeCreateCalendarEvent(args: {
       .single();
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "create_calendar_event",
-        targetType: "calendar_event",
-        toolUsed: "createCalendarEvent",
-        error: `Failed to create calendar event: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_calendar_event",
+          targetType: "calendar_event",
+          toolUsed: "createCalendarEvent",
+          error: `Failed to create calendar event: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     let message = `Calendar event created: "${args.title}"`;
@@ -5985,27 +7751,32 @@ async function executeCreateCalendarEvent(args: {
           client_name: clientCompanyName,
           status: event.status,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "create_calendar_event",
-      targetType: "calendar_event",
-      toolUsed: "createCalendarEvent",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "create_calendar_event",
+        targetType: "calendar_event",
+        toolUsed: "createCalendarEvent",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeQueryCalendarEvents(args: {
-  startDate?: string;
-  endDate?: string;
-  eventType?: string;
-  clientName?: string;
-  status?: string;
-  limit?: number;
-}, user: { id: string }) {
+async function executeQueryCalendarEvents(
+  args: {
+    startDate?: string;
+    endDate?: string;
+    eventType?: string;
+    clientName?: string;
+    status?: string;
+    limit?: number;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
     let clientId: string | null = null;
@@ -6027,7 +7798,9 @@ async function executeQueryCalendarEvents(args: {
 
     let query = supabase
       .from("calendar_events")
-      .select("id, title, description, event_type, start_date, start_time, end_date, end_time, all_day, location, client_id, status, colour, clients(company_name)")
+      .select(
+        "id, title, description, event_type, start_date, start_time, end_date, end_time, all_day, location, client_id, status, colour, clients(company_name)",
+      )
       .eq("user_id", user.id)
       .gte("start_date", startDate)
       .lte("start_date", endDate)
@@ -6048,13 +7821,15 @@ async function executeQueryCalendarEvents(args: {
     const { data: events, error } = await query;
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "query_calendar_events",
-        targetType: "calendar_event_query",
-        toolUsed: "queryCalendarEvents",
-        error: `Failed to query calendar events: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "query_calendar_events",
+          targetType: "calendar_event_query",
+          toolUsed: "queryCalendarEvents",
+          error: `Failed to query calendar events: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     const formattedEvents = (events || []).map((e: any) => ({
@@ -6094,33 +7869,38 @@ async function executeQueryCalendarEvents(args: {
         events: formattedEvents,
         count: formattedEvents.length,
         date_range: { start: startDate, end: endDate },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "query_calendar_events",
-      targetType: "calendar_event_query",
-      toolUsed: "queryCalendarEvents",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "query_calendar_events",
+        targetType: "calendar_event_query",
+        toolUsed: "queryCalendarEvents",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeUpdateCalendarEvent(args: {
-  eventIdentifier: string;
-  title?: string;
-  description?: string;
-  eventType?: string;
-  startDate?: string;
-  startTime?: string;
-  endDate?: string;
-  endTime?: string;
-  allDay?: boolean;
-  location?: string;
-  status?: string;
-  notes?: string;
-}, user: { id: string }) {
+async function executeUpdateCalendarEvent(
+  args: {
+    eventIdentifier: string;
+    title?: string;
+    description?: string;
+    eventType?: string;
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+    allDay?: boolean;
+    location?: string;
+    status?: string;
+    notes?: string;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
 
@@ -6132,27 +7912,32 @@ async function executeUpdateCalendarEvent(args: {
       .limit(1);
 
     if (!existing || existing.length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_calendar_event",
-        targetType: "calendar_event",
-        toolUsed: "updateCalendarEvent",
-        error: `No calendar event found matching "${args.eventIdentifier}"`,
-        nextStep: "Try using the exact event title or check the spelling."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_calendar_event",
+          targetType: "calendar_event",
+          toolUsed: "updateCalendarEvent",
+          error: `No calendar event found matching "${args.eventIdentifier}"`,
+          nextStep: "Try using the exact event title or check the spelling.",
+        }),
+      );
     }
 
     const eventId = existing[0].id;
     const updateData: any = {};
 
     if (args.title) updateData.title = args.title;
-    if (args.description !== undefined) updateData.description = args.description;
+    if (args.description !== undefined)
+      updateData.description = args.description;
     if (args.eventType) updateData.event_type = args.eventType;
     if (args.startDate) updateData.start_date = args.startDate;
-    if (args.startTime !== undefined) updateData.start_time = args.startTime || null;
+    if (args.startTime !== undefined)
+      updateData.start_time = args.startTime || null;
     if (args.endDate) updateData.end_date = args.endDate;
     if (args.endTime !== undefined) updateData.end_time = args.endTime || null;
     if (args.allDay !== undefined) updateData.all_day = args.allDay;
-    if (args.location !== undefined) updateData.location = args.location || null;
+    if (args.location !== undefined)
+      updateData.location = args.location || null;
     if (args.status) updateData.status = args.status;
     if (args.notes !== undefined) updateData.notes = args.notes;
 
@@ -6164,19 +7949,22 @@ async function executeUpdateCalendarEvent(args: {
       .single();
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_calendar_event",
-        targetType: "calendar_event",
-        toolUsed: "updateCalendarEvent",
-        error: `Failed to update calendar event: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_calendar_event",
+          targetType: "calendar_event",
+          toolUsed: "updateCalendarEvent",
+          error: `Failed to update calendar event: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
-    const changes = Object.keys(updateData).filter(k => k !== "updated_at");
-    const message = changes.length > 0
-      ? `Updated calendar event "${event.title}": ${changes.join(", ")}`
-      : `Calendar event "${event.title}" updated`;
+    const changes = Object.keys(updateData).filter((k) => k !== "updated_at");
+    const message =
+      changes.length > 0
+        ? `Updated calendar event "${event.title}": ${changes.join(", ")}`
+        : `Calendar event "${event.title}" updated`;
 
     return wrapWithActionResult(
       actionSuccess({
@@ -6195,28 +7983,33 @@ async function executeUpdateCalendarEvent(args: {
           start_time: event.start_time,
           status: event.status,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "update_calendar_event",
-      targetType: "calendar_event",
-      toolUsed: "updateCalendarEvent",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_calendar_event",
+        targetType: "calendar_event",
+        toolUsed: "updateCalendarEvent",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeCreateReminder(args: {
-  title: string;
-  description?: string;
-  reminderType?: string;
-  reminderAt: string;
-  clientName?: string;
-  isRecurring?: boolean;
-  recurringFrequency?: string;
-}, user: { id: string }) {
+async function executeCreateReminder(
+  args: {
+    title: string;
+    description?: string;
+    reminderType?: string;
+    reminderAt: string;
+    clientName?: string;
+    isRecurring?: boolean;
+    recurringFrequency?: string;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
     let clientId: string | null = null;
@@ -6234,13 +8027,15 @@ async function executeCreateReminder(args: {
 
     const reminderAt = new Date(args.reminderAt);
     if (isNaN(reminderAt.getTime())) {
-      return wrapWithActionResult(actionFailed({
-        action: "create_reminder",
-        targetType: "reminder",
-        toolUsed: "createReminder",
-        error: "Invalid reminder date/time format",
-        nextStep: "Please provide a valid date/time."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_reminder",
+          targetType: "reminder",
+          toolUsed: "createReminder",
+          error: "Invalid reminder date/time format",
+          nextStep: "Please provide a valid date/time.",
+        }),
+      );
     }
 
     const { data: reminder, error } = await supabase
@@ -6260,13 +8055,15 @@ async function executeCreateReminder(args: {
       .single();
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "create_reminder",
-        targetType: "reminder",
-        toolUsed: "createReminder",
-        error: `Failed to create reminder: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "create_reminder",
+          targetType: "reminder",
+          toolUsed: "createReminder",
+          error: `Failed to create reminder: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     let message = `Reminder created: "${args.title}"`;
@@ -6291,27 +8088,32 @@ async function executeCreateReminder(args: {
           reminder_type: reminder.reminder_type,
           status: reminder.status,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "create_reminder",
-      targetType: "reminder",
-      toolUsed: "createReminder",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "create_reminder",
+        targetType: "reminder",
+        toolUsed: "createReminder",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeQueryReminders(args: {
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-  reminderType?: string;
-  clientName?: string;
-  limit?: number;
-}, user: { id: string }) {
+async function executeQueryReminders(
+  args: {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    reminderType?: string;
+    clientName?: string;
+    limit?: number;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
     let clientId: string | null = null;
@@ -6332,7 +8134,9 @@ async function executeQueryReminders(args: {
 
     let query = supabase
       .from("reminders")
-      .select("id, title, description, reminder_at, status, reminder_type, client_id, clients(company_name)")
+      .select(
+        "id, title, description, reminder_at, status, reminder_type, client_id, clients(company_name)",
+      )
       .eq("user_id", user.id)
       .order("reminder_at", { ascending: true })
       .limit(args.limit || 20);
@@ -6353,17 +8157,24 @@ async function executeQueryReminders(args: {
     const { data: reminders, error } = await query;
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "query_reminders",
-        targetType: "reminder_query",
-        toolUsed: "queryReminders",
-        error: `Failed to query reminders: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "query_reminders",
+          targetType: "reminder_query",
+          toolUsed: "queryReminders",
+          error: `Failed to query reminders: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
-    const pending = reminders?.filter(r => r.status === "pending" && r.reminder_at >= now) || [];
-    const overdue = reminders?.filter(r => r.status === "pending" && r.reminder_at < now) || [];
+    const pending =
+      reminders?.filter(
+        (r) => r.status === "pending" && r.reminder_at >= now,
+      ) || [];
+    const overdue =
+      reminders?.filter((r) => r.status === "pending" && r.reminder_at < now) ||
+      [];
 
     const formattedReminders = (reminders || []).map((r: any) => ({
       id: r.id,
@@ -6398,28 +8209,33 @@ async function executeQueryReminders(args: {
         count: formattedReminders.length,
         pending_count: pending.length,
         overdue_count: overdue.length,
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "query_reminders",
-      targetType: "reminder_query",
-      toolUsed: "queryReminders",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "query_reminders",
+        targetType: "reminder_query",
+        toolUsed: "queryReminders",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeUpdateReminder(args: {
-  reminderIdentifier: string;
-  title?: string;
-  description?: string;
-  reminderAt?: string;
-  reminderType?: string;
-  status?: string;
-  snoozeMinutes?: number;
-}, user: { id: string }) {
+async function executeUpdateReminder(
+  args: {
+    reminderIdentifier: string;
+    title?: string;
+    description?: string;
+    reminderAt?: string;
+    reminderType?: string;
+    status?: string;
+    snoozeMinutes?: number;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
 
@@ -6431,20 +8247,23 @@ async function executeUpdateReminder(args: {
       .limit(1);
 
     if (!existing || existing.length === 0) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_reminder",
-        targetType: "reminder",
-        toolUsed: "updateReminder",
-        error: `No reminder found matching "${args.reminderIdentifier}"`,
-        nextStep: "Try using the exact reminder title or check the spelling."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_reminder",
+          targetType: "reminder",
+          toolUsed: "updateReminder",
+          error: `No reminder found matching "${args.reminderIdentifier}"`,
+          nextStep: "Try using the exact reminder title or check the spelling.",
+        }),
+      );
     }
 
     const reminderId = existing[0].id;
     const updateData: any = {};
 
     if (args.title) updateData.title = args.title;
-    if (args.description !== undefined) updateData.description = args.description;
+    if (args.description !== undefined)
+      updateData.description = args.description;
     if (args.reminderAt) {
       const reminderAt = new Date(args.reminderAt);
       if (!isNaN(reminderAt.getTime())) {
@@ -6471,19 +8290,22 @@ async function executeUpdateReminder(args: {
       .single();
 
     if (error) {
-      return wrapWithActionResult(actionFailed({
-        action: "update_reminder",
-        targetType: "reminder",
-        toolUsed: "updateReminder",
-        error: `Failed to update reminder: ${error.message}`,
-        nextStep: "Please try again."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "update_reminder",
+          targetType: "reminder",
+          toolUsed: "updateReminder",
+          error: `Failed to update reminder: ${error.message}`,
+          nextStep: "Please try again.",
+        }),
+      );
     }
 
     let actionDesc = "updated";
     if (args.status === "completed") actionDesc = "completed";
     else if (args.status === "cancelled") actionDesc = "cancelled";
-    else if (args.snoozeMinutes) actionDesc = `snoozed for ${args.snoozeMinutes} minutes`;
+    else if (args.snoozeMinutes)
+      actionDesc = `snoozed for ${args.snoozeMinutes} minutes`;
 
     return wrapWithActionResult(
       actionSuccess({
@@ -6501,31 +8323,38 @@ async function executeUpdateReminder(args: {
           status: reminder.status,
           reminder_at: reminder.reminder_at,
         },
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "update_reminder",
-      targetType: "reminder",
-      toolUsed: "updateReminder",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "update_reminder",
+        targetType: "reminder",
+        toolUsed: "updateReminder",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeQueryAgenda(args: {
-  date?: string;
-  includeOverdue?: boolean;
-  includeReminders?: boolean;
-  includeCalendar?: boolean;
-}, user: { id: string }) {
+async function executeQueryAgenda(
+  args: {
+    date?: string;
+    includeOverdue?: boolean;
+    includeReminders?: boolean;
+    includeCalendar?: boolean;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
     const targetDate = args.date ? new Date(args.date) : new Date();
     const today = targetDate.toISOString().split("T")[0];
-    const tomorrow = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    
+    const tomorrow = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
     const result: any = {
       date: today,
       tasks: { today: [], overdue: [] },
@@ -6540,13 +8369,15 @@ async function executeQueryAgenda(args: {
     if (args.includeOverdue !== false) {
       const { data: overdueTasks } = await supabase
         .from("tasks")
-        .select("id, title, status, priority, due_date, client:clients(company_name)")
+        .select(
+          "id, title, status, priority, due_date, client:clients(company_name)",
+        )
         .eq("user_id", user.id)
         .eq("status", "todo")
         .lt("due_date", today)
         .order("due_date", { ascending: false })
         .limit(10);
-      
+
       if (overdueTasks) {
         result.tasks.overdue = overdueTasks.map((t: any) => ({
           id: t.id,
@@ -6560,7 +8391,9 @@ async function executeQueryAgenda(args: {
 
     const { data: todayTasks } = await supabase
       .from("tasks")
-      .select("id, title, status, priority, due_date, client:clients(company_name)")
+      .select(
+        "id, title, status, priority, due_date, client:clients(company_name)",
+      )
       .eq("user_id", user.id)
       .eq("status", "todo")
       .eq("due_date", today)
@@ -6580,7 +8413,9 @@ async function executeQueryAgenda(args: {
     if (includeCalendar) {
       const { data: events } = await supabase
         .from("calendar_events")
-        .select("id, title, start_date, start_time, event_type, location, client:clients(company_name)")
+        .select(
+          "id, title, start_date, start_time, event_type, location, client:clients(company_name)",
+        )
         .eq("user_id", user.id)
         .eq("start_date", today)
         .eq("status", "scheduled")
@@ -6600,10 +8435,12 @@ async function executeQueryAgenda(args: {
 
     if (includeReminders) {
       const now = new Date().toISOString();
-      
+
       const { data: pendingReminders } = await supabase
         .from("reminders")
-        .select("id, title, reminder_at, reminder_type, client:clients(company_name)")
+        .select(
+          "id, title, reminder_at, reminder_type, client:clients(company_name)",
+        )
         .eq("user_id", user.id)
         .eq("status", "pending")
         .gte("reminder_at", today + "T00:00:00")
@@ -6623,7 +8460,9 @@ async function executeQueryAgenda(args: {
       if (includeOverdue) {
         const { data: overdueReminders } = await supabase
           .from("reminders")
-          .select("id, title, reminder_at, reminder_type, client:clients(company_name)")
+          .select(
+            "id, title, reminder_at, reminder_type, client:clients(company_name)",
+          )
           .eq("user_id", user.id)
           .eq("status", "pending")
           .lt("reminder_at", now)
@@ -6642,7 +8481,12 @@ async function executeQueryAgenda(args: {
       }
     }
 
-    const totalItems = result.tasks.today.length + result.tasks.overdue.length + result.calendar_events.length + result.reminders.pending.length + result.reminders.overdue.length;
+    const totalItems =
+      result.tasks.today.length +
+      result.tasks.overdue.length +
+      result.calendar_events.length +
+      result.reminders.pending.length +
+      result.reminders.overdue.length;
 
     return wrapWithActionResult(
       actionSuccess({
@@ -6653,28 +8497,33 @@ async function executeQueryAgenda(args: {
         summary: `Found ${totalItems} items on your agenda for ${today}: ${result.tasks.today.length} tasks due today, ${result.tasks.overdue.length} overdue, ${result.calendar_events.length} events, ${result.reminders.pending.length} reminders`,
         verified: true,
       }),
-      result
+      result,
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "query_agenda",
-      targetType: "agenda",
-      toolUsed: "queryAgenda",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "query_agenda",
+        targetType: "agenda",
+        toolUsed: "queryAgenda",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
-async function executeConvertNoteToTasks(args: {
-  noteIdentifier: string;
-  tasks: Array<{
-    title: string;
-    priority?: string;
-    dueDate?: string;
-    category?: string;
-  }>;
-}, user: { id: string }) {
+async function executeConvertNoteToTasks(
+  args: {
+    noteIdentifier: string;
+    tasks: Array<{
+      title: string;
+      priority?: string;
+      dueDate?: string;
+      category?: string;
+    }>;
+  },
+  user: { id: string },
+) {
   try {
     const supabase = getSupabase();
 
@@ -6696,20 +8545,23 @@ async function executeConvertNoteToTasks(args: {
         .eq("user_id", user.id)
         .ilike("content", `%${args.noteIdentifier}%`)
         .limit(1);
-      
+
       if (noteByContent && noteByContent.length > 0) {
         noteData = noteByContent[0];
       }
     }
 
     if (!noteData) {
-      return wrapWithActionResult(actionFailed({
-        action: "convert_note_to_tasks",
-        targetType: "note",
-        toolUsed: "convertNoteToTasks",
-        error: `No note found matching "${args.noteIdentifier}"`,
-        nextStep: "Try using the exact note title or search for a keyword in the note content."
-      }));
+      return wrapWithActionResult(
+        actionFailed({
+          action: "convert_note_to_tasks",
+          targetType: "note",
+          toolUsed: "convertNoteToTasks",
+          error: `No note found matching "${args.noteIdentifier}"`,
+          nextStep:
+            "Try using the exact note title or search for a keyword in the note content.",
+        }),
+      );
     }
 
     const createdTasks: any[] = [];
@@ -6731,13 +8583,15 @@ async function executeConvertNoteToTasks(args: {
         .single();
 
       if (error) {
-        return wrapWithActionResult(actionFailed({
-          action: "convert_note_to_tasks",
-          targetType: "task",
-          toolUsed: "convertNoteToTasks",
-          error: `Failed to create task "${taskInput.title}": ${error.message}`,
-          nextStep: "Please try again."
-        }));
+        return wrapWithActionResult(
+          actionFailed({
+            action: "convert_note_to_tasks",
+            targetType: "task",
+            toolUsed: "convertNoteToTasks",
+            error: `Failed to create task "${taskInput.title}": ${error.message}`,
+            nextStep: "Please try again.",
+          }),
+        );
       }
 
       createdTasks.push({
@@ -6763,16 +8617,18 @@ async function executeConvertNoteToTasks(args: {
           title: noteData.title,
         },
         tasks: createdTasks,
-      }
+      },
     );
   } catch (err: any) {
-    return wrapWithActionResult(actionFailed({
-      action: "convert_note_to_tasks",
-      targetType: "note",
-      toolUsed: "convertNoteToTasks",
-      error: `Unexpected error: ${err.message}`,
-      nextStep: "Please try again."
-    }));
+    return wrapWithActionResult(
+      actionFailed({
+        action: "convert_note_to_tasks",
+        targetType: "note",
+        toolUsed: "convertNoteToTasks",
+        error: `Unexpected error: ${err.message}`,
+        nextStep: "Please try again.",
+      }),
+    );
   }
 }
 
@@ -6785,15 +8641,27 @@ async function executeDocumentTransition(args: {
   const { documentType, reference, action } = args;
   const supabase = getSupabase();
 
-  const configMap: Record<string, { table: string; refCol: string; label: string }> = {
+  const configMap: Record<
+    string,
+    { table: string; refCol: string; label: string }
+  > = {
     invoice: { table: "invoices", refCol: "invoice_number", label: "Invoice" },
     quote: { table: "quotes", refCol: "quote_number", label: "Quote" },
-    purchase_order: { table: "purchase_orders", refCol: "po_number", label: "Purchase Order" },
-    credit_note: { table: "credit_notes", refCol: "cn_number", label: "Credit Note" },
+    purchase_order: {
+      table: "purchase_orders",
+      refCol: "po_number",
+      label: "Purchase Order",
+    },
+    credit_note: {
+      table: "credit_notes",
+      refCol: "cn_number",
+      label: "Credit Note",
+    },
   };
 
   const config = configMap[documentType];
-  if (!config) return JSON.stringify({ error: `Invalid document type: ${documentType}` });
+  if (!config)
+    return JSON.stringify({ error: `Invalid document type: ${documentType}` });
 
   try {
     // 1. Resolve document using the appropriate resolver
@@ -6807,32 +8675,49 @@ async function executeDocumentTransition(args: {
     } else if (documentType === "credit_note") {
       resolved = await resolveCreditNoteForWrite(supabase, reference);
     } else {
-      return JSON.stringify({ error: `Invalid document type: ${documentType}` });
+      return JSON.stringify({
+        error: `Invalid document type: ${documentType}`,
+      });
     }
 
     if (resolved.kind === "not_found") {
-      return JSON.stringify({ error: `No ${config.label.toLowerCase()} found matching "${reference}".` });
+      return JSON.stringify({
+        error: `No ${config.label.toLowerCase()} found matching "${reference}".`,
+      });
     }
 
     if (resolved.kind === "ambiguous") {
-      const matches = resolved.candidates.map((c: any) => `${c[config.refCol] || c.po_number || c.cn_number || c.quote_number || c.invoice_number} (${c.status})`).join(", ");
-      return JSON.stringify({ error: `Multiple matches for "${reference}": ${matches}. Please be more specific.` });
+      const matches = resolved.candidates
+        .map(
+          (c: any) =>
+            `${c[config.refCol] || c.po_number || c.cn_number || c.quote_number || c.invoice_number} (${c.status})`,
+        )
+        .join(", ");
+      return JSON.stringify({
+        error: `Multiple matches for "${reference}": ${matches}. Please be more specific.`,
+      });
     }
 
     const doc = resolved.record;
     const currentStatus = doc.status;
 
     // 2. Validate transition
-    const validation = await validateTransition(documentType, currentStatus, action);
+    const validation = await validateTransition(
+      documentType,
+      currentStatus,
+      action,
+    );
     if (!validation.success) {
       return wrapWithActionResult(
         actionFailed({
           action,
           targetType: documentType,
           toolUsed: "transitionDocumentStatus",
-          error: validation.error || `Cannot perform "${action}" on a ${config.label.toLowerCase()} in "${currentStatus}" status.`,
-          nextStep: `The ${config.label.toLowerCase()} is currently "${currentStatus}". Only certain actions are permitted from this state.`
-        })
+          error:
+            validation.error ||
+            `Cannot perform "${action}" on a ${config.label.toLowerCase()} in "${currentStatus}" status.`,
+          nextStep: `The ${config.label.toLowerCase()} is currently "${currentStatus}". Only certain actions are permitted from this state.`,
+        }),
       );
     }
 
@@ -6842,7 +8727,8 @@ async function executeDocumentTransition(args: {
       .update({ status: validation.newStatus })
       .eq("id", doc.id);
 
-    if (updateError) return JSON.stringify({ error: `Update failed: ${updateError.message}` });
+    if (updateError)
+      return JSON.stringify({ error: `Update failed: ${updateError.message}` });
 
     // 4. Verify
     const { data: verified } = await supabase
@@ -6862,9 +8748,12 @@ async function executeDocumentTransition(args: {
         summary: `${config.label} ${doc[config.refCol]} transitioned: ${currentStatus} → ${validation.newStatus}.`,
         verified: isVerified,
       }),
-      { previous_status: currentStatus, new_status: validation.newStatus, document_number: doc[config.refCol] }
+      {
+        previous_status: currentStatus,
+        new_status: validation.newStatus,
+        document_number: doc[config.refCol],
+      },
     );
-
   } catch (err: any) {
     return JSON.stringify({ error: `Unexpected error: ${err.message}` });
   }
@@ -6887,14 +8776,19 @@ function buildAttachmentParts(attachments: AttachmentInput[] | undefined) {
     .filter(Boolean);
 }
 
-function normalizeHistory(history: any[] | undefined, message: string, attachments?: AttachmentInput[]) {
+function normalizeHistory(
+  history: any[] | undefined,
+  message: string,
+  attachments?: AttachmentInput[],
+) {
   const geminiHistory = (history || []).map((msg: any) => ({
     role: msg.sender === "user" ? "user" : "model",
     parts: [{ text: msg.text }],
   }));
 
   const firstUserIndex = geminiHistory.findIndex((m: any) => m.role === "user");
-  let normalizedHistory = firstUserIndex !== -1 ? geminiHistory.slice(firstUserIndex) : [];
+  let normalizedHistory =
+    firstUserIndex !== -1 ? geminiHistory.slice(firstUserIndex) : [];
 
   // Truncate history to last 20 messages to manage token costs and context window.
   // Keep first 2 (for initial context) and last 18 when over limit.
@@ -6911,10 +8805,7 @@ function normalizeHistory(history: any[] | undefined, message: string, attachmen
     ...normalizedHistory,
     {
       role: "user",
-      parts: [
-        { text: message },
-        ...attachmentParts,
-      ],
+      parts: [{ text: message }, ...attachmentParts],
     },
   ];
 }
@@ -7008,7 +8899,8 @@ function extractPayload(response: any) {
           .filter((part: any) => typeof part.text === "string")
           .map((part: any) => part.text)
           .join("");
-  const audioFromResponse = typeof response?.data === "string" ? response.data : "";
+  const audioFromResponse =
+    typeof response?.data === "string" ? response.data : "";
   const audioFromParts = extractAudioFromParts(parts);
   const audioBase64 = audioFromResponse || audioFromParts.audioBase64 || "";
   const toolCall = extractToolCall(response, parts);
@@ -7021,12 +8913,18 @@ function extractPayload(response: any) {
     audioBase64,
     audioMimeType: audioFromParts.audioMimeType,
     toolCall,
-    toolCalls: allToolCalls.length > 0 ? allToolCalls : toolCall ? [toolCall] : [],
+    toolCalls:
+      allToolCalls.length > 0 ? allToolCalls : toolCall ? [toolCall] : [],
     functionCallParts,
   };
 }
 
-function pcmBase64ToWavBase64(base64Pcm: string, sampleRate = 24000, channels = 1, bitsPerSample = 16) {
+function pcmBase64ToWavBase64(
+  base64Pcm: string,
+  sampleRate = 24000,
+  channels = 1,
+  bitsPerSample = 16,
+) {
   const pcmBuffer = Buffer.from(base64Pcm, "base64");
   const byteRate = (sampleRate * channels * bitsPerSample) / 8;
   const blockAlign = (channels * bitsPerSample) / 8;
@@ -7049,8 +8947,13 @@ function pcmBase64ToWavBase64(base64Pcm: string, sampleRate = 24000, channels = 
   return Buffer.concat([wavHeader, pcmBuffer]).toString("base64");
 }
 
-async function synthesizeSpeech(aiClient: GoogleGenAI, text: string, languagePreference: AssistantPreferences["languagePreference"]) {
-  const voiceName = languagePreference === "british_english" ? BRITISH_VOICE : DEFAULT_VOICE;
+async function synthesizeSpeech(
+  aiClient: GoogleGenAI,
+  text: string,
+  languagePreference: AssistantPreferences["languagePreference"],
+) {
+  const voiceName =
+    languagePreference === "british_english" ? BRITISH_VOICE : DEFAULT_VOICE;
   const runTts = async (voice: string) =>
     aiClient.models.generateContent({
       model: TTS_MODEL,
@@ -7083,14 +8986,18 @@ async function synthesizeSpeech(aiClient: GoogleGenAI, text: string, languagePre
     return { audioBase64: "", audioMimeType: mimeType };
   }
 
-  const audioBase64 = mimeType === "audio/wav" ? base64Pcm : pcmBase64ToWavBase64(base64Pcm);
+  const audioBase64 =
+    mimeType === "audio/wav" ? base64Pcm : pcmBase64ToWavBase64(base64Pcm);
   return {
     audioBase64,
     audioMimeType: "audio/wav",
   };
 }
 
-function buildRuntimeContext(sessionContext: SessionContextInput | null, activeDocumentSession: ActiveDocumentSession) {
+function buildRuntimeContext(
+  sessionContext: SessionContextInput | null,
+  activeDocumentSession: ActiveDocumentSession,
+) {
   const sections: string[] = [];
 
   if (sessionContext?.businessProfile) {
@@ -7102,14 +9009,17 @@ function buildRuntimeContext(sessionContext: SessionContextInput | null, activeD
         `vat=${profile.vat_number || "Unknown"}`,
         `address=${profile.address || "Unknown"}`,
         `email=${profile.email || "Unknown"}`,
-      ].join(" ")
+      ].join(" "),
     );
   }
 
   if (sessionContext?.clients?.length) {
     const clientLines = sessionContext.clients
       .slice(0, 12)
-      .map((client) => `${client.company_name || "Unknown"}${client.email ? ` <${client.email}>` : ""}${client.phone ? ` ${client.phone}` : ""}`);
+      .map(
+        (client) =>
+          `${client.company_name || "Unknown"}${client.email ? ` <${client.email}>` : ""}${client.phone ? ` ${client.phone}` : ""}`,
+      );
     sections.push(`Relevant clients:\n- ${clientLines.join("\n- ")}`);
   }
 
@@ -7122,7 +9032,9 @@ function buildRuntimeContext(sessionContext: SessionContextInput | null, activeD
 
   if (activeDocumentSession?.isOpen && activeDocumentSession.documentType) {
     const docData = activeDocumentSession.documentData;
-    const lineItems = Array.isArray(docData?.lineItems) ? docData.lineItems : [];
+    const lineItems = Array.isArray(docData?.lineItems)
+      ? docData.lineItems
+      : [];
     const documentNumber =
       docData?.documentNumber ||
       docData?.invoiceNumber ||
@@ -7139,15 +9051,18 @@ function buildRuntimeContext(sessionContext: SessionContextInput | null, activeD
         `items=${lineItems.length}`,
       ]
         .filter(Boolean)
-        .join(" ")
+        .join(" "),
     );
 
     if (lineItems.length > 0) {
       sections.push(
         `Open line items:\n- ${lineItems
           .slice(0, 10)
-          .map((item: any, index: number) => `${index + 1}. ${item.description || "Untitled"} | qty ${item.quantity ?? 1} | price R${Number(item.unitPrice ?? item.unit_price ?? 0).toFixed(2)}`)
-          .join("\n- ")}`
+          .map(
+            (item: any, index: number) =>
+              `${index + 1}. ${item.description || "Untitled"} | qty ${item.quantity ?? 1} | price R${Number(item.unitPrice ?? item.unit_price ?? 0).toFixed(2)}`,
+          )
+          .join("\n- ")}`,
       );
     }
   } else {
@@ -7161,12 +9076,15 @@ function normalizeHistoryForModel(
   history: any[] | undefined,
   message: string,
   attachments: AttachmentInput[] | undefined,
-  runtimeContext: string
+  runtimeContext: string,
 ) {
   const baseHistory = normalizeHistory(history, message, attachments);
   return runtimeContext
     ? [
-        { role: "user", parts: [{ text: `Runtime context:\n${runtimeContext}` }] },
+        {
+          role: "user",
+          parts: [{ text: `Runtime context:\n${runtimeContext}` }],
+        },
         { role: "model", parts: [{ text: "Context received." }] },
         ...baseHistory,
       ]
@@ -7185,19 +9103,27 @@ function buildServerToolFallbackMessage(toolName: string, toolResult: string) {
     const actionStatus = parsed?.actionStatus as ActionResult | undefined;
     if (actionStatus) {
       if (actionStatus.status === "confirmed") {
-        return actionStatus.summary || `${actionStatus.action} completed: ${actionStatus.targetReference}`;
+        return (
+          actionStatus.summary ||
+          `${actionStatus.action} completed: ${actionStatus.targetReference}`
+        );
       }
       if (actionStatus.status === "failed") {
         return `I tried to ${actionStatus.action.replace(/_/g, " ")}, but it failed: ${actionStatus.error || "Unknown error"}. ${actionStatus.nextStep || ""}`.trim();
       }
       if (actionStatus.status === "need_info") {
-        return actionStatus.nextStep || `I need more information to ${actionStatus.action.replace(/_/g, " ")}.`;
+        return (
+          actionStatus.nextStep ||
+          `I need more information to ${actionStatus.action.replace(/_/g, " ")}.`
+        );
       }
       if (actionStatus.status === "could_not_verify") {
         return `${actionStatus.summary || `${actionStatus.action.replace(/_/g, " ")} attempted`}, but I could not verify it was saved correctly.`;
       }
       if (actionStatus.status === "unsupported") {
-        return actionStatus.summary || `This action is not currently available.`;
+        return (
+          actionStatus.summary || `This action is not currently available.`
+        );
       }
       if (actionStatus.status === "attempted") {
         return `${actionStatus.summary || `${actionStatus.action.replace(/_/g, " ")} attempted`}. ${actionStatus.nextStep || ""}`.trim();
@@ -7208,22 +9134,34 @@ function buildServerToolFallbackMessage(toolName: string, toolResult: string) {
       return `I tried to run ${toolName}, but it failed: ${parsed.error}`;
     }
 
-    if (toolName === "convertQuoteToInvoice" && parsed?.invoice?.invoiceNumber) {
+    if (
+      toolName === "convertQuoteToInvoice" &&
+      parsed?.invoice?.invoiceNumber
+    ) {
       const inv = parsed.invoice;
       return `Quote ${inv.quoteNumber} converted to Invoice ${inv.invoiceNumber}. Total: R${inv.total}. Due: ${inv.dueDate}.`;
     }
 
-    if (toolName === "draftInvoice" || (toolName === "openInvoiceManager" && parsed?.invoice)) {
+    if (
+      toolName === "draftInvoice" ||
+      (toolName === "openInvoiceManager" && parsed?.invoice)
+    ) {
       const invoice = parsed.invoice;
       return `Invoice ${invoice?.invoiceNumber || "created"} created for ${invoice?.clientName || "the client"} at R${invoice?.total || "0.00"}.`;
     }
 
-    if (toolName === "draftQuote" || (toolName === "openQuotationBuilder" && parsed?.quote)) {
+    if (
+      toolName === "draftQuote" ||
+      (toolName === "openQuotationBuilder" && parsed?.quote)
+    ) {
       const quote = parsed.quote;
       return `Quote ${quote?.quoteNumber || "created"} prepared for ${quote?.clientName || "the client"} at R${quote?.total || "0.00"}.`;
     }
 
-    if (toolName === "queryBusinessData" && parsed?.missingContactNameCount !== undefined) {
+    if (
+      toolName === "queryBusinessData" &&
+      parsed?.missingContactNameCount !== undefined
+    ) {
       return `I found ${parsed.missingContactNameCount} active clients without a contact name, ${parsed.missingCategoryCount} without a category, and ${parsed.missingEmailCount} without an email.`;
     }
 
@@ -7264,7 +9202,7 @@ function buildServerToolFallbackMessage(toolName: string, toolResult: string) {
 async function streamModelResponse(
   ai: GoogleGenAI,
   request: any,
-  controller: ReadableStreamDefaultController<Uint8Array>
+  controller: ReadableStreamDefaultController<Uint8Array>,
 ) {
   const encoder = new TextEncoder();
   controller.enqueue(encoder.encode(encodeEvent({ type: "start" })));
@@ -7280,7 +9218,6 @@ async function streamModelResponse(
     functionCallParts: [] as any[],
   };
 
-
   for await (const chunk of streamed) {
     const payload = extractPayload(chunk);
     const chunkText = payload.text || "";
@@ -7295,7 +9232,9 @@ async function streamModelResponse(
     }
 
     if (delta) {
-      controller.enqueue(encoder.encode(encodeEvent({ type: "delta", text: delta })));
+      controller.enqueue(
+        encoder.encode(encodeEvent({ type: "delta", text: delta })),
+      );
     }
 
     if (payload.toolCall || payload.toolCalls?.length || chunkText) {
@@ -7303,17 +9242,26 @@ async function streamModelResponse(
         ...lastPayload,
         ...payload,
         text: chunkText || lastPayload.text,
-        toolCalls: payload.toolCalls?.length ? payload.toolCalls : lastPayload.toolCalls,
+        toolCalls: payload.toolCalls?.length
+          ? payload.toolCalls
+          : lastPayload.toolCalls,
         toolCall: payload.toolCall || lastPayload.toolCall,
-        functionCallParts: payload.functionCallParts?.length ? payload.functionCallParts : lastPayload.functionCallParts,
+        functionCallParts: payload.functionCallParts?.length
+          ? payload.functionCallParts
+          : lastPayload.functionCallParts,
       };
     }
   }
 
   const finalResponse = await (streamed as any).response;
-  const extractedFinalPayload = finalResponse ? extractPayload(finalResponse) : null;
+  const extractedFinalPayload = finalResponse
+    ? extractPayload(finalResponse)
+    : null;
   const finalPayload =
-    extractedFinalPayload && (extractedFinalPayload.text || extractedFinalPayload.toolCall || extractedFinalPayload.toolCalls?.length)
+    extractedFinalPayload &&
+    (extractedFinalPayload.text ||
+      extractedFinalPayload.toolCall ||
+      extractedFinalPayload.toolCalls?.length)
       ? extractedFinalPayload
       : lastPayload;
 
@@ -7335,11 +9283,11 @@ export async function POST(req: NextRequest) {
 
   try {
     // Reject requests larger than 1MB to prevent memory abuse
-    const contentLength = req.headers.get('content-length');
+    const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > 1_000_000) {
       return new Response(
-        JSON.stringify({ error: 'Request too large. Maximum size is 1MB.' }),
-        { status: 413, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Request too large. Maximum size is 1MB." }),
+        { status: 413, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -7351,10 +9299,10 @@ export async function POST(req: NextRequest) {
     if (!rateLimitResult.allowed) {
       hasError = true;
       errorMessage = rateLimitResult.message || "Rate limit exceeded";
-      return new Response(
-        JSON.stringify({ error: rateLimitResult.message }),
-        { status: 429, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: rateLimitResult.message }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const body = await req.json();
@@ -7376,7 +9324,13 @@ export async function POST(req: NextRequest) {
     if (!geminiApiKey) {
       hasError = true;
       errorMessage = "Gemini API key is not configured";
-      return NextResponse.json({ error: "Gemini API key is not configured. Please add your API key in Settings → API Keys." }, { status: 401 });
+      return NextResponse.json(
+        {
+          error:
+            "Gemini API key is not configured. Please add your API key in Settings → API Keys.",
+        },
+        { status: 401 },
+      );
     }
 
     // Create a per-request GoogleGenAI instance with the resolved key
@@ -7384,9 +9338,20 @@ export async function POST(req: NextRequest) {
 
     if (!message) throw new Error("Missing message in request body");
 
-    const runtimeContext = buildRuntimeContext(sessionContext, activeDocumentSession);
-    const systemInstruction = buildSystemInstruction(preferences, activeDocumentSession);
-    const contents = normalizeHistoryForModel(history, message, attachments, runtimeContext);
+    const runtimeContext = buildRuntimeContext(
+      sessionContext,
+      activeDocumentSession,
+    );
+    const systemInstruction = buildSystemInstruction(
+      preferences,
+      activeDocumentSession,
+    );
+    const contents = normalizeHistoryForModel(
+      history,
+      message,
+      attachments,
+      runtimeContext,
+    );
 
     const stream = new ReadableStream<Uint8Array>({
       start: async (controller) => {
@@ -7407,90 +9372,163 @@ export async function POST(req: NextRequest) {
             systemInstruction,
           } as any;
 
-          let { finalPayload: payload, fullText } = await streamModelResponse(ai, initialRequest, controller);
+          let { finalPayload: payload, fullText } = await streamModelResponse(
+            ai,
+            initialRequest,
+            controller,
+          );
 
-          if (payload.toolCall && SERVER_SIDE_TOOLS.has(payload.toolCall.name)) {
+          if (
+            payload.toolCall &&
+            SERVER_SIDE_TOOLS.has(payload.toolCall.name)
+          ) {
             const toolName = payload.toolCall.name;
             const toolArgs = payload.toolCall.args || {};
             toolCallsExecuted.push(toolName);
 
             let toolResult: string;
             try {
-              if (toolName === "logTrip") toolResult = await executeLogTrip(toolArgs);
-              else if (toolName === "queryBusinessData") toolResult = await executeQueryBusinessData(toolArgs);
-              else if (toolName === "createClient") toolResult = await executeCreateClient(toolArgs);
-              else if (toolName === "updateClient") toolResult = await executeUpdateClient(toolArgs);
-              else if (toolName === "addClientCommunication") toolResult = await executeAddClientCommunication(toolArgs);
-              else if (toolName === "createClientContact") toolResult = await executeCreateClientContact(toolArgs);
-              else if (toolName === "updateClientContact") toolResult = await executeUpdateClientContact(toolArgs);
-              else if (toolName === "logExpense") toolResult = await executeLogExpense(toolArgs);
-              else if (toolName === "recordPayment") toolResult = await executeRecordPayment(toolArgs);
-              else if (toolName === "draftQuote") toolResult = await executeDraftQuote(toolArgs);
-              else if (toolName === "draftInvoice") toolResult = await executeDraftInvoice(toolArgs);
-              else if (toolName === "draftPurchaseOrder") toolResult = await executeDraftPurchaseOrder(toolArgs);
-              else if (toolName === "draftCreditNote") toolResult = await executeDraftCreditNote(toolArgs);
-              else if (toolName === "saveMemory") toolResult = await executeSaveMemory(toolArgs);
-              else if (toolName === "logFuelPurchase") toolResult = await executeLogFuelPurchase(toolArgs);
-              else if (toolName === "updateInvoiceStatus") toolResult = await executeUpdateInvoiceStatus(toolArgs);
-              else if (toolName === "updatePurchaseOrderStatus") toolResult = await executeUpdatePurchaseOrderStatus(toolArgs);
-              else if (toolName === "updateCreditNoteStatus") toolResult = await executeUpdateCreditNoteStatus(toolArgs);
-              else if (toolName === "markInvoicePaid") toolResult = await executeMarkInvoicePaid(toolArgs);
-              else if (toolName === "voidInvoice") toolResult = await executeVoidInvoice(toolArgs);
-              else if (toolName === "markInvoiceSent") toolResult = await executeMarkInvoiceSent(toolArgs);
-              else if (toolName === "reopenInvoice") toolResult = await executeReopenInvoice(toolArgs);
-              else if (toolName === "markQuoteSent") toolResult = await executeMarkQuoteSent(toolArgs);
-              else if (toolName === "acceptQuote") toolResult = await executeAcceptQuote(toolArgs);
-              else if (toolName === "declineQuote") toolResult = await executeDeclineQuote(toolArgs);
-              else if (toolName === "expireQuote") toolResult = await executeExpireQuote(toolArgs);
-              else if (toolName === "reopenQuote") toolResult = await executeReopenQuote(toolArgs);
-              else if (toolName === "rejectQuote") toolResult = await executeRejectQuote(toolArgs);
-              else if (toolName === "issueQuote") toolResult = await executeIssueQuote(toolArgs);
-              else if (toolName === "markPOSent") toolResult = await executeMarkPOSent(toolArgs);
-              else if (toolName === "acknowledgePO") toolResult = await executeAcknowledgePO(toolArgs);
-              else if (toolName === "markPODelivered") toolResult = await executeMarkPODelivered(toolArgs);
-              else if (toolName === "cancelPO") toolResult = await executeCancelPO(toolArgs);
-              else if (toolName === "issueCreditNote") toolResult = await executeIssueCreditNote(toolArgs);
-              else if (toolName === "sendCreditNote") toolResult = await executeSendCreditNote(toolArgs);
-              else if (toolName === "applyCreditNote") toolResult = await executeApplyCreditNote(toolArgs);
-              else if (toolName === "cancelCreditNote") toolResult = await executeCancelCreditNote(toolArgs);
-              else if (toolName === "transitionDocumentStatus") toolResult = await executeDocumentTransition(toolArgs);
-              else if (toolName === "convertQuoteToInvoice") toolResult = await executeConvertQuoteToInvoice(toolArgs);
-              else if (!user) toolResult = JSON.stringify({ error: "Authentication required" });
-              else if (toolName === "createTask") toolResult = await executeCreateTask(toolArgs, user);
-              else if (toolName === "updateTask") toolResult = await executeUpdateTask(toolArgs, user);
-              else if (toolName === "completeTask") toolResult = await executeCompleteTask(toolArgs, user);
-              else if (toolName === "queryTasks") toolResult = await executeQueryTasks(toolArgs, user);
-              else if (toolName === "deleteTask") toolResult = await executeDeleteTask(toolArgs, user);
-              else if (toolName === "createNote") toolResult = await executeCreateNote(toolArgs, user);
-              else if (toolName === "searchNotes") toolResult = await executeSearchNotes(toolArgs, user);
-              else if (toolName === "logCallNote") toolResult = await executeLogCallNote(toolArgs, user);
-              else if (toolName === "createCalendarEvent") toolResult = await executeCreateCalendarEvent(toolArgs, user);
-              else if (toolName === "queryCalendarEvents") toolResult = await executeQueryCalendarEvents(toolArgs, user);
-              else if (toolName === "updateCalendarEvent") toolResult = await executeUpdateCalendarEvent(toolArgs, user);
-              else if (toolName === "createReminder") toolResult = await executeCreateReminder(toolArgs, user);
-              else if (toolName === "queryReminders") toolResult = await executeQueryReminders(toolArgs, user);
-              else if (toolName === "updateReminder") toolResult = await executeUpdateReminder(toolArgs, user);
-              else if (toolName === "queryAgenda") toolResult = await executeQueryAgenda(toolArgs, user);
-              else if (toolName === "convertNoteToTasks") toolResult = await executeConvertNoteToTasks(toolArgs, user);
-              else toolResult = wrapWithActionResult(
-                actionUnsupported({
-                  action: toolName,
-                  targetType: "unknown",
-                  toolUsed: toolName,
-                  reason: `The action "${toolName}" is not a recognised server-side tool.`,
-                  nextStep: "Please rephrase your request or contact support if you believe this is an error.",
-                })
-              );
+              if (toolName === "logTrip")
+                toolResult = await executeLogTrip(toolArgs);
+              else if (toolName === "queryBusinessData")
+                toolResult = await executeQueryBusinessData(toolArgs);
+              else if (toolName === "createClient")
+                toolResult = await executeCreateClient(toolArgs);
+              else if (toolName === "updateClient")
+                toolResult = await executeUpdateClient(toolArgs);
+              else if (toolName === "addClientCommunication")
+                toolResult = await executeAddClientCommunication(toolArgs);
+              else if (toolName === "createClientContact")
+                toolResult = await executeCreateClientContact(toolArgs);
+              else if (toolName === "updateClientContact")
+                toolResult = await executeUpdateClientContact(toolArgs);
+              else if (toolName === "logExpense")
+                toolResult = await executeLogExpense(toolArgs);
+              else if (toolName === "recordPayment")
+                toolResult = await executeRecordPayment(toolArgs);
+              else if (toolName === "draftQuote")
+                toolResult = await executeDraftQuote(toolArgs);
+              else if (toolName === "draftInvoice")
+                toolResult = await executeDraftInvoice(toolArgs);
+              else if (toolName === "draftPurchaseOrder")
+                toolResult = await executeDraftPurchaseOrder(toolArgs);
+              else if (toolName === "draftCreditNote")
+                toolResult = await executeDraftCreditNote(toolArgs);
+              else if (toolName === "saveMemory")
+                toolResult = await executeSaveMemory(toolArgs);
+              else if (toolName === "logFuelPurchase")
+                toolResult = await executeLogFuelPurchase(toolArgs);
+              else if (toolName === "updateInvoiceStatus")
+                toolResult = await executeUpdateInvoiceStatus(toolArgs);
+              else if (toolName === "updatePurchaseOrderStatus")
+                toolResult = await executeUpdatePurchaseOrderStatus(toolArgs);
+              else if (toolName === "updateCreditNoteStatus")
+                toolResult = await executeUpdateCreditNoteStatus(toolArgs);
+              else if (toolName === "markInvoicePaid")
+                toolResult = await executeMarkInvoicePaid(toolArgs);
+              else if (toolName === "voidInvoice")
+                toolResult = await executeVoidInvoice(toolArgs);
+              else if (toolName === "markInvoiceSent")
+                toolResult = await executeMarkInvoiceSent(toolArgs);
+              else if (toolName === "reopenInvoice")
+                toolResult = await executeReopenInvoice(toolArgs);
+              else if (toolName === "markQuoteSent")
+                toolResult = await executeMarkQuoteSent(toolArgs);
+              else if (toolName === "acceptQuote")
+                toolResult = await executeAcceptQuote(toolArgs);
+              else if (toolName === "declineQuote")
+                toolResult = await executeDeclineQuote(toolArgs);
+              else if (toolName === "expireQuote")
+                toolResult = await executeExpireQuote(toolArgs);
+              else if (toolName === "reopenQuote")
+                toolResult = await executeReopenQuote(toolArgs);
+              else if (toolName === "rejectQuote")
+                toolResult = await executeRejectQuote(toolArgs);
+              else if (toolName === "issueQuote")
+                toolResult = await executeIssueQuote(toolArgs);
+              else if (toolName === "markPOSent")
+                toolResult = await executeMarkPOSent(toolArgs);
+              else if (toolName === "acknowledgePO")
+                toolResult = await executeAcknowledgePO(toolArgs);
+              else if (toolName === "markPODelivered")
+                toolResult = await executeMarkPODelivered(toolArgs);
+              else if (toolName === "cancelPO")
+                toolResult = await executeCancelPO(toolArgs);
+              else if (toolName === "issueCreditNote")
+                toolResult = await executeIssueCreditNote(toolArgs);
+              else if (toolName === "sendCreditNote")
+                toolResult = await executeSendCreditNote(toolArgs);
+              else if (toolName === "applyCreditNote")
+                toolResult = await executeApplyCreditNote(toolArgs);
+              else if (toolName === "cancelCreditNote")
+                toolResult = await executeCancelCreditNote(toolArgs);
+              else if (toolName === "transitionDocumentStatus")
+                toolResult = await executeDocumentTransition(toolArgs);
+              else if (toolName === "convertQuoteToInvoice")
+                toolResult = await executeConvertQuoteToInvoice(toolArgs);
+              else if (!user)
+                toolResult = JSON.stringify({
+                  error: "Authentication required",
+                });
+              else if (toolName === "createTask")
+                toolResult = await executeCreateTask(toolArgs, user);
+              else if (toolName === "updateTask")
+                toolResult = await executeUpdateTask(toolArgs, user);
+              else if (toolName === "completeTask")
+                toolResult = await executeCompleteTask(toolArgs, user);
+              else if (toolName === "queryTasks")
+                toolResult = await executeQueryTasks(toolArgs, user);
+              else if (toolName === "deleteTask")
+                toolResult = await executeDeleteTask(toolArgs, user);
+              else if (toolName === "createNote")
+                toolResult = await executeCreateNote(toolArgs, user);
+              else if (toolName === "searchNotes")
+                toolResult = await executeSearchNotes(toolArgs, user);
+              else if (toolName === "logCallNote")
+                toolResult = await executeLogCallNote(toolArgs, user);
+              else if (toolName === "createCalendarEvent")
+                toolResult = await executeCreateCalendarEvent(toolArgs, user);
+              else if (toolName === "queryCalendarEvents")
+                toolResult = await executeQueryCalendarEvents(toolArgs, user);
+              else if (toolName === "updateCalendarEvent")
+                toolResult = await executeUpdateCalendarEvent(toolArgs, user);
+              else if (toolName === "createReminder")
+                toolResult = await executeCreateReminder(toolArgs, user);
+              else if (toolName === "queryReminders")
+                toolResult = await executeQueryReminders(toolArgs, user);
+              else if (toolName === "updateReminder")
+                toolResult = await executeUpdateReminder(toolArgs, user);
+              else if (toolName === "queryAgenda")
+                toolResult = await executeQueryAgenda(toolArgs, user);
+              else if (toolName === "convertNoteToTasks")
+                toolResult = await executeConvertNoteToTasks(toolArgs, user);
+              else
+                toolResult = wrapWithActionResult(
+                  actionUnsupported({
+                    action: toolName,
+                    targetType: "unknown",
+                    toolUsed: toolName,
+                    reason: `The action "${toolName}" is not a recognised server-side tool.`,
+                    nextStep:
+                      "Please rephrase your request or contact support if you believe this is an error.",
+                  }),
+                );
             } catch (err: any) {
-              console.error(`[Tool Execution] Error executing ${toolName}:`, err);
-              toolResult = JSON.stringify({ error: err.message || "Tool execution failed" });
+              console.error(
+                `[Tool Execution] Error executing ${toolName}:`,
+                err,
+              );
+              toolResult = JSON.stringify({
+                error: err.message || "Tool execution failed",
+              });
             }
 
             // Log the AI action to the audit trail (fire-and-forget)
             const toolEndTime = Date.now();
-            const { actionStatus, data: resultData } = parseActionResult(toolResult);
+            const { actionStatus, data: resultData } =
+              parseActionResult(toolResult);
             const targetInfo = extractTargetInfo(toolName, toolArgs);
-            
+
             logAIAction({
               userId: user?.id,
               conversationId,
@@ -7499,20 +9537,30 @@ export async function POST(req: NextRequest) {
               toolArgs,
               targetType: targetInfo.targetType,
               targetReference: targetInfo.targetReference,
-              actionStatus: actionStatus?.status || (toolResult.includes('"error"') ? "failed" : "confirmed"),
+              actionStatus:
+                actionStatus?.status ||
+                (toolResult.includes('"error"') ? "failed" : "confirmed"),
               attempted: actionStatus?.attempted ?? true,
               verified: actionStatus?.verified ?? false,
               verificationDetails: resultData || undefined,
-              errorMessage: actionStatus?.error || (toolResult.includes('"error"') ? (JSON.parse(toolResult).error || null) : null),
+              errorMessage:
+                actionStatus?.error ||
+                (toolResult.includes('"error"')
+                  ? JSON.parse(toolResult).error || null
+                  : null),
               nextStep: actionStatus?.nextStep,
               summary: actionStatus?.summary,
               rawToolResult: resultData,
               modelName: CHAT_MODEL,
               latencyMs: toolEndTime - startTime,
               requestSource: "chat",
-            }).catch((e: any) => console.error('[AI Action Log Failed]', e?.message || e));
+            }).catch((e: any) =>
+              console.error("[AI Action Log Failed]", e?.message || e),
+            );
 
-            const isSuccess = actionStatus?.status === "confirmed" || actionStatus?.status === "could_not_verify";
+            const isSuccess =
+              actionStatus?.status === "confirmed" ||
+              actionStatus?.status === "could_not_verify";
             recordToolExecution(
               `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
               CHAT_MODEL,
@@ -7523,27 +9571,42 @@ export async function POST(req: NextRequest) {
                 errorType: isSuccess ? undefined : "unknown_error",
                 errorMessage: actionStatus?.error || undefined,
                 verificationStatus: isSuccess ? "confirmed" : "failed",
-              }
+              },
             );
 
             let parsedToolResult: Record<string, unknown>;
             try {
               parsedToolResult = JSON.parse(toolResult);
             } catch (e: any) {
-              console.error(`[Tool Parse] Failed to parse ${toolName} result:`, e.message);
-              parsedToolResult = { error: "Tool returned invalid response", raw: toolResult };
+              console.error(
+                `[Tool Parse] Failed to parse ${toolName} result:`,
+                e.message,
+              );
+              parsedToolResult = {
+                error: "Tool returned invalid response",
+                raw: toolResult,
+              };
             }
 
             const followUpContents = [
               ...contents,
               {
                 role: "model",
-                parts:
-                  payload.functionCallParts?.length
-                    ? payload.functionCallParts
-                    : [{ functionCall: { name: toolName, args: toolArgs } }],
+                parts: payload.functionCallParts?.length
+                  ? payload.functionCallParts
+                  : [{ functionCall: { name: toolName, args: toolArgs } }],
               },
-              { role: "user", parts: [{ functionResponse: { name: toolName, response: parsedToolResult } }] },
+              {
+                role: "user",
+                parts: [
+                  {
+                    functionResponse: {
+                      name: toolName,
+                      response: parsedToolResult,
+                    },
+                  },
+                ],
+              },
             ];
 
             const followUpRequest = {
@@ -7556,12 +9619,19 @@ export async function POST(req: NextRequest) {
               systemInstruction,
             } as any;
 
-            const followUpResult = await streamModelResponse(ai, followUpRequest, controller);
+            const followUpResult = await streamModelResponse(
+              ai,
+              followUpRequest,
+              controller,
+            );
             payload = followUpResult.finalPayload;
             fullText = followUpResult.fullText;
 
             if (!String(fullText || "").trim()) {
-              const fallbackText = buildServerToolFallbackMessage(toolName, toolResult);
+              const fallbackText = buildServerToolFallbackMessage(
+                toolName,
+                toolResult,
+              );
               if (fallbackText) {
                 fullText = fallbackText;
                 payload = {
@@ -7574,27 +9644,44 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const shouldSynthesizeAudio = Boolean(wantsAudio && fullText && !payload.toolCall);
+          const shouldSynthesizeAudio = Boolean(
+            wantsAudio && fullText && !payload.toolCall,
+          );
           const speechPayload = shouldSynthesizeAudio
-            ? await synthesizeSpeech(ai, fullText, preferences.languagePreference)
+            ? await synthesizeSpeech(
+                ai,
+                fullText,
+                preferences.languagePreference,
+              )
             : null;
 
           responseText = fullText;
 
-          controller.enqueue(encoder.encode(encodeEvent({
-            type: "done",
-            text: fullText,
-            toolCall: payload.toolCall || null,
-            toolCalls: payload.toolCalls || [],
-            audio: speechPayload?.audioBase64 || "",
-            audioBase64: speechPayload?.audioBase64 || "",
-            audioMimeType: speechPayload?.audioMimeType || "audio/wav",
-          })));
+          controller.enqueue(
+            encoder.encode(
+              encodeEvent({
+                type: "done",
+                text: fullText,
+                toolCall: payload.toolCall || null,
+                toolCalls: payload.toolCalls || [],
+                audio: speechPayload?.audioBase64 || "",
+                audioBase64: speechPayload?.audioBase64 || "",
+                audioMimeType: speechPayload?.audioMimeType || "audio/wav",
+              }),
+            ),
+          );
           controller.close();
         } catch (streamError: any) {
           hasError = true;
           errorMessage = streamError.message || "Streaming failed";
-          controller.enqueue(encoder.encode(encodeEvent({ type: "error", error: streamError.message || "Streaming failed" })));
+          controller.enqueue(
+            encoder.encode(
+              encodeEvent({
+                type: "error",
+                error: streamError.message || "Streaming failed",
+              }),
+            ),
+          );
           controller.close();
         }
       },
@@ -7607,11 +9694,12 @@ export async function POST(req: NextRequest) {
         Connection: "keep-alive",
       },
     });
-
-
   } catch (error: any) {
     if (isAuthError(error)) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     }
     hasError = true;
     errorMessage = error.message || "Internal Server Error";
@@ -7619,26 +9707,46 @@ export async function POST(req: NextRequest) {
 
     // Detect Gemini API failures and return user-friendly messages
     const msg = error.message || "";
-    if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('ECONNREFUSED')) {
+    if (
+      msg.includes("503") ||
+      msg.includes("UNAVAILABLE") ||
+      msg.includes("ECONNREFUSED")
+    ) {
       return NextResponse.json(
-        { error: 'The AI assistant is temporarily unavailable. Please try again in a moment.' },
-        { status: 503 }
+        {
+          error:
+            "The AI assistant is temporarily unavailable. Please try again in a moment.",
+        },
+        { status: 503 },
       );
     }
-    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate limit')) {
+    if (
+      msg.includes("429") ||
+      msg.includes("RESOURCE_EXHAUSTED") ||
+      msg.includes("rate limit")
+    ) {
       return NextResponse.json(
-        { error: 'Too many requests to the AI service. Please wait a moment before trying again.' },
-        { status: 429 }
+        {
+          error:
+            "Too many requests to the AI service. Please wait a moment before trying again.",
+        },
+        { status: 429 },
       );
     }
-    if (msg.includes('500') || msg.includes('502') || msg.includes('504')) {
+    if (msg.includes("500") || msg.includes("502") || msg.includes("504")) {
       return NextResponse.json(
-        { error: 'The AI service encountered an unexpected error. Please try again.' },
-        { status: 502 }
+        {
+          error:
+            "The AI service encountered an unexpected error. Please try again.",
+        },
+        { status: 502 },
       );
     }
 
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
+    );
   } finally {
     if (user?.id) {
       const endTime = Date.now();
@@ -7661,37 +9769,60 @@ export async function POST(req: NextRequest) {
         });
 
       if (conversationId || (Array.isArray(history) && history.length > 0)) {
-        const messages = buildPersistedMessages(history, userMessage, responseText);
+        const messages = buildPersistedMessages(
+          history,
+          userMessage,
+          responseText,
+        );
         if (messages.length > 0) {
-          saveConversationToSupabase(conversationId, messages, undefined).then((newId) => {
-            if (newId && !conversationId) {
-              console.log("[Conversation] Created new conversation:", newId);
-            }
-          }).catch((err) => console.error("[Conversation] Save failed:", err));
+          saveConversationToSupabase(conversationId, messages, undefined)
+            .then((newId) => {
+              if (newId && !conversationId) {
+                console.log("[Conversation] Created new conversation:", newId);
+              }
+            })
+            .catch((err) => console.error("[Conversation] Save failed:", err));
         }
       }
     }
   }
 }
 
-function buildPersistedMessages(history: any, lastUserMessage: string, lastAssistantResponse: string | null): Array<{ id: string; text: string; sender: "user" | "assistant"; timestamp: string }> {
-  const messages: Array<{ id: string; text: string; sender: "user" | "assistant"; timestamp: string }> = [];
+function buildPersistedMessages(
+  history: any,
+  lastUserMessage: string,
+  lastAssistantResponse: string | null,
+): Array<{
+  id: string;
+  text: string;
+  sender: "user" | "assistant";
+  timestamp: string;
+}> {
+  const messages: Array<{
+    id: string;
+    text: string;
+    sender: "user" | "assistant";
+    timestamp: string;
+  }> = [];
   const now = new Date().toISOString();
   const historyArray = Array.isArray(history) ? history : [];
-  
+
   if (historyArray.length > 0) {
     for (const msg of historyArray) {
       if (msg.role === "user" || msg.role === "assistant") {
         messages.push({
           id: generateMessageId(),
-          text: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
+          text:
+            typeof msg.content === "string"
+              ? msg.content
+              : JSON.stringify(msg.content),
           sender: msg.role === "user" ? "user" : "assistant",
           timestamp: now,
         });
       }
     }
   }
-  
+
   if (lastUserMessage) {
     messages.push({
       id: generateMessageId(),
@@ -7700,7 +9831,7 @@ function buildPersistedMessages(history: any, lastUserMessage: string, lastAssis
       timestamp: now,
     });
   }
-  
+
   if (lastAssistantResponse) {
     messages.push({
       id: generateMessageId(),
@@ -7709,7 +9840,7 @@ function buildPersistedMessages(history: any, lastUserMessage: string, lastAssis
       timestamp: now,
     });
   }
-  
+
   return messages;
 }
 

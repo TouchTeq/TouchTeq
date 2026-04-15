@@ -7,11 +7,13 @@ import Image from 'next/image';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { openMap, COMPANY_ADDRESS } from '@/lib/maps';
+import SiteSearch from '@/components/SiteSearch';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { scrollYProgress } = useScroll();
   const pathname = usePathname();
   const scaleX = useSpring(scrollYProgress, {
@@ -46,6 +48,18 @@ export default function Header() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Global Cmd/Ctrl+K shortcut to open search
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -212,9 +226,11 @@ export default function Header() {
 
           {/* RIGHT — Search + CTA */}
           <div className="hidden lg:flex items-center space-x-4 ml-8 flex-shrink-0">
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Open site search"
               className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors flex-shrink-0"
             >
               <Search size={18} />
@@ -229,7 +245,11 @@ export default function Header() {
 
           {/* Mobile Menu Toggle */}
           <div className="flex items-center space-x-4 lg:hidden">
-            <button className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Open site search"
+              className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors"
+            >
               <Search size={20} />
             </button>
             <button 
@@ -339,6 +359,8 @@ export default function Header() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SiteSearch open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

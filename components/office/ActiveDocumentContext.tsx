@@ -542,7 +542,7 @@ export function ActiveDocumentProvider({ children }: { children: React.ReactNode
         return;
       }
 
-      if (documentType && documentId && prev.validateSession?.(documentType, documentId) === false) {
+      if (documentType && documentId && validateSession(documentType, documentId) === false) {
         dispatchToolAck(toolCallId, 'saveDocument', false, {
           error: `Session mismatch. You tried to save ${documentType} ${documentId} but ${prev.documentType} ${prev.documentId} is open.`,
           data: { saveStatus: 'stale_session', currentType: prev.documentType, currentId: prev.documentId },

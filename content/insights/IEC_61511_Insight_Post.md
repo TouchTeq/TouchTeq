@@ -75,4 +75,4 @@ If you're not sure where your facility stands:
 
 The engineering requirements in IEC 61511 are demanding. The management discipline required to sustain them over decades is harder. Sites that treat functional safety as a one-time project deliverable tend to find out what they've missed at the worst possible time.
 
-*This article is a general overview. For site-specific implementation, consult a qualified functional safety engineer or refer to the full IEC 61511 standard.*
+*This article is a general overview for plant managers and operations personnel. For site-specific SIL determination, functional safety lifecycle planning, or IEC 61511 compliance assessments, consult a qualified functional safety engineer or certified process safety professional.*

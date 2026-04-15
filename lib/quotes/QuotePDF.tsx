@@ -8,6 +8,11 @@ export const QuotePDF = ({ quote, lineItems, businessProfile }: any) => {
   const primaryColor = settings.primary_color || '#F97316';
   const fontFamily = settings.document_font === 'Times New Roman' ? 'Times-Roman' : 'Helvetica';
 
+  const clientName = quote.clients?.company_name ?? quote.quick_client_name ?? 'N/A';
+  const clientContact = quote.clients?.contact_person ?? quote.quick_client_email ?? '';
+  const clientAddress = quote.clients?.physical_address ?? quote.quick_client_address ?? '';
+  const clientEmail = quote.clients?.email ?? quote.quick_client_email ?? '';
+
   const styles = StyleSheet.create({
     page: {
       padding: 40,
@@ -181,10 +186,10 @@ export const QuotePDF = ({ quote, lineItems, businessProfile }: any) => {
 
         <View style={styles.clientSection}>
           <Text style={styles.label}>Quoted To:</Text>
-          <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{quote.clients.company_name}</Text>
-          {quote.clients.contact_person && <Text>Attn: {quote.clients.contact_person}</Text>}
-          <Text>{quote.clients.physical_address}</Text>
-          <Text>{quote.clients.email}</Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{clientName}</Text>
+          {clientContact && <Text>Attn: {clientContact}</Text>}
+          {clientAddress && <Text>{clientAddress}</Text>}
+          {clientEmail && <Text>{clientEmail}</Text>}
         </View>
 
         <View style={styles.table}>

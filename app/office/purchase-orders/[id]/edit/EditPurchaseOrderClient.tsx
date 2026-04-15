@@ -342,7 +342,7 @@ export default function EditPurchaseOrderClient({
             <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
               <div className="md:col-span-6">
                 <textarea
-                  ref={(el) => (descriptionRefs.current[idx] = el)}
+                  ref={(el: HTMLTextAreaElement | null) => { descriptionRefs.current[idx] = el; }}
                   value={item.description}
                   onChange={(e) => handleLineItemChange(idx, 'description', e.target.value)}
                   className="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm"
