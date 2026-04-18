@@ -58,12 +58,20 @@ export default function InvoiceRenderer({ invoice, lineItems, businessProfile, c
       <div className="flex items-start justify-between border-b pb-8" style={{ borderColor: accentColor }}>
         <SupplierBrand logoUrl={data.logoUrl} supplierName={data.supplierName} accentColor={accentColor} />
         <div className="text-right">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Tax Invoice</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">Tax Invoice</p>
           {data.invoiceNumber && (
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-900">
               {data.invoiceNumber}
             </h1>
           )}
+          <div className="mt-2 space-y-1">
+            {data.issueDate && (
+              <p className="text-sm font-bold text-slate-400">Issue Date: {data.issueDate}</p>
+            )}
+            {data.dueDate && (
+              <p className="text-sm font-bold text-slate-400">Due Date: {data.dueDate}</p>
+            )}
+          </div>
         </div>
       </div>
 

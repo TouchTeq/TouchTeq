@@ -48,16 +48,16 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
       alignItems: 'flex-end',
     },
     title: {
-      fontSize: 20,
+      fontSize: 10,
       fontWeight: 'bold',
-      color: '#000000',
+      color: primaryColor,
       marginBottom: 5,
     },
     invoiceNumber: {
-      fontSize: 12,
+      fontSize: 18,
       fontWeight: 'bold',
-      color: primaryColor,
-      marginBottom: 8,
+      color: '#1E293B',
+      marginBottom: 4,
     },
     dateRow: {
       flexDirection: 'row',
@@ -65,14 +65,14 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
       marginBottom: 2,
     },
     dateLabel: {
-      fontSize: 9,
+      fontSize: 14,
       color: '#666666',
       marginRight: 8,
     },
     dateValue: {
-      fontSize: 10,
+      fontSize: 14,
       fontWeight: 'bold',
-      color: '#333333',
+      color: '#666666',
     },
     detailsGrid: {
       flexDirection: 'row',
@@ -97,7 +97,7 @@ export const InvoicePDF = ({ invoice, lineItems, businessProfile }: any) => {
     },
     supplierName: {
       fontWeight: 'bold',
-      fontSize: 11,
+      fontSize: 12,
       marginBottom: 3,
     },
     supplierAddress: {

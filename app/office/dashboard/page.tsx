@@ -494,7 +494,7 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
-            href="/office/chat"
+            href="/office/ai-assistant"
             className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-orange-500/10 hover:border-orange-500/30 border border-transparent transition-all group"
           >
             <div className="flex items-center gap-3">
@@ -510,7 +510,7 @@ export default async function DashboardPage() {
           </Link>
 
           <Link
-            href="/office/tasks/new"
+            href="/office/tasks"
             className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-orange-500/10 hover:border-orange-500/30 border border-transparent transition-all group"
           >
             <div className="flex items-center gap-3">
@@ -526,7 +526,7 @@ export default async function DashboardPage() {
           </Link>
 
           <Link
-            href="/office/notes/new"
+            href="/office/notes"
             className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-orange-500/10 hover:border-orange-500/30 border border-transparent transition-all group"
           >
             <div className="flex items-center gap-3">
