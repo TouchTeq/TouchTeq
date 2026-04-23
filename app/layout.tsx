@@ -7,6 +7,7 @@ import CookieConsentBanner from '@/components/CookieConsentBanner';
 import ConditionalGA4 from '@/components/ConditionalGA4';
 import JsonLd from '@/components/seo/JsonLd';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -195,6 +196,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         </LenisProvider>
         <ConditionalGA4 />
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
