@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { 
   FileText,
@@ -124,7 +125,9 @@ export default async function DeliveryNotesPage({
       </div>
 
       {/* Filters */}
-      <DeliveryNotesControls />
+      <Suspense fallback={<div>Loading...</div>}>
+        <DeliveryNotesControls />
+      </Suspense>
 
       {/* Table */}
       {deliveryNotes && deliveryNotes.length > 0 ? (

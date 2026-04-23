@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAuthenticatedUser } from '@/lib/auth/require-user';
 import AiLogClient from './AiLogClient';
@@ -45,14 +46,16 @@ export default async function AiLogPage({
   const uniqueTools = [...new Set((toolNames || []).map((r: any) => r.tool_name))].sort();
 
   return (
-    <AiLogClient
-      logs={logs || []}
-      totalCount={count || 0}
-      page={page}
-      pageSize={pageSize}
-      toolNames={uniqueTools}
-      activeStatus={params.status || 'all'}
-      activeTool={params.tool || 'all'}
-    />
+    <Suspense fallback={<div>Loading...</div>}>
+      <AiLogClient
+        logs={logs || []}
+        totalCount={count || 0}
+        page={page}
+        pageSize={pageSize}
+        toolNames={uniqueTools}
+        activeStatus={params.status || 'all'}
+        activeTool={params.tool || 'all'}
+      />
+    </Suspense>
   );
 }

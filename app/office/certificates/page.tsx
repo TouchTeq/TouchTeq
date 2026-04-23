@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { 
   Shield, 
@@ -104,7 +105,9 @@ export default async function CertificatesPage({
       </div>
 
       {/* Filters & Search */}
-      <CertificatesControls initialQ={q} initialType={type} initialStatus={status} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <CertificatesControls initialQ={q} initialType={type} initialStatus={status} />
+      </Suspense>
 
       {/* Certificates Table */}
       {certificates && certificates.length > 0 ? (

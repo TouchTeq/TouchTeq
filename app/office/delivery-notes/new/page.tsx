@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Plus, 
@@ -26,6 +26,14 @@ import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import { DatePicker } from '@/components/ui/DatePicker';
 
 export default function NewDeliveryNotePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-slate-500">Loading delivery note builder...</div>}>
+      <NewDeliveryNoteContent />
+    </Suspense>
+  );
+}
+
+function NewDeliveryNoteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const linkedInvoiceId = searchParams.get('invoiceId');

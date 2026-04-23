@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import SettingsClient from './SettingsClient';
 import { getBusinessProfile } from '@/lib/settings/actions';
@@ -17,7 +18,9 @@ export default async function SettingsPage() {
         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-2">Operational Configuration Hub</p>
       </div>
 
-      <SettingsClient initialProfile={profile} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <SettingsClient initialProfile={profile} />
+      </Suspense>
     </div>
   );
 }

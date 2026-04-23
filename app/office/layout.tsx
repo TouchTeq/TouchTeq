@@ -711,7 +711,9 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
 
                   {/* Navigation */}
                   <div ref={sidebarRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                    <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} sidebarRef={sidebarRef} overdueReminderCount={overdueReminderCount} onSignOut={handleSignOut} />
+                    <Suspense fallback={<div className="p-3 text-xs text-slate-500 uppercase tracking-widest">Loading navigation...</div>}>
+                      <SidebarNav navGroups={navGroups} isCollapsed={isCollapsed} pathname={pathname} sidebarRef={sidebarRef} overdueReminderCount={overdueReminderCount} onSignOut={handleSignOut} />
+                    </Suspense>
                   </div>
                 </motion.aside>
 

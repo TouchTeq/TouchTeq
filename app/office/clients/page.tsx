@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import {
   Users,
@@ -146,12 +147,14 @@ export default async function ClientsPage({
       </div>
 
       {/* Controls */}
-      <ClientsControls
-        initialQ={q}
-        initialFilter={filter as any}
-        initialCategory={category as CategoryFilter}
-        initialBalance={balance as BalanceFilter}
-      />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ClientsControls
+          initialQ={q}
+          initialFilter={filter as any}
+          initialCategory={category as CategoryFilter}
+          initialBalance={balance as BalanceFilter}
+        />
+      </Suspense>
 
       {/* Clients Table */}
       {clients.length > 0 ? (

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import {
   Receipt,
@@ -236,7 +237,9 @@ export default async function InvoicesPage({
       {/* Content based on tab */}
       {tab === 'invoices' && (
         <>
-          <InvoicesControls initialQ={q} initialStatus={status as any} initialRange={range as any} />
+          <Suspense fallback={<div>Loading...</div>}>
+            <InvoicesControls initialQ={q} initialStatus={status as any} initialRange={range as any} />
+          </Suspense>
           {invoices && invoices.length > 0 ? (
             <InvoicesTableClient invoices={invoices} />
           ) : (

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { 
   ShoppingBag, 
@@ -96,7 +97,9 @@ export default async function PurchaseOrdersPage({
       </div>
 
       {/* Filters & Search */}
-      <PurchaseOrdersControls initialQ={q} initialStatus={status as any} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <PurchaseOrdersControls initialQ={q} initialStatus={status as any} />
+      </Suspense>
 
       {/* PO Table */}
       {purchaseOrders && purchaseOrders.length > 0 ? (

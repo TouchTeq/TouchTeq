@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import ActivityClient from './ActivityClient';
 
@@ -38,5 +39,9 @@ export default async function ActivityPage() {
     })) || []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  return <ActivityClient activities={activities} />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ActivityClient activities={activities} />
+    </Suspense>
+  );
 }
