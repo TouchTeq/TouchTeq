@@ -6,6 +6,7 @@ import CustomCursor from '@/components/CustomCursor';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
 import ConditionalGA4 from '@/components/ConditionalGA4';
 import JsonLd from '@/components/seo/JsonLd';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -193,6 +194,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           <CookieConsentBanner />
         </LenisProvider>
         <ConditionalGA4 />
+        <SpeedInsights />
       </body>
     </html>
   );
