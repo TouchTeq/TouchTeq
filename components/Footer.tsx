@@ -74,15 +74,30 @@ export default function Footer() {
                 Specialist fire & gas detection, control & instrumentation, and electrical engineering for industrial facilities across Southern Africa.
               </p>
               <div className="flex space-x-4">
-                {[Facebook, Linkedin, Twitter].map((Icon, i) => (
-                  <Link
-                    key={i}
-                    href="#"
-                    className="w-10 h-10 bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-all"
-                  >
-                    <Icon size={18} />
-                  </Link>
-                ))}
+                <Link
+                  href="https://www.linkedin.com/company/touch-teqniques-engineering-services/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-all"
+                >
+                  <Linkedin size={18} />
+                </Link>
+                <Link
+                  href="https://www.facebook.com/TouchTeqniques"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-all"
+                >
+                  <Facebook size={18} />
+                </Link>
+                <Link
+                  href="https://x.com/TouchTeqniques"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-all"
+                >
+                  <Twitter size={18} />
+                </Link>
               </div>
             </motion.div>
 
