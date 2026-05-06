@@ -170,7 +170,7 @@ export default function ServicesSection() {
             whileHover={{ x: 10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="lg:col-span-2 p-8 md:p-10 rounded-2xl bg-[#ff6900] flex flex-col justify-center items-start group cursor-pointer hover:bg-[#e55e00] transition-all shadow-2xl hover:shadow-[#ff6900]/20"
+            className="lg:col-span-2 p-6 sm:p-8 md:p-10 rounded-2xl bg-[#ff6900] flex flex-col justify-center items-start group cursor-pointer hover:bg-[#e55e00] transition-all shadow-2xl hover:shadow-[#ff6900]/20"
           >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full gap-6">
               <div>
@@ -188,7 +188,7 @@ export default function ServicesSection() {
               >
                 <Link 
                   href="/contact#request-quote"
-                  className="bg-[#1A2B4C] text-white px-8 py-4 rounded-md font-black text-xs md:text-sm uppercase tracking-widest transition-all shadow-xl hover:shadow-black/20 flex items-center space-x-2"
+                  className="bg-[#1A2B4C] text-white px-5 sm:px-8 py-4 rounded-md font-black text-[11px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest transition-all shadow-xl hover:shadow-black/20 flex items-center justify-center space-x-2 w-full sm:w-auto"
                 >
                   <span>Start Consultation</span>
                   <ArrowUpRight size={18} />

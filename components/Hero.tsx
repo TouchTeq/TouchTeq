@@ -14,7 +14,7 @@ const trustSignals = [
 
 export default function Hero() {
   return (
-    <section className="relative min-h-fit lg:min-h-screen flex items-center pt-32 pb-24 md:pt-48 md:pb-32 overflow-hidden bg-[#0A1120]">
+    <section className="relative min-h-fit lg:min-h-screen flex items-center pt-28 pb-16 sm:pt-32 sm:pb-24 md:pt-48 md:pb-32 overflow-hidden bg-[#0A1120]">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -42,9 +42,9 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex items-center space-x-2 mb-6"
+            className="flex items-start sm:items-center gap-2 mb-5 sm:mb-6"
           >
-            <div className="h-px w-6 md:w-8 bg-orange-500"></div>
+            <div className="h-px w-6 md:w-8 bg-orange-500 mt-2 sm:mt-0 shrink-0"></div>
             <span className="text-orange-500 font-mono text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.3em]">
               Specialized Engineering for Safety-Critical Environments
             </span>
@@ -55,7 +55,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-white text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[1.1] mb-8 tracking-tighter"
+            className="text-white text-[2.3rem] sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[1.05] sm:leading-[1.1] mb-6 sm:mb-8 tracking-normal sm:tracking-tighter"
           >
             Industrial Engineering <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
@@ -68,7 +68,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-slate-300 text-base md:text-xl leading-relaxed mb-10 max-w-2xl font-medium"
+            className="text-slate-300 text-[15px] sm:text-base md:text-xl leading-relaxed mb-8 sm:mb-10 max-w-2xl font-medium"
           >
             Specialist Fire & Gas Detection, Control & Instrumentation, and Electrical Engineering for high-risk industrial facilities across Southern Africa. Delivered by certified experts with 24/7 accountability.
           </motion.p>
@@ -78,13 +78,13 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 mb-16"
+            className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-12 sm:mb-16"
           >
             <Link 
               href="/contact#request-quote"
-              className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto"
+              className="group flex w-full sm:w-auto items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full"
             >
-              <span className="px-6 md:px-8 py-4 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">
+              <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 md:px-8 py-4 flex items-center text-white font-black text-[10px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left">
                 Request Technical Consultation
               </span>
               <div className="bg-[#1A2B4C] px-4 md:px-5 flex items-center justify-center group-hover:bg-black transition-colors shrink-0">
@@ -94,9 +94,9 @@ export default function Hero() {
 
             <Link 
               href="/risk-assessment"
-              className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto"
+              className="group flex w-full sm:w-auto items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full"
             >
-              <span className="px-6 md:px-8 py-4 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">
+              <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 md:px-8 py-4 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[10px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left transition-colors">
                 Assess My Facility Risk — Free
               </span>
               <div className="bg-[#1A2B4C] px-4 md:px-5 flex items-center justify-center group-hover:bg-orange-500 transition-colors shrink-0">

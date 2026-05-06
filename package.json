@@ -30,6 +30,8 @@
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "@types/papaparse": "^5.5.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "autoprefixer": "^10.4.21",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

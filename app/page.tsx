@@ -59,7 +59,7 @@ export default function Home() {
         <ContactSection />
 
         {/* CTA Section */}
-        <section className="relative w-full bg-[#0A0F1A] text-white overflow-hidden py-32">
+        <section className="relative w-full bg-[#0A0F1A] text-white overflow-hidden py-20 sm:py-24 md:py-32">
           <div className="absolute inset-0 z-0">
             <Image
               src="/f-bg.jpg"
@@ -79,17 +79,17 @@ export default function Home() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="flex items-center space-x-3 mb-6"
+                className="flex items-start sm:items-center gap-3 mb-6"
               >
-                <div className="w-12 h-[1px] bg-orange-500"></div>
-                <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em]">Ready to Move Forward</span>
+                <div className="w-10 sm:w-12 h-[1px] bg-orange-500 mt-2 sm:mt-0 shrink-0"></div>
+                <span className="text-orange-500 font-black text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.4em]">Ready to Move Forward</span>
               </motion.div>
               <motion.h2
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="text-5xl md:text-7xl font-black text-white uppercase tracking-tight leading-[0.85] mb-10"
+                className="text-3xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tight leading-[1.02] sm:leading-[0.9] md:leading-[0.85] mb-8 md:mb-10"
               >
                 Ready to Protect Your <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">People and Assets?</span>
               </motion.h2>
@@ -108,13 +108,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="flex flex-col sm:flex-row gap-6"
+                className="flex flex-col sm:flex-row gap-3 sm:gap-6"
               >
                 <Link 
                   href="/contact#request-quote"
-                  className="group flex items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full sm:w-auto"
+                  className="group flex w-full sm:w-auto items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full"
                 >
-                  <span className="px-6 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[11px] md:text-sm uppercase tracking-widest text-left transition-colors">
+                  <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 md:px-8 py-3 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[10px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left transition-colors">
                     REQUEST A CONSULTATION
                   </span>
                   <div className="bg-[#ff6900] px-4 md:px-5 flex items-center justify-center group-hover:bg-orange-600 transition-colors shrink-0">
@@ -124,9 +124,9 @@ export default function Home() {
 
                 <a 
                   href="tel:+27725522110"
-                  className="group flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full sm:w-auto"
+                  className="group flex w-full sm:w-auto items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20 max-w-full"
                 >
-                  <span className="px-6 md:px-8 py-3 flex items-center text-white font-black text-[11px] md:text-sm uppercase tracking-widest text-left">
+                  <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 md:px-8 py-3 flex items-center text-white font-black text-[10px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left">
                     <Phone size={16} className="mr-3" />
                     CALL US
                   </span>

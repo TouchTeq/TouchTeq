@@ -30,7 +30,7 @@ export default function ExpertiseSection() {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="absolute -top-10 -left-10 w-40 h-40 border-t border-l border-slate-200 z-0"
+              className="absolute -top-6 -left-4 md:-top-10 md:-left-10 w-24 h-24 md:w-40 md:h-40 border-t border-l border-slate-200 z-0"
             ></motion.div>
 
             <motion.div
@@ -102,12 +102,12 @@ export default function ExpertiseSection() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 + (index * 0.1) }}
-                    className="flex items-center space-x-3"
+                    className="flex items-start space-x-3"
                   >
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center">
                       <CheckCircle2 size={16} className="text-[#ff6900]" />
                     </div>
-                    <span className="text-[#1A2B4C] font-bold text-sm md:text-base uppercase tracking-normal">
+                    <span className="min-w-0 text-[#1A2B4C] font-bold text-sm md:text-base uppercase tracking-normal">
                       {item}
                     </span>
                   </motion.div>
@@ -133,9 +133,9 @@ export default function ExpertiseSection() {
               >
                 <Link 
                   href="/services"
-                  className="group inline-flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
+                  className="group inline-flex w-full sm:w-auto items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
                 >
-                  <span className="px-8 py-4 flex items-center text-white font-black text-sm uppercase tracking-widest">
+                  <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 sm:px-8 py-4 flex items-center text-white font-black text-[11px] sm:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left">
                     View Our Services
                   </span>
                   <div className="bg-[#1A2B4C] px-5 flex items-center justify-center group-hover:bg-black transition-colors">

@@ -135,7 +135,7 @@ export default function IndustriesCarousel() {
     return () => clearInterval(timer);
   }, [isAnimating, nextSlide]);
 
-  const slideWidth = containerWidth > 1024 ? 58 : 85;
+  const slideWidth = containerWidth > 1024 ? 58 : containerWidth > 640 ? 76 : 88;
   const gap = containerWidth > 1024 ? 4 : 4;
 
   const onDragEnd = useCallback((_event: any, info: any) => {
@@ -269,7 +269,7 @@ export default function IndustriesCarousel() {
 
         {/* Navigation and CTA on top of the card at the bottom */}
         <div className="container mx-auto px-4 md:px-12 relative z-20 mt-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 md:px-4">
             {/* Navigation Buttons on the left - positioned on top of the orange card */}
             <div className="flex shadow-2xl">
               <button
@@ -291,9 +291,9 @@ export default function IndustriesCarousel() {
             {/* CTA Button on the right - positioned on top of the orange card */}
             <Link
               href="/contact#request-quote"
-              className="bg-white text-[#1A2B4C] hover:text-[#ff6900] hover:bg-slate-50 transition-all duration-300 flex items-center group rounded-sm overflow-hidden shadow-2xl"
+              className="bg-white text-[#1A2B4C] hover:text-[#ff6900] hover:bg-slate-50 transition-all duration-300 flex items-center justify-center group rounded-sm overflow-hidden shadow-2xl w-full sm:w-auto max-w-full"
             >
-              <span className="px-8 py-4 font-black text-xs md:text-sm uppercase tracking-[0.2em]">
+              <span className="min-w-0 flex-1 px-5 sm:px-8 py-4 font-black text-[11px] md:text-sm uppercase tracking-[0.12em] sm:tracking-[0.2em] text-center">
                 Request a Consultation
               </span>
               <div className="bg-[#1A2B4C] p-4 flex items-center justify-center group-hover:bg-black transition-colors">

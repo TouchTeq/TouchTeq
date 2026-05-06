@@ -260,7 +260,7 @@ export default function ContactSection() {
               <div className="space-y-10">
                 <div className="group">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Call support center 24/7</p>
-                  <a href="tel:+27725522110" className="text-2xl md:text-3xl font-black text-orange-500 hover:text-[#1A2B4C] transition-colors">
+                  <a href="tel:+27725522110" className="text-2xl md:text-3xl font-black text-orange-500 hover:text-[#1A2B4C] transition-colors break-words">
                     +27 72 552 2110
                   </a>
                 </div>
@@ -280,7 +280,7 @@ export default function ContactSection() {
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                       <Mail size={14} className="text-orange-500" /> Write to us
                     </p>
-                    <a href="mailto:info@touchteq.co.za" className="text-[#1A2B4C] font-black uppercase text-sm hover:text-orange-500 transition-colors">
+                    <a href="mailto:info@touchteq.co.za" className="text-[#1A2B4C] font-black uppercase text-sm hover:text-orange-500 transition-colors break-all">
                       info@touchteq.co.za
                     </a>
                   </div>
@@ -302,7 +302,7 @@ export default function ContactSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-white p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(26,43,76,0.15)] border-t-4 border-orange-500 h-full"
+              className="bg-white p-5 sm:p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(26,43,76,0.15)] border-t-4 border-orange-500 h-full"
             >
               <AnimatePresence mode="wait">
                 {showSuccess ? (
@@ -474,7 +474,7 @@ export default function ContactSection() {
                         >
                           {agreed && <Check size={14} className="text-white" />}
                         </div>
-                        <span className="text-slate-500 text-sm font-medium">
+                        <span className="min-w-0 text-slate-500 text-sm font-medium">
                           I accept the <Link href="#" className="text-orange-500 hover:underline">Terms & Conditions</Link> and <Link href="#" className="text-orange-500 hover:underline">Privacy Policy</Link> of Touch Teq Engineering.
                         </span>
                       </label>
@@ -482,9 +482,9 @@ export default function ContactSection() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="group relative flex items-center bg-orange-500 hover:bg-orange-600 transition-all rounded-sm overflow-hidden shadow-xl shadow-orange-500/20 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="group relative flex items-center justify-center bg-orange-500 hover:bg-orange-600 transition-all rounded-sm overflow-hidden shadow-xl shadow-orange-500/20 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <span className="px-10 py-4 text-white font-black text-xs uppercase tracking-[0.2em]">
+                        <span className="min-w-0 flex-1 px-6 sm:px-10 py-4 text-white font-black text-[11px] sm:text-xs uppercase tracking-[0.14em] sm:tracking-[0.2em] text-center">
                           {isSubmitting ? 'Sending...' : 'Send Message'}
                         </span>
                         <div className="bg-[#1A2B4C] p-4 flex items-center justify-center group-hover:bg-black transition-colors">

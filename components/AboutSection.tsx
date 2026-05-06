@@ -84,9 +84,9 @@ export default function AboutSection() {
 
             <Link 
               href="/about"
-              className="group inline-flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
+              className="group inline-flex w-full sm:w-auto items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
             >
-              <span className="px-8 py-4 flex items-center text-white font-black text-sm uppercase tracking-widest">
+              <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 sm:px-8 py-4 flex items-center text-white font-black text-[11px] sm:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left">
                 Learn More About Our Standards
               </span>
               <div className="bg-[#1A2B4C] px-5 flex items-center justify-center group-hover:bg-black transition-colors">
