@@ -127,7 +127,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 'Control and Instrumentation Engineering',
                 'Hazardous Area Classification',
                 'SIL Assessment',
-                'IEC 61511 Compliance',
+                'Technical Documentation Support',
                 'Industrial Electrical Engineering',
               ],
               priceRange: '$$$$',

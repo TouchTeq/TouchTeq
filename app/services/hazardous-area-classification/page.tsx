@@ -31,7 +31,7 @@ const services = [
   },
   {
     title: "Equipment Gap Analysis",
-    description: "We assess your existing electrical, instrumentation, and mechanical equipment against the classified zones to identify installations that do not meet the required protection level. Every non-compliant item is flagged with a recommended corrective action."
+    description: "We assess your existing electrical, instrumentation, and mechanical equipment against the classified zones to identify installations that do not meet the required protection level. Every gap is flagged with a recommended corrective action."
   },
   {
     title: "Hazardous Area Equipment Register (HAER)",
@@ -650,7 +650,7 @@ export default function HazardousAreaClassificationPage() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="text-5xl md:text-7xl font-black text-white uppercase tracking-tight leading-[0.85] mb-10"
             >
-              Is Your Facility Classification <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Current and Compliant?</span>
+              Is Your Facility Classification <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Current and Documented?</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -659,7 +659,7 @@ export default function HazardousAreaClassificationPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
             >
-              Whether you need a new classification study, a review of existing zones, or an independent compliance audit, our engineers are ready to help.
+              Whether you need a new classification study, a review of existing zones, or an independent documentation review, our engineers are ready to help.
             </motion.p>
             
             <motion.div

@@ -6,8 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const trustSignals = [
-  { icon: ShieldCheck, text: "IEC 61511 & SANS 10089 Compliant" },
-  { icon: Zap, text: "OEM-Approved Technical Support" },
+  { icon: ShieldCheck, text: "GDSCorp Detection Partner" },
+  { icon: Zap, text: "SUPCON Automation Partner" },
   { icon: Globe, text: "Regional & Cross-Border Service" },
   { icon: Zap, text: "24/7 Emergency Response" },
 ];
@@ -70,7 +70,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-slate-300 text-[15px] sm:text-base md:text-xl leading-relaxed mb-8 sm:mb-10 max-w-2xl font-medium"
           >
-            Specialist Fire & Gas Detection, Control & Instrumentation, and Electrical Engineering for high-risk industrial facilities across Southern Africa. Delivered by certified experts with 24/7 accountability.
+            Specialist Fire & Gas Detection, Automation, Control & Instrumentation, and Electrical Engineering for high-risk industrial facilities across Southern Africa. Delivered by experienced experts with 24/7 accountability.
           </motion.p>
 
           {/* CTAs */}

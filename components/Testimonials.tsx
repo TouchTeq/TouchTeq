@@ -68,20 +68,6 @@ export default function Testimonials() {
                 referrerPolicy="no-referrer"
               />
 
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-                className="absolute -bottom-4 -right-4 md:-bottom-8 md:-right-8 bg-white p-4 md:p-8 shadow-2xl flex items-center gap-3 md:gap-6 z-20"
-              >
-                <div className="text-3xl md:text-5xl font-black text-orange-500 leading-none">15+</div>
-                <div className="text-orange-500 font-black uppercase text-xs md:text-sm leading-tight tracking-normal">
-                  Industrial <br />
-                  Projects <br />
-                  Delivered
-                </div>
-              </motion.div>
             </motion.div>
           </div>
 

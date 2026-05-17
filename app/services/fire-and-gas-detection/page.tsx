@@ -25,11 +25,11 @@ const services = [
   },
   {
     title: "System Design & Engineering",
-    description: "We produce detailed system designs including detector placement, cause and effect matrices, cable schedules, and full documentation packages aligned with IEC 61511 and SANS 10089."
+    description: "We produce detailed system designs including detector placement, cause and effect matrices, cable schedules, and full documentation packages for safe, practical handover."
   },
   {
     title: "Equipment Supply",
-    description: "We source and supply fire and gas detection equipment from trusted OEM suppliers only. No gray-market components. No substitutions without client approval."
+    description: "We partner with GDSCorp to provide reliable gas and flame detection solutions. No gray-market components. No substitutions without client approval."
   },
   {
     title: "Installation & Commissioning",
@@ -41,7 +41,7 @@ const services = [
   },
   {
     title: "Maintenance & Support",
-    description: "We provide scheduled preventative maintenance and 24/7 emergency callout support to keep your system operational and compliant at all times."
+    description: "We provide scheduled preventative maintenance and 24/7 emergency callout support to keep your system operational and properly documented."
   }
 ];
 
@@ -68,12 +68,12 @@ const whyChooseUs = [
     desc: "Every fire and gas detection project is managed and executed directly by a qualified engineer. You always know who is responsible for your system."
   },
   {
-    title: "Compliance From Day One",
-    desc: "We design to the standard, not around it. Your documentation, cause and effect matrices, and commissioning records are ready for inspection from day one."
+    title: "Documentation From Day One",
+    desc: "Your documentation, cause and effect matrices, and commissioning records are built into the project from the start."
   },
   {
-    title: "OEM-Approved Equipment Only",
-    desc: "We only supply equipment from approved manufacturers. Every component is traceable, warranted, and supported by the OEM."
+    title: "GDSCorp Partnership",
+    desc: "We partner with GDSCorp to support reliable gas and flame detection solutions for industrial environments."
   },
   {
     title: "24/7 Emergency Support",
@@ -100,7 +100,7 @@ const faqs = [
   },
   {
     q: "Do you handle maintenance after installation?",
-    a: "Yes. We offer scheduled preventative maintenance programs and 24/7 emergency callout support. We recommend annual inspections as a minimum to keep your system compliant and operational."
+    a: "Yes. We offer scheduled preventative maintenance programs and 24/7 emergency callout support. We recommend annual inspections as a minimum to keep your system reliable, documented, and operational."
   },
   {
     q: "Can you integrate a new fire and gas system with our existing control system?",
@@ -155,7 +155,7 @@ export default function FireAndGasPage() {
       />
       <ServiceJsonLd 
         name="Fire and Gas Detection Engineering"
-        description="Specialist engineering, design, and installation of fire and gas detection systems for high-risk industrial facilities. Compliant with IEC 61511 and SANS 10089."
+        description="Specialist engineering, design, and installation of fire and gas detection systems for high-risk industrial facilities, supported by GDSCorp partnership positioning."
         url="https://touchteq.co.za/services/fire-and-gas-detection"
         serviceType={[
           'Fire Detection', 
@@ -207,7 +207,7 @@ export default function FireAndGasPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              We design, supply, install, and commission fire and gas detection systems for refineries, chemical plants, mining operations, and manufacturing facilities across Southern Africa. Every system is built to meet IEC 61511 and SANS 10089 requirements.
+              We design, supply, install, and commission fire and gas detection systems for refineries, chemical plants, mining operations, and manufacturing facilities across Southern Africa. We are partners with GDSCorp to provide reliable gas and flame detection solutions.
             </motion.p>
             
             <motion.div
@@ -272,7 +272,7 @@ export default function FireAndGasPage() {
                 Industrial facilities face serious risks from fire, toxic gas, and explosive atmospheres. A properly designed and installed fire and gas detection system is one of the most important layers of protection you can have on site.
               </p>
               <p>
-                At Touch Teq Engineering, we handle the full project lifecycle. From initial hazard assessment and system design through to supply, installation, commissioning, and handover. Every system we deliver is designed for your specific facility, your specific risks, and your specific compliance requirements.
+                At Touch Teq Engineering, we handle the full project lifecycle. From initial hazard assessment and system design through to supply, installation, commissioning, and handover. Every system we deliver is designed for your specific facility, your specific risks, and your operating requirements.
               </p>
               <p>
                 We work directly with plant managers, engineering teams, and HSE managers to make sure the system does what it needs to do, is properly documented, and is ready for inspection.
@@ -318,8 +318,8 @@ export default function FireAndGasPage() {
             <div className="lg:w-1/2">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <Image 
-                  src="/flame_detector.jpeg" 
-                  alt="Industrial Gas Detection" 
+                  src="/gdscorp-gas-detector.png" 
+                  alt="GDSCorp gas detector installed in an industrial facility" 
                   width={800} 
                   height={1000}
                   className="object-cover"
@@ -331,7 +331,7 @@ export default function FireAndGasPage() {
                     Field Proven Technology
                   </div>
                   <h4 className="text-white text-2xl font-black uppercase tracking-normal">
-                    SPECTREX SharpEye™ Integration
+                    GDSCorp Gas & Flame Detection Solutions
                   </h4>
                 </div>
               </div>
@@ -376,18 +376,18 @@ export default function FireAndGasPage() {
         </div>
       </section>
 
-      {/* Section 3: Standards & Compliance */}
+      {/* Section 3: Technical Standards & Documentation */}
       <section className="py-24 bg-[#1A2B4C] text-white">
         <div className="container mx-auto px-4 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Compliance & Standards</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Technical Standards & Documentation</span>
               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Systems Built for Audits, Inspections, and <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Long-Term Compliance</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Long-Term Reliability</span>
               </h2>
               <p className="text-slate-300 text-lg leading-relaxed mb-8 font-medium">
-                Compliance is not an afterthought for us. Every system we design and install is built around the applicable standards from day one. This means your system is ready for internal audits, third-party inspections, and regulatory reviews without last-minute fixes.
+                Documentation is not an afterthought for us. Every system we design and install is planned around the facility requirements from day one. This means your team has the records it needs for internal audits, third-party inspections, and long-term maintenance.
               </p>
             </div>
             

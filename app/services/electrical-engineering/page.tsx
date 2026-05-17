@@ -107,7 +107,7 @@ const whyChooseUs = [
 const faqs = [
   {
     q: "What types of electrical work do you handle?",
-    a: "We handle industrial electrical engineering including power distribution, motor control, lighting, earthing, hazardous area installations, testing, and commissioning. We do not do residential or commercial electrical work."
+    a: "We handle industrial electrical engineering including power distribution, motor control, lighting, earthing, hazardous area installations, testing, and commissioning for industrial facilities."
   },
   {
     q: "Are you registered with ECSA?",
@@ -119,7 +119,7 @@ const faqs = [
   },
   {
     q: "Do you provide electrical maintenance services?",
-    a: "Yes. We offer planned preventative maintenance, fault finding, and emergency callout support for industrial electrical systems. Regular maintenance helps prevent unplanned downtime and keeps your systems compliant."
+    a: "Yes. We offer planned preventative maintenance, fault finding, and emergency callout support for industrial electrical systems. Regular maintenance helps prevent unplanned downtime and keeps your systems reliable and properly documented."
   },
   {
     q: "What documentation do you provide after a project?",
@@ -274,7 +274,7 @@ export default function ElectricalEngineeringPage() {
                 Electrical systems in industrial facilities need to be safe, reliable, and properly designed for the environment they operate in. Whether it is a refinery, a chemical plant, or a mining operation, the consequences of poor electrical design or installation can be serious.
               </p>
               <p>
-                At Touch Teq Engineering, we handle industrial electrical work from design through to installation, testing, and handover. We focus on getting the fundamentals right. Proper cable sizing, correct protection coordination, compliant earthing systems, and clear documentation that your maintenance team can actually use.
+                At Touch Teq Engineering, we handle industrial electrical work from design through to installation, testing, and handover. We focus on getting the fundamentals right. Proper cable sizing, correct protection coordination, practical earthing systems, and clear documentation that your maintenance team can actually use.
               </p>
               <p>
                 We are registered with ECSA as a Professional Technologist in Electrical Engineering. That means every project carries the accountability of a qualified professional, not a general contractor working outside their scope.
@@ -346,7 +346,7 @@ export default function ElectricalEngineeringPage() {
               </h2>
               
               <p className="text-slate-600 text-lg leading-relaxed mb-10 font-medium">
-                Our electrical engineering work covers a broad range of industrial systems. We help clients keep their electrical infrastructure safe, compliant, and fit for purpose.
+                Our electrical engineering work covers a broad range of industrial systems. We help clients keep their electrical infrastructure safe, reliable, and fit for purpose.
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -372,12 +372,12 @@ export default function ElectricalEngineeringPage() {
         </div>
       </section>
 
-      {/* Section 4: Standards & Compliance */}
+      {/* Section 4: Standards & Documentation */}
       <section className="py-24 bg-[#1A2B4C] text-white">
         <div className="container mx-auto px-4 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Compliance & Standards</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Standards & Documentation</span>
               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Electrical Systems <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Designed and Installed</span> <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">to the Right Standards</span>

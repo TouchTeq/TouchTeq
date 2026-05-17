@@ -19,7 +19,7 @@ import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 const principles = [
   {
     title: "Technical Rigour Over Shortcuts",
-    description: "We do not take shortcuts in engineering. Every design is checked. Every installation is tested. Every document is reviewed before it leaves our hands. When we sign off on a piece of work, it meets the standard. Not approximately, not close enough, but fully compliant and technically defensible. This is not negotiable, regardless of schedule pressure or budget constraints."
+    description: "We do not take shortcuts in engineering. Every design is checked. Every installation is tested. Every document is reviewed before it leaves our hands. When we sign off on a piece of work, it must be clear, technically defensible, and ready for review. This is not negotiable, regardless of schedule pressure or budget constraints."
   },
   {
     title: "Direct Accountability",
@@ -31,7 +31,7 @@ const principles = [
   },
   {
     title: "Honest Communication",
-    description: "We tell our clients what they need to hear, not what they want to hear. If a timeline is unrealistic, we say so. If an existing installation is non-compliant, we document it clearly and recommend the corrective action. If a scope of work is outside our capability, we are upfront about it. Trust is built on honesty, and we would rather have a difficult conversation early than deliver a compromised result later."
+    description: "We tell our clients what they need to hear, not what they want to hear. If a timeline is unrealistic, we say so. If an existing installation has technical gaps, we document them clearly and recommend the corrective action. If a scope of work is outside our capability, we are upfront about it. Trust is built on honesty, and we would rather have a difficult conversation early than deliver a compromised result later."
   },
   {
     title: "Completeness",
@@ -152,7 +152,7 @@ const industries = [
 const advantages = [
   {
     title: "Exclusive Industrial Focus",
-    description: "We work in one market: high-risk industrial environments. We do not spread our resources across commercial, residential, and industrial projects. That singular focus means our entire team, our entire knowledge base, and our entire operational capability is concentrated on the work that matters to industrial clients."
+    description: "We work in one market: high-risk industrial environments. That singular focus means our entire team, our entire knowledge base, and our entire operational capability is concentrated on the work that matters to industrial clients."
   },
   {
     title: "Engineer-Led Delivery",
@@ -351,16 +351,16 @@ export default function AboutPage() {
               className="space-y-6 text-slate-600 text-lg leading-relaxed font-medium text-left"
             >
               <p>
-                Touch Teq Engineering was established to address a specific problem in the Southern African industrial market. Too many facilities were struggling to find engineering partners who genuinely understood the technical and regulatory demands of high-risk environments. General electrical contractors could pull cables, but they could not design a fire and gas detection layout or carry out a hazardous area classification. Large multinational consultancies could produce engineering documents, but they often lacked the practical site experience to ensure those designs translated into installations that actually worked.
+                Touch Teq Engineering exists for industrial facilities that need engineering partners who understand the technical and regulatory demands of high-risk environments. General electrical contractors may be able to pull cables, but specialist systems such as fire and gas detection layouts and hazardous area classification require focused engineering judgement. Large multinational consultancies can produce engineering documents, but practical site experience is what helps those designs translate into installations that actually work.
               </p>
               <p>
-                We set out to bridge that gap. Touch Teq is a specialist engineering firm that works exclusively in industrial environments. Refineries, chemical plants, mines, fuel storage facilities, power stations, and processing operations. We do not take on residential projects. We do not do commercial fit-outs. Every project we deliver, every engineer we employ, and every capability we develop is focused on the systems that protect people and keep industrial operations running safely.
+                We set out to bridge that gap. Touch Teq is a specialist engineering firm that works in industrial environments: refineries, chemical plants, mines, fuel storage facilities, power stations, and processing operations. Every project we deliver, every engineer we employ, and every capability we develop is focused on the systems that protect people and keep industrial operations running safely.
               </p>
               <p>
-                Our scope covers three core technical disciplines: fire and gas detection, control and instrumentation, and industrial electrical engineering. Within those disciplines, we provide the full range of services from front-end design and hazardous area classification through to equipment procurement, installation, commissioning, and ongoing maintenance. This means our clients deal with one engineering team that understands the entire lifecycle of the systems they depend on, not a fragmented chain of subcontractors passing responsibility from one to the next.
+                Our scope covers three core technical disciplines: fire and gas detection, control and instrumentation, and industrial electrical engineering. Within those disciplines, we provide the full range of services from front-end design and hazardous area classification through to equipment procurement, sales support, installation, commissioning, and ongoing maintenance. This means our clients deal with one engineering team that understands the entire lifecycle of the systems they depend on, not a fragmented chain of subcontractors passing responsibility from one to the next.
               </p>
               <p>
-                We are not the largest engineering company in the region, and we have no interest in trying to be. What we are is technically deep, operationally focused, and directly accountable for the quality of every piece of work that carries our name.
+                We are technically focused, operationally practical, and directly accountable for the quality of every piece of work that carries our name.
               </p>
             </motion.div>
           </div>

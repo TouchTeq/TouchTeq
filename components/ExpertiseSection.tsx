@@ -49,24 +49,6 @@ export default function ExpertiseSection() {
                 referrerPolicy="no-referrer"
               />
             </motion.div>
-              
-            {/* Experience Box Overlay - Positioned on top of the image container */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, x: -30 }}
-              whileInView={{ opacity: 1, scale: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="absolute top-12 left-0 md:-left-12 z-20 bg-[#ff6900] p-6 md:p-10 shadow-2xl rounded-lg max-w-[160px] md:max-w-[240px]"
-            >
-              <div className="text-white">
-                <span className="text-4xl md:text-5xl lg:text-7xl font-black block mb-2 tracking-normal">10<span className="text-2xl md:text-3xl lg:text-4xl">+</span></span>
-                <p className="text-[10px] md:text-xs lg:text-sm font-black uppercase tracking-[0.15em] md:tracking-[0.2em] leading-tight">
-                  Years <br />
-                  Engineering <br />
-                  Experience
-                </p>
-              </div>
-            </motion.div>
           </div>
 
           {/* Right Side: Content */}
@@ -80,7 +62,7 @@ export default function ExpertiseSection() {
               <div className="flex items-center space-x-2 mb-4">
                 <div className="h-1.5 w-1.5 bg-[#ff6900] rounded-full"></div>
                 <span className="text-[#ff6900] font-mono text-xs font-bold uppercase tracking-[0.3em]">
-                  Touch Teq • Certified Engineering Experts
+                  Touch Teq • Experienced Engineering Experts
                 </span>
               </div>
               
@@ -90,7 +72,7 @@ export default function ExpertiseSection() {
               </h2>
               
               <p className="text-slate-600 text-lg leading-relaxed mb-10">
-                Touch Teq Engineering provides fire & gas detection, control and instrumentation, and electrical engineering solutions for industrial facilities where reliability and compliance are critical. Every project is handled directly by a qualified engineer, ensuring clear communication, accountable decision-making, and consistent quality from design through support, backed by 24/7 emergency service.
+                Touch Teq Engineering provides fire & gas detection, automation, control and instrumentation, and electrical engineering solutions for industrial facilities where reliability and operational safety are critical. Every project is handled directly by a qualified engineer, ensuring clear communication, accountable decision-making, and consistent quality from design through support, backed by 24/7 emergency service.
               </p>
 
               {/* Checklist */}
@@ -121,7 +103,7 @@ export default function ExpertiseSection() {
                 transition={{ delay: 0.7 }}
                 className="text-slate-500 text-sm italic mb-12 border-l-2 border-slate-100 pl-6"
               >
-                We deliver practical, compliant engineering solutions that protect people, assets, and operations—without unnecessary complexity.
+                We deliver practical engineering solutions that protect people, assets, and operations—without unnecessary complexity.
               </motion.p>
 
               {/* CTA Button */}

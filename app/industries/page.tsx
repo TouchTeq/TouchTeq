@@ -197,8 +197,8 @@ const challenges = [
     description: "P&IDs that do not match what is installed. Loop drawings that were never updated. We recover, verify, and update plant documentation through site walkdowns and systematic record correction."
   },
   {
-    title: "Non-Compliant Equipment in Classified Hazardous Areas",
-    description: "Equipment that does not carry the correct explosion protection rating is an ignition source. We conduct equipment gap analyses and provide prioritised remediation plans."
+    title: "Equipment Gaps in Classified Hazardous Areas",
+    description: "Equipment that does not carry the correct explosion protection rating can become an ignition source. We conduct equipment gap analyses and provide prioritised remediation plans."
   },
   {
     title: "Aging Systems Approaching End of Life",
@@ -213,15 +213,15 @@ const challenges = [
 const advantages = [
   {
     title: "Exclusive Industrial Focus",
-    description: "We do not divide our attention between residential, commercial, and industrial projects. Every engineer on our team works in high-risk industrial environments every day."
+    description: "Our focus is industrial work. Every engineer on our team works in high-risk industrial environments every day."
   },
   {
     title: "We Cover the Full Technical Scope",
     description: "Fire and gas detection, control and instrumentation, electrical engineering, hazardous area classification, design, installation, commissioning, and maintenance under one roof."
   },
   {
-    title: "Compliance Is Built In, Not Bolted On",
-    description: "Our engineering process ensures every deliverable meets applicable standards, regulations, and client specifications from the start."
+    title: "Documentation Is Built In, Not Bolted On",
+    description: "Our engineering process keeps deliverables aligned with applicable standards, regulations, and client specifications from the start."
   },
   {
     title: "We Understand Your Procurement and Safety Requirements",

@@ -26,7 +26,7 @@ const services = [
   },
   {
     title: "PLC & Control System Upgrades",
-    description: "We upgrade outdated or unsupported control systems to improve reliability, reduce downtime, and make maintenance easier for your team."
+    description: "We upgrade outdated or unsupported control systems to improve reliability, reduce downtime, and make maintenance easier for your team, with SUPCON partnership support where it fits the project."
   },
   {
     title: "Instrumentation Installation",
@@ -135,7 +135,7 @@ export default function ControlAndInstrumentationPage() {
       />
       <ServiceJsonLd 
         name="Control & Instrumentation Engineering"
-        description="Design, installation, and maintenance of industrial control and instrumentation systems. PLC upgrades, calibration, and loop testing across Southern Africa."
+        description="Design, installation, and maintenance of industrial control, instrumentation, and automation systems. PLC upgrades, calibration, loop testing, and SUPCON partnership support across Southern Africa."
         url="https://touchteq.co.za/services/control-and-instrumentation"
         serviceType={[
           'Control Engineering', 
@@ -195,7 +195,7 @@ export default function ControlAndInstrumentationPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              We design, install, upgrade, and maintain control and instrumentation systems for industrial facilities across Southern Africa. Our work helps clients improve reliability, process visibility, and operational safety.
+              We design, install, upgrade, and maintain automation, control and instrumentation systems for industrial facilities across Southern Africa. Our SUPCON partnership support helps clients improve reliability, process visibility, and operational safety.
             </motion.p>
             
             <motion.div
@@ -260,7 +260,7 @@ export default function ControlAndInstrumentationPage() {
                 Good control and instrumentation systems are essential for stable plant performance. They help operators monitor critical processes, respond quickly to issues, and keep production running safely and efficiently.
               </p>
               <p>
-                At Touch Teq Engineering, we provide practical control and instrumentation solutions for high-risk industrial environments. We work on new installations, system upgrades, fault finding, and plant improvements. Our focus is simple. Build systems that are reliable, easy to maintain, and suited to the real conditions on site.
+                At Touch Teq Engineering, we provide practical automation, control and instrumentation solutions for high-risk industrial environments. We work on new installations, system upgrades, fault finding, and plant improvements. Our focus is simple. Build systems that are reliable, easy to maintain, and suited to the real conditions on site.
               </p>
               <p>
                 We work directly with engineering teams, operations teams, and maintenance teams to make sure the final solution is clear, workable, and properly documented.
@@ -315,10 +315,10 @@ export default function ControlAndInstrumentationPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1A2B4C]/80 to-transparent"></div>
                 <div className="absolute bottom-10 left-10 right-10">
                   <div className="bg-orange-500 inline-block px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest mb-4">
-                    Plant Monitoring
+                    SUPCON Partnership
                   </div>
                   <h4 className="text-white text-2xl font-black uppercase tracking-normal">
-                    Support for Critical Plant Monitoring and Control
+                    Support for Critical Plant Automation and Control
                   </h4>
                 </div>
               </div>

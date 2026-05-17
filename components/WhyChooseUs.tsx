@@ -13,13 +13,13 @@ const reasons = [
   },
   {
     icon: ClipboardCheck,
-    title: "Compliance & Standards",
-    description: "We design, supply, and commission systems that meet IEC 61511, SANS 10089, IECEx, and ATEX requirements. Our solutions are built for audits, inspections, and long-term regulatory confidence."
+    title: "Technical Partnerships",
+    description: "We work with specialist technology partners including SUPCON and GDSCorp to support dependable automation, gas detection, and flame detection solutions for industrial environments."
   },
   {
     icon: Briefcase,
     title: "Industry Experience",
-    description: "With 10+ years of hands-on experience in refineries, chemical plants, and heavy industry, I understand the unique challenges of hazardous environments and deliver solutions that work."
+    description: "With hands-on experience in refineries, chemical plants, and heavy industry, I understand the unique challenges of hazardous environments and deliver solutions that work."
   },
   {
     icon: FileBadge,
@@ -81,7 +81,7 @@ export default function WhyChooseUs() {
               transition={{ delay: 0.2 }}
               className="text-slate-300 text-sm md:text-base leading-relaxed font-medium max-w-xl"
             >
-              Touch Teq delivers specialist fire & gas detection, control & instrumentation, as well as electrical engineering, with a hands-on, engineer-led approach. Every project is handled directly by a qualified professional—ensuring clear communication, technical precision, and accountability from design through commissioning.
+              Touch Teq delivers specialist fire & gas detection, automation, control & instrumentation, as well as electrical engineering, with a hands-on, engineer-led approach. Every project is handled directly by a qualified professional—ensuring clear communication, technical precision, and accountability from design through commissioning.
             </motion.p>
           </div>
 

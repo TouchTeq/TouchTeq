@@ -27,7 +27,7 @@ export default function ServicesLayout({
             'Control and Instrumentation Engineering',
             'Hazardous Area Classification',
             'SIL Assessment',
-            'IEC 61511 Compliance',
+            'Technical Documentation Support',
             'Industrial Electrical Engineering',
           ],
           areaServed: [

@@ -26,11 +26,11 @@ const industries = [
     title: "Process Industry",
     href: "/industries",
     categories: "Oil & Gas | Chemical & Petrochemical | Pharmaceutical | Food & Beverage",
-    description: "Hazardous area-compliant fire & gas detection, SIL-rated safety systems, and process control solutions for refineries, chemical plants, pharmaceutical, and food & beverage facilities across Southern Africa.",
+    description: "Hazardous area fire & gas detection, safety system support, and process control solutions for refineries, chemical plants, pharmaceutical, and food & beverage facilities across Southern Africa.",
     image: "/industrial-oil-refinery.jpeg",
     bullets: [
       "Hazardous area compliance (ATEX/IECEx)",
-      "SIL-rated safety systems (IEC 61511)",
+      "Safety system support",
       "Batch and continuous control",
       "REGULATORY COMPLIANCE (OHS ACT & SANS STANDARDS)"
     ]

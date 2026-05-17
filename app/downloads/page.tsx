@@ -22,7 +22,7 @@ const resources = [
     id: 2,
     title: 'Fire & Gas Audit Checklist',
     filename: 'FG_Audit_Checklist.docx',
-    description: 'A detailed audit checklist for fire and gas detection systems. Includes detector maintenance records, panel inspection points, loop testing procedures, and compliance verification for SANS 10089 requirements.',
+    description: 'A detailed audit checklist for fire and gas detection systems. Includes detector maintenance records, panel inspection points, loop testing procedures, and documentation checks for SANS 10089 requirements.',
     icon: FileText,
     tag: 'Fire & Gas'
   },
@@ -340,7 +340,7 @@ export default function DownloadsPage() {
                 transition={{ delay: 0.1 }}
                 className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
               >
-                Our technical resources are free because we believe in empowering the industry. When you're ready for a tailored engineering solution, our team is here to help.
+                Our technical resources are free because we believe in empowering the industry. When you&apos;re ready for a tailored engineering solution, our team is here to help.
               </motion.p>
               
               <motion.div

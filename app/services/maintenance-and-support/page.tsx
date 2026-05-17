@@ -274,7 +274,7 @@ export default function MaintenanceAndSupportPage() {
 
             <div className="space-y-6 text-slate-600 text-lg leading-relaxed font-medium">
               <p>
-                In a high-risk industrial environment, a system failure is more than just an inconvenience. It is a safety risk and a potential production disaster. Fire and gas detection, control systems, and electrical infrastructure require regular, professional attention to remain reliable and compliant.
+                In a high-risk industrial environment, a system failure is more than just an inconvenience. It is a safety risk and a potential production disaster. Fire and gas detection, control systems, and electrical infrastructure require regular, professional attention to remain reliable and properly documented.
               </p>
               <p>
                 At Touch Teq Engineering, we don&apos;t just install systems and walk away. We provide the ongoing technical support needed to keep your facility running safely. Our maintenance programs are designed to identify potential issues before they cause a shutdown, ensuring your safety-critical systems are ready to perform when they are needed most.

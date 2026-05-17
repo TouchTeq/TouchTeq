@@ -5,8 +5,8 @@ import { Flame, Cpu, Zap, AlertTriangle, Settings, ArrowUpRight, CheckCircle2, S
 import Link from 'next/link';
 
 const trustSignals = [
-  { icon: ShieldCheck, title: "IEC 61511 & SANS 10089", subtitle: "Compliant" },
-  { icon: Award, title: "OEM-Approved", subtitle: "Equipment" },
+  { icon: ShieldCheck, title: "GDSCorp", subtitle: "Detection Partner" },
+  { icon: Award, title: "SUPCON", subtitle: "Automation Partner" },
   { icon: Clock, title: "24/7 Emergency", subtitle: "Support" },
   { icon: Globe, title: "Regional & Cross-Border", subtitle: "Service" },
 ];
@@ -15,8 +15,8 @@ const services = [
   {
     title: "Fire & Gas Detection",
     icon: Flame,
-    description: "Advanced flame and gas detection systems engineered for hazardous industrial environments. We deliver compliant, reliable solutions from design through commissioning.",
-    features: ["System Design & Layout Studies", "SPECTREX Optical Monitoring", "Compliance Verification"],
+    description: "Advanced flame and gas detection systems engineered for hazardous industrial environments. We partner with GDSCorp to provide reliable gas and flame detection solutions from design through commissioning.",
+    features: ["System Design & Layout Studies", "Gas & Flame Detection Solutions", "GDSCorp Partnership"],
     color: "orange",
     href: "/services/fire-and-gas-detection"
   },
@@ -24,7 +24,7 @@ const services = [
     title: "Control & Instrumentation",
     icon: Cpu,
     description: "Complete automation solutions including PLC programming, SCADA systems, and process control optimization for high-risk facilities.",
-    features: ["PLC Programming & Configuration", "Flow, Pressure & Level Instruments", "Process Analytics (pH, O2)"],
+    features: ["PLC Programming & Configuration", "Flow, Pressure & Level Instruments", "SUPCON Partnership"],
     color: "navy",
     href: "/services/control-and-instrumentation"
   },
@@ -105,7 +105,7 @@ export default function ServicesSection() {
             transition={{ delay: 0.2 }}
             className="text-slate-500 text-base md:text-lg leading-relaxed max-w-2xl font-medium"
           >
-            Specialist fire & gas, control and instrumentation, and electrical engineering services designed for regulated industrial operations across Southern Africa.
+            Specialist fire & gas, automation, control and instrumentation, and electrical engineering services designed for regulated industrial operations across Southern Africa.
           </motion.p>
         </div>
 

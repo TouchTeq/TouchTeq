@@ -390,7 +390,7 @@ export default function InsightsPage() {
               className="text-3xl md:text-5xl font-black uppercase tracking-tight mb-8 text-white"
             >
               Is Your Facility <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Compliant and Safe?</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Documented and Safe?</span>
             </motion.h2>
 
             <motion.p
@@ -635,7 +635,7 @@ export default function InsightsPage() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="text-5xl md:text-7xl font-black text-white uppercase tracking-tight leading-[0.85] mb-10"
             >
-              Have a Technical Question <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">We Haven't Covered?</span>
+              Have a Technical Question <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">We Haven&apos;t Covered?</span>
             </motion.h2>
 
             <motion.p

@@ -48,7 +48,7 @@ const services = [
   },
   {
     title: "Drafting and CAD Services",
-    description: "Our drafting capability supports the production of clear, accurate, and standards-compliant technical drawings, including 2D layouts, single-line diagrams, P&IDs, and equipment location plans."
+    description: "Our drafting capability supports the production of clear, accurate technical drawings, including 2D layouts, single-line diagrams, P&IDs, and equipment location plans."
   },
   {
     title: "Reverse Engineering and Legacy Plant Documentation",

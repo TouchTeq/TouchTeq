@@ -149,23 +149,19 @@ export default function Header() {
       <nav className={`transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-2 md:py-3' : 'bg-white/90 backdrop-blur-sm py-3 md:py-4'} border-b border-slate-200 h-16 md:h-24`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 flex items-center justify-between h-full">
           {/* LEFT — Logo */}
-          <Link href="/" className="flex items-center space-x-2 group flex-shrink-0 mr-4 lg:mr-8 lg:-ml-[6%] min-w-0">
+          <Link href="/" className="flex items-center group flex-shrink-0 mr-4 lg:mr-8 min-w-0" aria-label="Touch Teq Engineering home">
             <Image 
               src="/TT-logo-orange-trans.png" 
               alt="Touch Teq Engineering" 
-              width={180}
-              height={50}
-              className="h-8 w-auto sm:h-10 md:h-12"
+              width={64}
+              height={64}
+              className="h-9 w-auto sm:h-11 md:h-14"
               priority
             />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[#1A2B4C] font-black text-xs sm:text-lg md:text-xl leading-none tracking-normal uppercase group-hover:text-orange-500 transition-colors whitespace-nowrap">Touch Teq</span>
-              <span className="text-orange-500 text-[6px] sm:text-[8px] md:text-[10px] font-bold tracking-[0.28em] sm:tracking-[0.35em] md:tracking-[0.5em] uppercase whitespace-nowrap">Engineering</span>
-            </div>
           </Link>
 
           {/* CENTER — Desktop Nav Links */}
-          <div className="hidden lg:flex items-center gap-8 xl:gap-10 mx-auto">
+          <div className="hidden xl:flex items-center gap-8 mx-auto">
             {navItems.map((item) => (
               <div key={item.name} className="relative group/item flex items-center h-full">
                 {item.dropdown ? (
@@ -225,7 +221,7 @@ export default function Header() {
           </div>
 
           {/* RIGHT — Search + CTA */}
-          <div className="hidden lg:flex items-center space-x-4 ml-8 flex-shrink-0">
+          <div className="hidden xl:flex items-center space-x-4 ml-8 flex-shrink-0">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -244,7 +240,7 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Toggle */}
-          <div className="flex items-center space-x-2 sm:space-x-4 lg:hidden">
+          <div className="flex items-center space-x-2 sm:space-x-4 xl:hidden">
             <button
               onClick={() => setIsSearchOpen(true)}
               aria-label="Open site search"
@@ -270,7 +266,7 @@ export default function Header() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`fixed left-0 right-0 bottom-0 z-40 bg-white lg:hidden flex flex-col px-5 sm:px-8 pt-6 pb-8 overflow-y-auto ${isScrolled ? 'top-16' : 'top-[100px]'}`}
+            className={`fixed left-0 right-0 bottom-0 z-40 bg-white xl:hidden flex flex-col px-5 sm:px-8 pt-6 pb-8 overflow-y-auto ${isScrolled ? 'top-16' : 'top-[100px]'}`}
           >
             <div className="flex flex-col space-y-5">
               {navItems.map((item, index) => (
