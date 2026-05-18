@@ -17,7 +17,7 @@ export default function ServiceJsonLd({
   url,
   serviceType,
   areaServed = ['South Africa', 'Mozambique', 'Botswana', 'Namibia', 'Zimbabwe'],
-  image = 'https://touchteq.co.za/TT-logo-orange-trans.png'
+  image = 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg'
 }: ServiceJsonLdProps) {
   return (
     <JsonLd
@@ -42,3 +42,4 @@ export default function ServiceJsonLd({
     />
   );
 }
+

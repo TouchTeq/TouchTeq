@@ -33,7 +33,7 @@ export const metadata: Metadata = {
       'Touch Teq Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: [
       {
-        url: '/TT-logo-orange-trans.png',
+        url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
         alt: 'Touch Teq Engineering',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'About Touch Teq Engineering | Specialist Fire & Gas Detection Engineering',
     description:
       'Touch Teq Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
-    images: ['/TT-logo-orange-trans.png'],
+    images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },
   robots: {
@@ -64,3 +64,4 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children;
 }
+

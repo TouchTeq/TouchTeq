@@ -57,18 +57,14 @@ export default function Footer() {
               transition={{ delay: 0.1 }}
               className="space-y-8"
             >
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center">
                 <Image 
-                  src="/TT-logo-orange-trans.png" 
+                  src="/touch-teq-logo-wordmark.jpeg" 
                   alt="Touch Teq Engineering" 
-                  width={180}
-                  height={50}
-                  className="h-12 w-auto"
+                  width={454}
+                  height={65}
+                  className="h-10 md:h-12 w-auto"
                 />
-                <div className="flex flex-col">
-                  <span className="text-white font-black text-xl leading-none tracking-normal uppercase">Touch Teq</span>
-                  <span className="text-orange-500 text-[10px] font-bold tracking-[0.5em] uppercase">Engineering</span>
-                </div>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
                 Specialist fire & gas detection, control & instrumentation, and electrical engineering for industrial facilities across Southern Africa.

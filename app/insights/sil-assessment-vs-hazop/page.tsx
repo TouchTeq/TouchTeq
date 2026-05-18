@@ -126,7 +126,7 @@ const articleJsonLd = {
   publisher: {
     '@type': 'Organization',
     name: 'Touch Teq Engineering Services',
-    logo: 'https://touchteq.co.za/TT-logo-orange-trans.png',
+    logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
@@ -397,3 +397,4 @@ export default function SILHAZOPInsightsDetailPage() {
     </main>
   );
 }
+

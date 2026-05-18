@@ -33,7 +33,7 @@ export const metadata: Metadata = {
       'Practical articles and regulatory updates written by engineers who work in the same environments you manage. No filler. No generic safety advice. Content that is relevant to the decisions you make and the standards you are held to.',
     images: [
       {
-        url: '/TT-logo-orange-trans.png',
+        url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
         alt: 'Touch Teq Engineering',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'Technical Insights for Industrial Engineers | Touch Teq Engineering',
     description:
       'Practical articles and regulatory updates written by engineers who work in the same environments you manage. No filler. No generic safety advice. Content that is relevant to the decisions you make and the standards you are held to.',
-    images: ['/TT-logo-orange-trans.png'],
+    images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },
   robots: {
@@ -64,3 +64,4 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children;
 }
+

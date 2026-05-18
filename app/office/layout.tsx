@@ -677,22 +677,22 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                   {/* Logo Area */}
                   <div className={`flex items-center justify-between border-b border-slate-800/50 flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'p-4 justify-center' : 'p-5 gap-3'}`}>
                     <div className="flex items-center gap-3">
-                      <div className={`relative overflow-hidden flex-shrink-0 ${isCollapsed ? 'w-9 h-9' : 'w-10 h-10'}`}>
+                      <div className={`relative overflow-hidden flex-shrink-0 ${isCollapsed ? 'w-9 h-9' : 'w-28 h-10'}`}>
                         {logoUrl ? (
                           <Image
                             src={logoUrl}
                             alt="Logo"
                             fill
-                            sizes={isCollapsed ? '36px' : '40px'}
+                            sizes={isCollapsed ? '36px' : '112px'}
                             className="object-contain"
                           />
                         ) : (
                           <Image
-                            src="/TT-logo-orange-trans.png"
+                            src="/touch-teq-logo-wordmark.jpeg"
                             alt="TouchTeq Logo"
                             fill
-                            sizes={isCollapsed ? '36px' : '40px'}
-                            className="object-contain rounded"
+                            sizes={isCollapsed ? '36px' : '112px'}
+                            className="object-contain"
                           />
                         )}
                       </div>

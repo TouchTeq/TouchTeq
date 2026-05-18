@@ -148,7 +148,7 @@ export default function ControlAndInstrumentationPage() {
       <OrganizationJsonLd 
         name="Touch Teq Engineering"
         url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/logo.png"
+        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />
@@ -585,3 +585,4 @@ export default function ControlAndInstrumentationPage() {
     </main>
   );
 }
+

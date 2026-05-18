@@ -49,9 +49,9 @@ export default function LoginPage() {
         <div className="bg-[#151B28] border border-slate-800/50 p-8 md:p-10 shadow-2xl relative z-10">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-10 text-center">
-            <div className="w-20 h-20 relative mb-6">
+            <div className="w-64 h-10 relative mb-6">
               <Image 
-                src="/logo.png" 
+                src="/touch-teq-logo-wordmark.jpeg" 
                 alt="TouchTeq Logo" 
                 fill 
                 className="object-contain"

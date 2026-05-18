@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation across Southern Africa.',
     images: [
       {
-        url: '/TT-logo-orange-trans.png',
+        url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
         alt: 'Touch Teq Engineering',
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Touch Teq | Specialist Fire & Gas Detection Engineering',
     description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation across Southern Africa.',
-    images: ['/TT-logo-orange-trans.png'],
+    images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },
   robots: {
@@ -97,8 +97,8 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               name: 'Touch Teqniques Engineering Services',
               alternateName: 'Touch Teq Engineering',
               url: 'https://touchteq.co.za',
-              logo: 'https://touchteq.co.za/TT-logo-orange-trans.png',
-              image: 'https://touchteq.co.za/TT-logo-orange-trans.png',
+              logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+              image: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
               description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation in safety-critical industrial environments across Southern Africa.',
               address: {
                 '@type': 'PostalAddress',
@@ -201,3 +201,4 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     </html>
   );
 }
+

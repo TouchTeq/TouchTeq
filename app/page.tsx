@@ -25,7 +25,7 @@ export default function Home() {
       <OrganizationJsonLd 
         name="Touch Teq Engineering"
         url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/logo.png"
+        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
         address={{
           streetAddress: '787 16th Rd',
@@ -145,3 +145,4 @@ export default function Home() {
     </main>
   );
 }
+

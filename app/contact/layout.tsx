@@ -33,7 +33,7 @@ export const metadata: Metadata = {
       'Contact Touch Teq Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: [
       {
-        url: '/TT-logo-orange-trans.png',
+        url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
         alt: 'Touch Teq Engineering',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'Contact Touch Teq Engineering | Get in Touch With Our Engineering Team',
     description:
       'Contact Touch Teq Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
-    images: ['/TT-logo-orange-trans.png'],
+    images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },
   robots: {
@@ -64,3 +64,4 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children;
 }
+

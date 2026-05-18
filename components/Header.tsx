@@ -146,22 +146,22 @@ export default function Header() {
       </div>
 
       {/* Main Navigation */}
-      <nav className={`transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-2 md:py-3' : 'bg-white/90 backdrop-blur-sm py-3 md:py-4'} border-b border-slate-200 h-16 md:h-24`}>
+      <nav className={`transition-all duration-300 ${isScrolled ? 'bg-[#F7F7F7] shadow-lg py-2 md:py-3' : 'bg-[#F7F7F7] py-3 md:py-4'} border-b border-slate-200 h-16 md:h-24`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 flex items-center justify-between h-full">
           {/* LEFT — Logo */}
-          <Link href="/" className="flex items-center group flex-shrink-0 mr-4 lg:mr-8 min-w-0" aria-label="Touch Teq Engineering home">
+          <Link href="/" className="flex items-center group flex-shrink-0 mr-3 lg:mr-5 min-w-0" aria-label="Touch Teq Engineering home">
             <Image 
-              src="/TT-logo-orange-trans.png" 
+              src="/touch-teq-logo-wordmark.jpeg" 
               alt="Touch Teq Engineering" 
-              width={64}
-              height={64}
-              className="h-9 w-auto sm:h-11 md:h-14"
+              width={454}
+              height={65}
+              className="h-7 w-auto sm:h-8 md:h-9"
               priority
             />
           </Link>
 
           {/* CENTER — Desktop Nav Links */}
-          <div className="hidden xl:flex items-center gap-8 mx-auto">
+          <div className="hidden xl:flex items-center gap-6 mx-auto">
             {navItems.map((item) => (
               <div key={item.name} className="relative group/item flex items-center h-full">
                 {item.dropdown ? (
@@ -221,19 +221,19 @@ export default function Header() {
           </div>
 
           {/* RIGHT — Search + CTA */}
-          <div className="hidden xl:flex items-center space-x-4 ml-8 flex-shrink-0">
+          <div className="hidden xl:flex items-center space-x-3 ml-5 flex-shrink-0">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsSearchOpen(true)}
               aria-label="Open site search"
-              className="p-2 text-[#1A2B4C] hover:text-orange-500 transition-colors flex-shrink-0"
+              className="p-1.5 text-[#1A2B4C] hover:text-orange-500 transition-colors flex-shrink-0"
             >
-              <Search size={18} />
+              <Search size={17} />
             </motion.button>
             <Link 
               href="/contact#request-quote" 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-md font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 whitespace-nowrap flex-shrink-0"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-md font-black text-[11px] uppercase tracking-[0.14em] transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95 whitespace-nowrap flex-shrink-0"
             >
               Request a Consultation
             </Link>
