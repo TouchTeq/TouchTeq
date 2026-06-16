@@ -722,7 +722,7 @@ export default function AboutPage() {
               transition={{ delay: 0.2 }}
               className="max-w-4xl mx-auto text-slate-600 text-lg leading-relaxed font-medium mb-12"
             >
-              Touch Teqniques Engineering is headquartered in [City, South Africa], strategically located to serve the major industrial corridors in Gauteng, Mpumalanga, and KwaZulu-Natal. Our project footprint, however, extends well beyond our home base. 
+              Touch Teqniques Engineering is headquartered in Johannesburg, South Africa, strategically located to serve the major industrial corridors in Gauteng, Mpumalanga, and KwaZulu-Natal. Our project footprint, however, extends well beyond our home base. 
               <br /><br />
               We have delivered engineering, installation, and maintenance services at industrial facilities across Southern Africa, including cross-border projects in Mozambique, Botswana, Namibia, and Zimbabwe. We manage the logistics, permits, regulatory requirements, and site access protocols involved in working across borders as a standard part of our project delivery. Our regional clients receive the same engineering standard, the same documentation quality, and the same level of direct accountability as our South African clients.
             </motion.p>

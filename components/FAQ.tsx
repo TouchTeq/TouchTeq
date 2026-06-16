@@ -16,7 +16,7 @@ export const faqs = [
   {
     question: 'Do your systems meet international safety standards?',
     answer:
-      'Yes. Our engineering and supply scope is aligned to the relevant South African and international standards for the application, including IEC 61511, IEC 60079, SANS requirements, and ATEX or IECEx equipment frameworks where applicable.',
+      'Yes. Our engineering and supply scope is aligned to the relevant South African and international standards for the application, covering functional safety, hazardous area equipment certification, and local regulatory requirements where applicable.',
   },
   {
     question: 'What industries do you work with?',

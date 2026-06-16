@@ -150,7 +150,7 @@ const faqs = [
   },
   {
     q: "Why is HAC a legal requirement in South Africa?",
-    a: "Under the OHS Act and Electrical Installation Regulations, employers must ensure electrical equipment in explosive atmospheres is suitable. SANS 10108 provides the framework for this. Failing to classify your facility puts you in breach of these requirements."
+    a: "South African health and safety legislation requires employers to ensure electrical equipment in explosive atmospheres is suitable for the environment. A formal hazardous area classification is the recognised method for demonstrating that compliance. Failing to classify your facility puts you in breach of these requirements."
   },
   {
     q: "How often should we review or update our classification?",

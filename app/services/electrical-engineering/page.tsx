@@ -115,7 +115,7 @@ const faqs = [
   },
   {
     q: "Can you work in hazardous areas?",
-    a: "Yes. We carry out electrical installations in ATEX and IECEx classified hazardous areas. This includes correct equipment selection, proper cable gland terminations, and the inspection documentation required for compliance."
+    a: "Yes. We carry out electrical installations in certified hazardous areas, including correct equipment selection, proper cable gland terminations, and the inspection documentation required for compliance."
   },
   {
     q: "Do you provide electrical maintenance services?",

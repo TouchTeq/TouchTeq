@@ -80,7 +80,7 @@ const faqs = [
   },
   {
     q: "What standards apply to fire and gas detection in South Africa?",
-    a: "The primary standard for fire detection and alarm systems in South Africa is SANS 10139 (aligned with SANS 10400-T). For safety-instrumented fire and gas functions we design to IEC 61511, adopted locally as SANS 61511. In hazardous areas, equipment must comply with SANS 10108 and the SANS 60079 series, typically certified under IECEx."
+    a: "Fire and gas detection work in South Africa falls under several national and international standards covering fire detection systems, functional safety for safety-instrumented functions, and hazardous area equipment certification. We align our design and documentation to whichever standards apply to your facility and regulatory environment."
   },
   {
     q: "What industries do you serve?",
