@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/insights/iec-61511-plant-managers',
-    siteName: 'Touch Teq Engineering',
+    siteName: 'Touch Teqniques Engineering',
     title: 'Understanding IEC 61511: What Plant Managers in South Africa Need to Know',
     description:
       'IEC 61511 governs safety instrumented systems across South African process plants. Learn what plant managers need to know about SIL, SIS design, and OHS Act compliance.',

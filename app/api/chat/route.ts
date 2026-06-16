@@ -1536,7 +1536,7 @@ const tools = [
       {
         name: "navigateTo",
         description:
-          "Navigates to a specific section of the Touch Teq Office dashboard. Use when the user says 'go to dashboard', 'open clients', 'take me to reports', 'show expenses', etc.",
+          "Navigates to a specific section of the Touch Teqniques Engineering Office dashboard. Use when the user says 'go to dashboard', 'open clients', 'take me to reports', 'show expenses', etc.",
         parametersJsonSchema: {
           type: "object",
           properties: {

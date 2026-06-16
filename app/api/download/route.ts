@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     const recipientEmail = process.env.SALES_EMAIL || 'sales@touchteq.co.za';
 
     await sendTransactionalEmail({
-      to: [{ email: recipientEmail, name: 'Touch Teq Sales' }],
+      to: [{ email: recipientEmail, name: 'Touch Teqniques Engineering Sales' }],
       subject: `Resource Download: ${resourceName}`,
       htmlContent: `
         <div style="font-family: Arial, sans-serif; color: #334155; max-width: 680px; margin: 0 auto;">

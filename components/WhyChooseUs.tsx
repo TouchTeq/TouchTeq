@@ -9,7 +9,7 @@ const reasons = [
   {
     icon: PencilRuler,
     title: "Engineer-Led Projects",
-    description: "Every project is handled directly by a qualified engineer from start to finish—no subcontracting, no handoffs. You get consistent expertise, clear communication, and full accountability."
+    description: "Every project is handled directly by a qualified engineer from start to finish. You get consistent expertise, clear communication, and full accountability."
   },
   {
     icon: ClipboardCheck,
@@ -24,7 +24,7 @@ const reasons = [
   {
     icon: FileBadge,
     title: "Registered Professional Engineer",
-    description: "ECSA Pr Tech Eng (Electrical) and SAQCC Fire Industry registered. Every project is handled by a qualified professional, not subcontractors."
+    description: "ECSA Pr Tech Eng (Electrical) and SAQCC Fire Industry registered. Every project is handled by a qualified professional."
   },
   {
     icon: Clock,
@@ -81,7 +81,7 @@ export default function WhyChooseUs() {
               transition={{ delay: 0.2 }}
               className="text-slate-300 text-sm md:text-base leading-relaxed font-medium max-w-xl"
             >
-              Touch Teq delivers specialist fire & gas detection, automation, control & instrumentation, as well as electrical engineering, with a hands-on, engineer-led approach. Every project is handled directly by a qualified professional—ensuring clear communication, technical precision, and accountability from design through commissioning.
+              Touch Teqniques Engineering delivers specialist fire & gas detection, automation, control & instrumentation, as well as electrical engineering, with a hands-on, engineer-led approach. Every project is handled directly by a qualified professional, ensuring clear communication, technical precision, and accountability from design through commissioning.
             </motion.p>
           </div>
 
@@ -96,7 +96,7 @@ export default function WhyChooseUs() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10">
               <Image
                 src="/wcu.jpg"
-                alt="Touch Teq Engineering Team"
+                alt="Touch Teqniques Engineering Team"
                 width={800}
                 height={600}
                 className="object-cover"

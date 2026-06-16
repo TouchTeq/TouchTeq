@@ -1,4 +1,4 @@
-# SEO Audit Report — Touch Teq Engineering (touchteq.co.za)
+# SEO Audit Report — Touch Teqniques Engineering (touchteq.co.za)
 
 **Date:** March 30, 2026 (Updated)  
 **Auditor:** Cline AI SEO Specialist  
@@ -11,7 +11,7 @@
 
 **Overall SEO Health: STRONG (8.5/10)**
 
-Touch Teq Engineering has a well-optimized website with strong technical foundations, excellent content depth, and solid E-E-A-T signals. The site demonstrates professional engineering credibility with comprehensive service pages, detailed about page, and valuable insight articles.
+Touch Teqniques Engineering has a well-optimized website with strong technical foundations, excellent content depth, and solid E-E-A-T signals. The site demonstrates professional engineering credibility with comprehensive service pages, detailed about page, and valuable insight articles.
 
 ### Top 5 Priority Issues
 
@@ -119,11 +119,11 @@ Touch Teq Engineering has a well-optimized website with strong technical foundat
   Description: "Design, supply, install, and commission fire and gas detection systems for refineries, chemical plants, and mining operations across Southern Africa. IEC 61511 & SANS 10089 compliant."
 
 /about:
-  Title: "About Touch Teq Engineering | Specialist Industrial Engineering South Africa"
-  Description: "Learn about Touch Teq Engineering — a specialist industrial engineering firm delivering fire & gas detection, C&I, and electrical engineering across Southern Africa."
+  Title: "About Touch Teqniques Engineering | Specialist Industrial Engineering South Africa"
+  Description: "Learn about Touch Teqniques Engineering — a specialist industrial engineering firm delivering fire & gas detection, C&I, and electrical engineering across Southern Africa."
 
 /contact:
-  Title: "Contact Touch Teq Engineering | Get a Quote for Industrial Engineering Services"
+  Title: "Contact Touch Teqniques Engineering | Get a Quote for Industrial Engineering Services"
   Description: "Contact our engineering team for fire & gas detection, control & instrumentation, and electrical engineering services. 24/7 emergency support available across Southern Africa."
 ```
 
@@ -305,7 +305,7 @@ Touch Teq Engineering has a well-optimized website with strong technical foundat
 - ✅ type: website
 - ✅ locale: en_ZA
 - ✅ url: https://touchteq.co.za
-- ✅ siteName: Touch Teq Engineering
+- ✅ siteName: Touch Teqniques Engineering
 - ✅ title and description set
 - ✅ image: /TT-logo-orange-trans.png (1200x630)
 
@@ -438,6 +438,6 @@ Touch Teq Engineering has a well-optimized website with strong technical foundat
 
 ## Conclusion
 
-Touch Teq Engineering has a strong SEO foundation with excellent content quality and clear E-E-A-T signals. The primary area for improvement is implementing unique page metadata across all pages and adding structured data (FAQ schema on service pages, BreadcrumbList on service pages). These changes, combined with the existing strong content, should significantly improve search visibility for target keywords in the industrial engineering space.
+Touch Teqniques Engineering has a strong SEO foundation with excellent content quality and clear E-E-A-T signals. The primary area for improvement is implementing unique page metadata across all pages and adding structured data (FAQ schema on service pages, BreadcrumbList on service pages). These changes, combined with the existing strong content, should significantly improve search visibility for target keywords in the industrial engineering space.
 
 The website effectively communicates expertise, trustworthiness, and authority — key factors for B2B engineering services. With the recommended technical improvements, this site is well-positioned to rank competitively for target keywords like "fire and gas detection South Africa," "hazardous area classification," and "IEC 61511 compliance."

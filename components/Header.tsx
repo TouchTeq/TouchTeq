@@ -149,10 +149,10 @@ export default function Header() {
       <nav className={`transition-all duration-300 ${isScrolled ? 'bg-[#F7F7F7] shadow-lg py-2 md:py-3' : 'bg-[#F7F7F7] py-3 md:py-4'} border-b border-slate-200 h-16 md:h-24`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 flex items-center justify-between h-full">
           {/* LEFT — Logo */}
-          <Link href="/" className="flex items-center group flex-shrink-0 mr-3 lg:mr-5 min-w-0" aria-label="Touch Teq Engineering home">
+          <Link href="/" className="flex items-center group flex-shrink-0 mr-3 lg:mr-5 min-w-0" aria-label="Touch Teqniques Engineering home">
             <Image 
               src="/touch-teq-logo-wordmark.jpeg" 
-              alt="Touch Teq Engineering" 
+              alt="Touch Teqniques Engineering" 
               width={454}
               height={65}
               className="h-7 w-auto sm:h-8 md:h-9"

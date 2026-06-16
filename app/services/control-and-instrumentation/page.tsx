@@ -146,7 +146,7 @@ export default function ControlAndInstrumentationPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -260,7 +260,7 @@ export default function ControlAndInstrumentationPage() {
                 Good control and instrumentation systems are essential for stable plant performance. They help operators monitor critical processes, respond quickly to issues, and keep production running safely and efficiently.
               </p>
               <p>
-                At Touch Teq Engineering, we provide practical automation, control and instrumentation solutions for high-risk industrial environments. We work on new installations, system upgrades, fault finding, and plant improvements. Our focus is simple. Build systems that are reliable, easy to maintain, and suited to the real conditions on site.
+                At Touch Teqniques Engineering, we provide practical automation, control and instrumentation solutions for high-risk industrial environments. We work on new installations, system upgrades, fault finding, and plant improvements. Our focus is simple. Build systems that are reliable, easy to maintain, and suited to the real conditions on site.
               </p>
               <p>
                 We work directly with engineering teams, operations teams, and maintenance teams to make sure the final solution is clear, workable, and properly documented.
@@ -428,12 +428,12 @@ export default function ControlAndInstrumentationPage() {
         </div>
       </section>
 
-      {/* Section 6: Why Choose Touch Teq */}
+      {/* Section 6: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teq</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teqniques Engineering</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Clear Solutions. <br />
                 Direct Support. <br />
@@ -546,7 +546,7 @@ export default function ControlAndInstrumentationPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
             >
-              Speak to Touch Teq about a new installation, system upgrade, commissioning scope, or plant support requirement. We will review your needs and provide a practical solution for your site.
+              Speak to Touch Teqniques Engineering about a new installation, system upgrade, commissioning scope, or plant support requirement. We will review your needs and provide a practical solution for your site.
             </motion.p>
             
               <motion.div

@@ -69,7 +69,7 @@ const insightsItems: GalleryItem[] = [
   {
     id: "item-5",
     title: "What to Expect During a Fire and Gas System Commissioning",
-    summary: "Proper F&G commissioning is a structured, documented process that proves the entire system — from field sensors through to logic, alarms, and physical outputs — works as designed.",
+    summary: "Proper F&G commissioning is a structured, documented process that proves the entire system, from field sensors through to logic, alarms, and physical outputs, works as designed.",
     url: "/insights/fire-and-gas-system-commissioning",
     image: "/f&g.jpeg",
     readTime: 8,

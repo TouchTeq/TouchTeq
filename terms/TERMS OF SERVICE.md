@@ -1,10 +1,10 @@
 TERMS OF SERVICE
 Last updated: March 2026
 Who we are
-This website is operated by Touch Teqniques Engineering Services, trading as Touch Teq Engineering, Johannesburg, South Africa. By accessing or using this website you agree to these terms.
+This website is operated by Touch Teqniques Engineering Services, trading as Touch Teqniques Engineering, Johannesburg, South Africa. By accessing or using this website you agree to these terms.
 
 Use of this website
-This website is intended to provide information about Touch Teq Engineering's services, share technical knowledge, and allow prospective clients to make contact. You may use this website for lawful purposes only.
+This website is intended to provide information about Touch Teqniques Engineering's services, share technical knowledge, and allow prospective clients to make contact. You may use this website for lawful purposes only.
 You may not:
 
 Copy, reproduce, or redistribute any content from this website without our written permission
@@ -16,15 +16,15 @@ Enquiries and contact forms
 Submitting an enquiry through our contact form, risk assessment tool, or any other form on this website does not constitute a formal contract, binding agreement, or commitment of any kind by either party. A formal engagement begins only when a signed quotation or written agreement has been issued and accepted.
 
 Intellectual property
-All content on this website — including text, articles, technical guides, downloadable resources, graphics, and the Touch Teq name and logo — is the intellectual property of Touch Teqniques Engineering Services and is protected under applicable South African law.
+All content on this website, including text, articles, technical guides, downloadable resources, graphics, and the Touch Teqniques Engineering name and logo, is the intellectual property of Touch Teqniques Engineering Services and is protected under applicable South African law.
 You may share links to our content and reference our articles with appropriate attribution. You may not reproduce, republish, or repurpose our content for commercial use without prior written consent.
 
-Disclaimer — Important
+Disclaimer, Important
 Please read this section carefully.
 The information, articles, technical guides, risk assessment tools, checklists, and downloadable resources published on this website are provided for general informational purposes only. They are intended to educate and inform, not to serve as professional engineering advice.
 Nothing on this website constitutes a substitute for qualified engineering assessment, design, or consultation.
 Fire and gas detection systems, hazardous area classifications, functional safety assessments, SIL determinations, and related engineering activities are safety-critical by nature. They must be designed, assessed, and commissioned by a suitably qualified and experienced engineer in accordance with applicable standards including but not limited to IEC 61511, IEC 60079, and SANS regulations.
-Touch Teqniques Engineering Services accepts no liability for any loss, damage, injury, or consequence — direct or indirect — arising from decisions made or actions taken based solely on information obtained from this website.
+Touch Teqniques Engineering Services accepts no liability for any loss, damage, injury, or consequence, direct or indirect, arising from decisions made or actions taken based solely on information obtained from this website.
 If you require professional engineering advice, please contact us directly to discuss your specific requirements.
 
 Third party links

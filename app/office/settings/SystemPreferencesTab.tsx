@@ -137,7 +137,7 @@ export default function SystemPreferencesTab({ profile }: { profile: any }) {
 
          <div className="mt-8 p-6 border-l-4 border-red-500/30 bg-red-500/5 rounded-r-xl">
             <p className="text-[10px] text-slate-400 font-bold leading-relaxed">
-               To delete your Touch Teq Office account or permanently wipe all data, please contact your system administrator. These actions are restricted to prevent accidental data loss.
+               To delete your Touch Teqniques Engineering Office account or permanently wipe all data, please contact your system administrator. These actions are restricted to prevent accidental data loss.
             </p>
          </div>
       </section>

@@ -13,7 +13,7 @@ export const searchIndex: SearchResult[] = [
   // ── Pages ─────────────────────────────────────────────────────────────
   {
     id: 'home',
-    title: 'Touch Teq Engineering',
+    title: 'Touch Teqniques Engineering',
     description: 'Specialist industrial engineering for fire and gas detection, control and instrumentation, and electrical engineering across Southern Africa.',
     category: 'Page',
     url: '/',

@@ -33,8 +33,8 @@ const questions = [
     title: "Hazardous Materials",
     question: "Does your facility handle, store, or process flammable gases, volatile liquids, or combustible dusts?",
     options: [
-      "Yes — continuously or frequently",
-      "Yes — occasionally",
+      "Yes, continuously or frequently",
+      "Yes, occasionally",
       "No / Unsure"
     ]
   },
@@ -449,7 +449,7 @@ export default function RiskAssessment() {
                       {formState.agreed && <Check size={16} className="text-white" />}
                     </button>
                     <label className="text-slate-400 text-sm leading-relaxed cursor-pointer" onClick={() => setFormState({...formState, agreed: !formState.agreed})}>
-                      I agree to receive my risk report and relevant industry updates from Touch Teq Engineering. You can unsubscribe at any time.
+                      I agree to receive my risk report and relevant industry updates from Touch Teqniques Engineering. You can unsubscribe at any time.
                     </label>
                   </div>
 

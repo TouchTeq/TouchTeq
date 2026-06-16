@@ -222,7 +222,7 @@ export const CreditNotePDF = ({ creditNote, lineItems, businessProfile }: any) =
               )}
             </View>
             <View>
-              <Text style={styles.brandName}>{businessProfile.company_name || 'Touch Teq'}</Text>
+              <Text style={styles.brandName}>{businessProfile.company_name || 'Touch Teqniques Engineering'}</Text>
               <Text style={{ fontSize: 8, color: '#666666' }}>Engineering Services</Text>
             </View>
           </View>
@@ -329,7 +329,7 @@ export const CreditNotePDF = ({ creditNote, lineItems, businessProfile }: any) =
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            {businessProfile.company_name || 'Touch Teq'} | {businessProfile.email || 'info@touchteq.co.za'} | {businessProfile.phone || '+27 72 552 2110'}
+            {businessProfile.company_name || 'Touch Teqniques Engineering'} | {businessProfile.email || 'info@touchteq.co.za'} | {businessProfile.phone || '+27 72 552 2110'}
           </Text>
         </View>
       </Page>

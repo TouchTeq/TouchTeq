@@ -341,7 +341,7 @@ export default function ContactPage() {
         }))}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -369,7 +369,7 @@ export default function ContactPage() {
         <div className="absolute inset-0 z-0">
           <Image
             src="https://picsum.photos/seed/contact-industrial/1920/1080"
-            alt="Contact Touch Teq"
+            alt="Contact Touch Teqniques Engineering"
             fill
             className="object-cover opacity-30"
             priority
@@ -489,7 +489,7 @@ export default function ContactPage() {
               transition={{ delay: 0.2 }}
               className="text-slate-600 text-base md:text-lg leading-relaxed font-medium max-w-xl"
             >
-              We route every inquiry directly to our engineering team, not a generic call centre. When you contact Touch Teq, you speak to people who understand the technical complexities of your facility.
+              We route every inquiry directly to our engineering team, not a generic call centre. When you contact Touch Teqniques Engineering, you speak to people who understand the technical complexities of your facility.
             </motion.p>
           </div>
           
@@ -932,7 +932,7 @@ export default function ContactPage() {
                       {agreed && <Check size={14} className="text-white" />}
                     </div>
                     <span className="text-slate-500 text-sm font-medium">
-                      Accept terms and conditions from Touch Teq.
+                      Accept terms and conditions from Touch Teqniques Engineering.
                     </span>
                   </label>
                   <button 
@@ -1232,7 +1232,7 @@ export default function ContactPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
             >
-              Join the major industrial organisations that trust Touch Teq for their most critical safety and engineering requirements.
+              Join the major industrial organisations that trust Touch Teqniques Engineering for their most critical safety and engineering requirements.
             </motion.p>
             
             <motion.div

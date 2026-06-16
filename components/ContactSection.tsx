@@ -475,7 +475,7 @@ export default function ContactSection() {
                           {agreed && <Check size={14} className="text-white" />}
                         </div>
                         <span className="min-w-0 text-slate-500 text-sm font-medium">
-                          I accept the <Link href="#" className="text-orange-500 hover:underline">Terms & Conditions</Link> and <Link href="#" className="text-orange-500 hover:underline">Privacy Policy</Link> of Touch Teq Engineering.
+                          I accept the <Link href="#" className="text-orange-500 hover:underline">Terms & Conditions</Link> and <Link href="#" className="text-orange-500 hover:underline">Privacy Policy</Link> of Touch Teqniques Engineering.
                         </span>
                       </label>
 

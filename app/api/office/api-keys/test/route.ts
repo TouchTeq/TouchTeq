@@ -71,11 +71,11 @@ async function testBrevoKey(apiKey: string) {
         'api-key': apiKey,
       },
       body: JSON.stringify({
-        sender: { name: 'Touch Teq Office', email: 'info@touchteq.co.za' },
-        to: [{ email: 'info@touchteq.co.za', name: 'Touch Teq' }],
-        subject: 'Brevo Connection Test — Touch Teq Office',
+        sender: { name: 'Touch Teqniques Engineering Office', email: 'info@touchteq.co.za' },
+        to: [{ email: 'info@touchteq.co.za', name: 'Touch Teqniques Engineering' }],
+        subject: 'Brevo Connection Test — Touch Teqniques Engineering Office',
         htmlContent:
-          '<p>This is an automated connection test from Touch Teq Office Settings. Your Brevo API key is working correctly.</p>',
+          '<p>This is an automated connection test from Touch Teqniques Engineering Office Settings. Your Brevo API key is working correctly.</p>',
       }),
     });
 

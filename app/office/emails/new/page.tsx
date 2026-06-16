@@ -104,7 +104,7 @@ export default function NewEmailPage() {
                 type="text"
                 value={emailData.subject}
                 onChange={(e) => setEmailData({...emailData, subject: e.target.value})}
-                placeholder="re: Quotation [QT-0001] for Touch Teq"
+                placeholder="re: Quotation [QT-0001] for Touch Teqniques Engineering"
                 className="w-full bg-[#0B0F19] border border-slate-800 focus:border-orange-500 outline-none p-4 text-white transition-all font-medium rounded-xl shadow-inner"
               />
             </div>

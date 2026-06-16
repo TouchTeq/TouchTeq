@@ -33,7 +33,7 @@ const services = [
   },
   {
     title: "Installation & Commissioning",
-    description: "Our engineers handle on-site installation, loop testing, and full system commissioning. We do not hand off to subcontractors. The same team that designs the system installs it."
+    description: "Our engineers handle on-site installation, loop testing, and full system commissioning. The same team that designs the system installs it."
   },
   {
     title: "System Integration",
@@ -46,9 +46,10 @@ const services = [
 ];
 
 const standards = [
-  { code: "IEC 61511", desc: "Functional Safety for Safety Instrumented Systems" },
-  { code: "SANS 10089", desc: "Fire Detection and Alarm Systems" },
-  { code: "ATEX / IECEx", desc: "Equipment for Explosive Atmospheres" },
+  { code: "IEC 61511", desc: "Framework for Safety Instrumented Systems" },
+  { code: "SANS 10089", desc: "Petroleum Industry Storage and Handling (Parts 1–3)" },
+  { code: "SANS 10139", desc: "Fire Detection and Alarm Systems" },
+  { code: "ATEX / IECEx", desc: "International Schemes for Equipment in Explosive Atmospheres" },
   { code: "IEC 60079", desc: "Electrical Equipment in Hazardous Areas" },
   { code: "SANS 10400", desc: "Application of the National Building Regulations" }
 ];
@@ -88,7 +89,7 @@ const faqs = [
   },
   {
     q: "What standards apply to fire and gas detection in South Africa?",
-    a: "The primary standard for fire detection and alarm systems in South Africa is SANS 10089. For safety instrumented systems, including fire and gas systems with safety functions, IEC 61511 applies. In hazardous areas, ATEX and IECEx standards govern the equipment used. Touch Teq designs all systems to meet these requirements."
+    a: "The primary standard for fire detection and alarm systems in South Africa is SANS 10139 (aligned with SANS 10400-T). For safety-instrumented fire and gas functions we design to IEC 61511, adopted locally as SANS 61511. In hazardous areas, equipment must comply with SANS 10108 and the SANS 60079 series, typically certified under IECEx."
   },
   {
     q: "What industries do you serve?",
@@ -166,7 +167,7 @@ export default function FireAndGasPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -272,7 +273,7 @@ export default function FireAndGasPage() {
                 Industrial facilities face serious risks from fire, toxic gas, and explosive atmospheres. A properly designed and installed fire and gas detection system is one of the most important layers of protection you can have on site.
               </p>
               <p>
-                At Touch Teq Engineering, we handle the full project lifecycle. From initial hazard assessment and system design through to supply, installation, commissioning, and handover. Every system we deliver is designed for your specific facility, your specific risks, and your operating requirements.
+                At Touch Teqniques Engineering, we handle the full project lifecycle. From initial hazard assessment and system design through to supply, installation, commissioning, and handover. Every system we deliver is designed for your specific facility, your specific risks, and your operating requirements.
               </p>
               <p>
                 We work directly with plant managers, engineering teams, and HSE managers to make sure the system does what it needs to do, is properly documented, and is ready for inspection.
@@ -383,11 +384,17 @@ export default function FireAndGasPage() {
             <div>
               <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Technical Standards & Documentation</span>
               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
-                Systems Built for Audits, Inspections, and <br />
+                Systems Documented for Audits, Inspections, and <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Long-Term Reliability</span>
               </h2>
-              <p className="text-slate-300 text-lg leading-relaxed mb-8 font-medium">
-                Documentation is not an afterthought for us. Every system we design and install is planned around the facility requirements from day one. This means your team has the records it needs for internal audits, third-party inspections, and long-term maintenance.
+              <p className="text-slate-300 text-lg leading-relaxed mb-4 font-medium">
+                Documentation is not an afterthought for us. Every project we support is set up from day one with clear records, so your team has what it needs for internal audits, third-party inspections, and long-term maintenance. Where work requires formal certification, we coordinate with appropriately qualified and accredited specialists.
+              </p>
+              <p className="text-slate-400 text-sm leading-relaxed mb-4 font-medium">
+                Reference standards we align documentation with:
+              </p>
+              <p className="text-slate-400 text-xs leading-relaxed font-medium italic">
+                Note: Standards listed for reference only.
               </p>
             </div>
             
@@ -440,12 +447,12 @@ export default function FireAndGasPage() {
         </div>
       </section>
 
-      {/* Section 5: Why Choose Touch Teq */}
+      {/* Section 5: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teq</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teqniques Engineering</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Specialist Engineers. <br />
                 Direct Accountability. <br />

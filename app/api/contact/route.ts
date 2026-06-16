@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     `;
 
     const emailResult = await sendTransactionalEmail({
-      to: [{ email: recipientEmail, name: 'Touch Teq Sales' }],
+      to: [{ email: recipientEmail, name: 'Touch Teqniques Engineering Sales' }],
       subject: `Website enquiry from ${fullName}`,
       htmlContent,
       replyTo: {

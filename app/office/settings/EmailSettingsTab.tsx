@@ -25,7 +25,7 @@ W: www.touchteq.co.za
 SAQCC Fire Reg: DGS15/0130 | B-BBEE Level 1`;
 
 const DEFAULT_ACCOUNTS_SIGNATURE = `Kind regards,
-Touch Teq Accounts
+Touch Teqniques Engineering Accounts
 Touch Teqniques Engineering Services
 T: +27 72 552 2110
 E: accounts@touchteq.co.za

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This hardening addresses accounting integrity risks in the Touch Teq office dashboard by implementing atomic database functions for payment recording, credit note application, and invoice voiding. All finance operations now use row-level locking, proper guards, and auditable ledger tables.
+This hardening addresses accounting integrity risks in the Touch Teqniques Engineering office dashboard by implementing atomic database functions for payment recording, credit note application, and invoice voiding. All finance operations now use row-level locking, proper guards, and auditable ledger tables.
 
 ---
 

@@ -297,7 +297,7 @@ export default function QuoteAcceptPage({ params }: { params: Promise<{ id: stri
 
         {/* Footer */}
         <div className="text-center mt-8 text-slate-500 text-xs">
-          <p>Powered by Touch Teq Engineering Services</p>
+          <p>Powered by Touch Teqniques Engineering Services</p>
         </div>
       </div>
     </div>

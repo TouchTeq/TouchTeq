@@ -17,7 +17,7 @@ const articles = [
   {
     id: 1,
     title: "Understanding IEC 61511: What Plant Managers in South Africa Need to Know",
-    excerpt: "IEC 61511 defines the requirements for safety instrumented systems in the process industry. For plant managers in South Africa, understanding what the standard requires — and what it means for your facility's safety lifecycle — is no longer optional. This article breaks down the key requirements in plain language.",
+    excerpt: "IEC 61511 defines the requirements for safety instrumented systems in the process industry. For plant managers in South Africa, understanding what the standard requires, and what it means for your facility's safety lifecycle, is no longer optional. This article breaks down the key requirements in plain language.",
     category: "Regulatory Updates",
     cardTag: "Functional Safety",
     detailTags: ["Functional Safety", "IEC 61511", "Safety Instrumented Systems"],
@@ -353,7 +353,7 @@ export default function InsightsPage() {
                     Download Technical Checklists & Reference Sheets
                   </h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    HAC Checklist, Fire & Gas Audit Checklist, and Engineering Standards Reference Sheet — free to download with your details.
+                    HAC Checklist, Fire & Gas Audit Checklist, and Engineering Standards Reference Sheet, free to download with your details.
                   </p>
                 </div>
                 <div className="shrink-0">
@@ -414,7 +414,7 @@ export default function InsightsPage() {
                 className="group inline-flex items-stretch bg-orange-500 hover:bg-orange-600 transition-all rounded-md overflow-hidden shadow-xl shadow-orange-500/20"
               >
                 <span className="px-8 py-5 flex items-center text-white font-black text-xs md:text-sm uppercase tracking-widest whitespace-nowrap">
-                  Assess My Facility Risk — Free
+                  Assess My Facility Risk, Free
                 </span>
                 <div className="bg-[#1A2B4C] px-6 flex items-center justify-center group-hover:bg-black transition-colors">
                   <ArrowRight className="text-white w-5 h-5 group-hover:translate-x-1 transition-all duration-300" />
@@ -457,7 +457,7 @@ export default function InsightsPage() {
               transition={{ delay: 0.2 }}
               className="text-slate-600 text-lg leading-relaxed font-medium"
             >
-              Most technical content published online is written by marketers summarising information they found elsewhere. The articles on this page are written by practising engineers at Touch Teq who work daily in refineries, chemical plants, mines, and processing facilities across Southern Africa.
+              Most technical content published online is written by marketers summarising information they found elsewhere. The articles on this page are written by practising engineers at Touch Teqniques Engineering who work daily in refineries, chemical plants, mines, and processing facilities across Southern Africa.
             </motion.p>
 
             <motion.p
@@ -563,7 +563,7 @@ export default function InsightsPage() {
                     {agreed && <Check size={14} className="text-white" />}
                   </button>
                   <label className="text-slate-500 text-sm leading-relaxed cursor-pointer" onClick={() => setAgreed(!agreed)}>
-                    I agree to receive industry updates from Touch Teq Engineering. You can unsubscribe at any time.
+                    I agree to receive industry updates from Touch Teqniques Engineering. You can unsubscribe at any time.
                   </label>
                 </div>
 
@@ -645,7 +645,7 @@ export default function InsightsPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
             >
-              If there is a topic you would like us to address — a standard you are trying to understand, a compliance question, or a technical challenge you are facing — contact us directly. We are happy to point you in the right direction, and your question may become the subject of a future article.
+              If there is a topic you would like us to address, a standard you are trying to understand, a compliance question, or a technical challenge you are facing, contact us directly. We are happy to point you in the right direction, and your question may become the subject of a future article.
             </motion.p>
 
             <motion.div

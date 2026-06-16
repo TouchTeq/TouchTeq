@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       const sourceLabel = source || 'Website';
 
       await sendTransactionalEmail({
-        to: [{ email: recipientEmail, name: 'Touch Teq Sales' }],
+        to: [{ email: recipientEmail, name: 'Touch Teqniques Engineering Sales' }],
         subject: `New ${sourceLabel} signup: ${name}`,
         htmlContent: `
           <div style="font-family: Arial, sans-serif; color: #334155; max-width: 680px; margin: 0 auto;">

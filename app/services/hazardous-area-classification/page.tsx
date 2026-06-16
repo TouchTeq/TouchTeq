@@ -198,7 +198,7 @@ export default function HazardousAreaClassificationPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -247,7 +247,7 @@ export default function HazardousAreaClassificationPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              Touch Teq Engineering delivers thorough Hazardous Area Classification (HAC) studies for industrial operations across Southern Africa. Our engineers assess your processes, identify explosive atmosphere risks, and deliver the documentation required for compliance and safety.
+              Touch Teqniques Engineering delivers thorough Hazardous Area Classification (HAC) studies for industrial operations across Southern Africa. Our engineers assess your processes, identify explosive atmosphere risks, and deliver the documentation required for compliance and safety.
             </motion.p>
             
             <motion.div
@@ -315,7 +315,7 @@ export default function HazardousAreaClassificationPage() {
                 Hazardous Area Classification (HAC) is the starting point for every decision that follows. It determines what type of electrical and instrumentation equipment can be installed in each area. It defines how maintenance teams work safely. It shapes your hot work procedures, your emergency response planning, and your overall risk management strategy.
               </p>
               <p>
-                At Touch Teq Engineering, we take a methodical, engineering-driven approach to area classification. We study your process flow diagrams, identify every potential release source, evaluate the properties of the substances involved, and assess your ventilation arrangements. From there, we calculate the type, extent, and likelihood of hazardous zones based on the actual conditions at your site.
+                At Touch Teqniques Engineering, we take a methodical, engineering-driven approach to area classification. We study your process flow diagrams, identify every potential release source, evaluate the properties of the substances involved, and assess your ventilation arrangements. From there, we calculate the type, extent, and likelihood of hazardous zones based on the actual conditions at your site.
               </p>
             </div>
           </div>
@@ -440,7 +440,7 @@ export default function HazardousAreaClassificationPage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Recognised Standards</span>
               </h2>
               <p className="text-slate-300 text-lg leading-relaxed mb-8 font-medium">
-                All classification work carried out by Touch Teq Engineering is performed in strict accordance with the standards and regulations recognised in Southern Africa and internationally.
+                All classification work carried out by Touch Teqniques Engineering is performed in strict accordance with the standards and regulations recognised in Southern Africa and internationally.
               </p>
             </div>
             
@@ -496,12 +496,12 @@ export default function HazardousAreaClassificationPage() {
         </div>
       </section>
 
-      {/* Section 7: Why Choose Touch Teq */}
+      {/* Section 7: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teq Advantage</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teqniques Engineering Advantage</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Technical Depth. <br />
                 Practical Outcomes. <br />

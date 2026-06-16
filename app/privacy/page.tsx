@@ -10,12 +10,12 @@ import Link from 'next/link';
 const sections = [
   {
     title: 'Who We Are',
-    content: `This website is operated by Touch Teqniques Engineering Services, trading as Touch Teq Engineering, a fire and gas detection and control & instrumentation engineering firm based in Johannesburg, South Africa.\n\nIf you have any questions about this policy, contact us at info@touchteq.co.za.`,
+    content: `This website is operated by Touch Teqniques Engineering Services, trading as Touch Teqniques Engineering, a fire and gas detection and control & instrumentation engineering firm based in Johannesburg, South Africa.\n\nIf you have any questions about this policy, contact us at info@touchteq.co.za.`,
     icon: FileText
   },
   {
     title: 'What Information We Collect',
-    content: `We collect personal information only when you voluntarily provide it through the following:\n\n• Contact form — name, company name, email address, phone number, and your message\n• Newsletter signup — email address\n• Downloadable resource requests — name and email address\n• Facility Risk Assessment tool — name, email address, and facility information you enter\n\nWe do not collect any personal information from visitors who simply browse the website without submitting a form.`,
+    content: `We collect personal information only when you voluntarily provide it through the following:\n\n• Contact form: name, company name, email address, phone number, and your message\n• Newsletter signup: email address\n• Downloadable resource requests: name and email address\n• Facility Risk Assessment tool: name, email address, and facility information you enter\n\nWe do not collect any personal information from visitors who simply browse the website without submitting a form.`,
     icon: Users
   },
   {
@@ -25,12 +25,12 @@ const sections = [
   },
   {
     title: 'Third Party Services',
-    content: `We use the following trusted third party services to operate this website. Each has its own privacy policy governing how they handle data:\n\nGoogle Analytics 4 — collects anonymous usage data (pages visited, time on site, general location) to help us understand how the website is used. No personally identifiable information is shared with Google.\n\nBrevo — our email delivery platform. When you submit a form, your name and email are stored in Brevo to enable us to respond to you.\n\nCloudflare Turnstile — a spam protection service that runs silently in the background on our forms.\n\nWe do not sell, rent, or share your personal information with any other third parties.`,
+    content: `We use the following trusted third party services to operate this website. Each has its own privacy policy governing how they handle data:\n\nGoogle Analytics 4: collects anonymous usage data (pages visited, time on site, general location) to help us understand how the website is used. No personally identifiable information is shared with Google.\n\nBrevo: our email delivery platform. When you submit a form, your name and email are stored in Brevo to enable us to respond to you.\n\nCloudflare Turnstile: a spam protection service that runs silently in the background on our forms.\n\nWe do not sell, rent, or share your personal information with any other third parties.`,
     icon: Shield
   },
   {
     title: 'Cookies',
-    content: `We use the following cookies on this website:\n\nEssential cookies — required for the website to function correctly. These are always active.\n\nAnalytics cookies — used by Google Analytics 4 to collect anonymous usage statistics. These only load if you click "Accept All" on our cookie banner.\n\nWe do not use advertising or marketing tracking cookies of any kind.`,
+    content: `We use the following cookies on this website:\n\nEssential cookies: required for the website to function correctly. These are always active.\n\nAnalytics cookies: used by Google Analytics 4 to collect anonymous usage statistics. These only load if you click "Accept All" on our cookie banner.\n\nWe do not use advertising or marketing tracking cookies of any kind.`,
     icon: Lock
   },
   {

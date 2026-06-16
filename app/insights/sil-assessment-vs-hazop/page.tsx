@@ -125,7 +125,7 @@ const articleJsonLd = {
   author: { '@type': 'Person', name: 'Thabo Matona', jobTitle: 'Founder and Principal Engineer' },
   publisher: {
     '@type': 'Organization',
-    name: 'Touch Teq Engineering Services',
+    name: 'Touch Teqniques Engineering Services',
     logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',

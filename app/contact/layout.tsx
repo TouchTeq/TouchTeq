@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact Touch Teq Engineering | Get in Touch With Our Engineering Team',
+  title: 'Contact Touch Teqniques Engineering | Get in Touch With Our Engineering Team',
   description:
-    'Contact Touch Teq Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+    'Contact Touch Teqniques Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
   keywords: [
-    'contact Touch Teq',
+    'contact Touch Teqniques Engineering',
     'fire and gas detection',
     'control and instrumentation',
     'hazardous area classification',
@@ -27,24 +27,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/contact',
-    siteName: 'Touch Teq Engineering',
-    title: 'Contact Touch Teq Engineering | Get in Touch With Our Engineering Team',
+    siteName: 'Touch Teqniques Engineering',
+    title: 'Contact Touch Teqniques Engineering | Get in Touch With Our Engineering Team',
     description:
-      'Contact Touch Teq Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+      'Contact Touch Teqniques Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: [
       {
         url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
-        alt: 'Touch Teq Engineering',
+        alt: 'Touch Teqniques Engineering',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact Touch Teq Engineering | Get in Touch With Our Engineering Team',
+    title: 'Contact Touch Teqniques Engineering | Get in Touch With Our Engineering Team',
     description:
-      'Contact Touch Teq Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+      'Contact Touch Teqniques Engineering for fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },

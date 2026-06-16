@@ -326,7 +326,7 @@ W: www.touchteq.co.za
 SAQCC Fire Reg: DGS15/0130 | B-BBEE Level 1`;
 
 const DEFAULT_ACCOUNTS_SIGNATURE = `Kind regards,
-Touch Teq Accounts
+Touch Teqniques Engineering Accounts
 Touch Teqniques Engineering Services
 T: +27 72 552 2110
 E: accounts@touchteq.co.za
@@ -3094,12 +3094,12 @@ const triggerShortcut = (command: string, starter?: string) => {
                 <div className="flex items-center gap-4">
                   {renderOrb('small')}
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-300">Touch Teq AI Assistant</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-300">Touch Teqniques Engineering AI Assistant</p>
                     <p className="text-sm text-slate-400">Powered by Gemini with document and voice context</p>
                   </div>
                 </div>
               ) : (
-                <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Touch Teq AI Assistant</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Touch Teqniques Engineering AI Assistant</div>
               )}
 
              <div className="flex flex-wrap items-center gap-2">
@@ -3235,7 +3235,7 @@ const triggerShortcut = (command: string, starter?: string) => {
                   <Sparkles size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Touch Teq AI Assistant</h3>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Touch Teqniques Engineering AI Assistant</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">Powered by Gemini</span>

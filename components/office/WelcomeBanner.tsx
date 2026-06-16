@@ -39,7 +39,7 @@ export default function WelcomeBanner({ profile }: { profile: any }) {
                      <Sparkles size={28} />
                   </div>
                   <div>
-                     <h2 className="text-xl font-black text-white uppercase tracking-tight">Welcome to Touch Teq Office</h2>
+                     <h2 className="text-xl font-black text-white uppercase tracking-tight">Welcome to Touch Teqniques Engineering Office</h2>
                      <p className="text-slate-400 text-sm font-medium mt-1">
                         To get started, complete your <Link href="/office/settings?tab=profile" className="text-white font-bold hover:text-orange-400">Business Profile</Link> and add your <Link href="/office/settings?tab=banking" className="text-white font-bold hover:text-orange-400">Banking Details</Link> in Settings so your quotes and invoices are ready to send.
                      </p>

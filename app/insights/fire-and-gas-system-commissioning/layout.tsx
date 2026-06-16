@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/insights/fire-and-gas-system-commissioning',
-    siteName: 'Touch Teq Engineering',
+    siteName: 'Touch Teqniques Engineering',
     title: 'Fire and Gas System Commissioning: What to Expect',
     description:
       'Find out what a professional fire and gas system commissioning involves, what to prepare, and what to expect at each stage of the process.',

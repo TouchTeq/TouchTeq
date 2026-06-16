@@ -72,7 +72,7 @@ export default function FAQ() {
               <div className="relative w-full h-full overflow-hidden">
                 <Image
                   src="/faq.jpeg"
-                  alt="Touch Teq FAQ"
+                  alt="Touch Teqniques Engineering FAQ"
                   fill
                   className="object-cover"
                   referrerPolicy="no-referrer"

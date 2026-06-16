@@ -88,7 +88,7 @@ const industries = [
 const whyChooseUs = [
   {
     title: "ECSA Registered Professional",
-    desc: "Touch Teq is registered with the Engineering Council of South Africa as a Professional Technologist in Electrical Engineering. That registration carries legal accountability and professional responsibility for the work we do."
+    desc: "Touch Teqniques Engineering is registered with the Engineering Council of South Africa as a Professional Technologist in Electrical Engineering. That registration carries legal accountability and professional responsibility for the work we do."
   },
   {
     title: "No Subcontractors",
@@ -111,7 +111,7 @@ const faqs = [
   },
   {
     q: "Are you registered with ECSA?",
-    a: "Yes. Touch Teq is registered with the Engineering Council of South Africa as a Professional Technologist in Electrical Engineering (Pr Tech Eng). This means our work carries the professional accountability required for industrial projects."
+    a: "Yes. Touch Teqniques Engineering is registered with the Engineering Council of South Africa as a Professional Technologist in Electrical Engineering (Pr Tech Eng). This means our work carries the professional accountability required for industrial projects."
   },
   {
     q: "Can you work in hazardous areas?",
@@ -160,7 +160,7 @@ export default function ElectricalEngineeringPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -274,7 +274,7 @@ export default function ElectricalEngineeringPage() {
                 Electrical systems in industrial facilities need to be safe, reliable, and properly designed for the environment they operate in. Whether it is a refinery, a chemical plant, or a mining operation, the consequences of poor electrical design or installation can be serious.
               </p>
               <p>
-                At Touch Teq Engineering, we handle industrial electrical work from design through to installation, testing, and handover. We focus on getting the fundamentals right. Proper cable sizing, correct protection coordination, practical earthing systems, and clear documentation that your maintenance team can actually use.
+                At Touch Teqniques Engineering, we handle industrial electrical work from design through to installation, testing, and handover. We focus on getting the fundamentals right. Proper cable sizing, correct protection coordination, practical earthing systems, and clear documentation that your maintenance team can actually use.
               </p>
               <p>
                 We are registered with ECSA as a Professional Technologist in Electrical Engineering. That means every project carries the accountability of a qualified professional, not a general contractor working outside their scope.
@@ -439,12 +439,12 @@ export default function ElectricalEngineeringPage() {
         </div>
       </section>
 
-      {/* Section 6: Why Choose Touch Teq */}
+      {/* Section 6: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teq</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Why Touch Teqniques Engineering</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Registered. Qualified. <br />
                 <span className="text-orange-500">Accountable.</span>

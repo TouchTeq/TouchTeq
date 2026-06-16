@@ -19,7 +19,7 @@ export default function Hero() {
       <div className="absolute inset-0 z-0">
         <Image
           src="/tt-bg.jpeg"
-          alt="Touch Teq Engineering"
+          alt="Touch Teqniques Engineering"
           fill
           className="object-cover translate-y-12 opacity-60"
           priority
@@ -97,7 +97,7 @@ export default function Hero() {
               className="group flex w-full sm:w-auto items-stretch bg-white hover:bg-slate-100 transition-all rounded-md overflow-hidden shadow-xl max-w-full"
             >
               <span className="min-w-0 flex-1 justify-center sm:justify-start px-5 md:px-8 py-4 flex items-center text-[#0A1120] group-hover:text-orange-500 font-black text-[10px] md:text-sm uppercase tracking-[0.12em] sm:tracking-widest text-center sm:text-left transition-colors">
-                Assess My Facility Risk — Free
+                Assess My Facility Risk, Free
               </span>
               <div className="bg-[#1A2B4C] px-4 md:px-5 flex items-center justify-center group-hover:bg-orange-500 transition-colors shrink-0">
                 <ArrowRight className="text-white w-4 h-4 -rotate-45 group-hover:rotate-0 transition-all duration-300" />

@@ -16,10 +16,10 @@ export default function ArticleAuthorityBox({
         Thabo Matona
       </h3>
       <p className="mt-2 text-sm font-bold uppercase tracking-widest text-slate-500">
-        Founder and Principal Engineer, Touch Teq Engineering
+        Founder and Principal Engineer, Touch Teqniques Engineering
       </p>
       <p className="mt-4 text-sm leading-relaxed text-slate-600">
-        This article is published by Touch Teq Engineering and reviewed for
+        This article is published by Touch Teqniques Engineering and reviewed for
         technical accuracy by an engineer overseeing industrial fire and gas
         detection, control and instrumentation, hazardous area classification,
         and electrical engineering work in Southern Africa.

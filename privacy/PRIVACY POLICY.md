@@ -1,7 +1,7 @@
 PRIVACY POLICY
 Last updated: March 2026
 Who we are
-This website is operated by Touch Teqniques Engineering Services, trading as Touch Teq Engineering, a fire and gas detection and control & instrumentation engineering firm based in Johannesburg, South Africa.
+This website is operated by Touch Teqniques Engineering Services, trading as Touch Teqniques Engineering, a fire and gas detection and control & instrumentation engineering firm based in Johannesburg, South Africa.
 If you have any questions about this policy, contact us at info@touchteq.co.za.
 
 What information we collect

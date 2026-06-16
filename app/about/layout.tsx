@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About Touch Teq Engineering | Specialist Fire & Gas Detection Engineering',
+  title: 'About Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
   description:
-    'Touch Teq Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+    'Touch Teqniques Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
   keywords: [
-    'about Touch Teq',
+    'about Touch Teqniques Engineering',
     'fire and gas detection engineering',
     'control and instrumentation',
     'hazardous area classification',
@@ -27,24 +27,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/about',
-    siteName: 'Touch Teq Engineering',
-    title: 'About Touch Teq Engineering | Specialist Fire & Gas Detection Engineering',
+    siteName: 'Touch Teqniques Engineering',
+    title: 'About Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
     description:
-      'Touch Teq Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+      'Touch Teqniques Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: [
       {
         url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
-        alt: 'Touch Teq Engineering',
+        alt: 'Touch Teqniques Engineering',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About Touch Teq Engineering | Specialist Fire & Gas Detection Engineering',
+    title: 'About Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
     description:
-      'Touch Teq Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
+      'Touch Teqniques Engineering is a specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services across Southern Africa.',
     images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
   },

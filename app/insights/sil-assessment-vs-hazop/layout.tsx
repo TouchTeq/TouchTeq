@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/insights/sil-assessment-vs-hazop',
-    siteName: 'Touch Teq Engineering',
+    siteName: 'Touch Teqniques Engineering',
     title: 'SIL Assessment vs HAZOP: Understanding the Difference',
     description:
       'SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals.',

@@ -58,7 +58,7 @@ export default function AboutSection() {
             </h2>
             
             <p className="text-slate-600 text-base md:text-lg leading-relaxed mb-8 font-medium max-w-xl">
-              Touch Teq is not a general contractor. We are a specialist engineering firm focused on the intersection of safety, compliance, and industrial efficiency. Based in Southern Africa, we provide the technical backbone for refineries, chemical plants, and heavy manufacturing facilities.
+              Touch Teqniques is not a general contractor. We are a specialist engineering firm focused on the intersection of safety, compliance, and industrial efficiency. Based in Southern Africa, we provide the technical backbone for refineries, chemical plants, mining, and heavy manufacturing facilities.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">

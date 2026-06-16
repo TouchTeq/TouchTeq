@@ -111,7 +111,7 @@ const advantages = [
 ];
 
 const faqs = [
-  { q: "Do you use subcontractors for installation and commissioning work?", a: "We maintain direct control over all safety-critical installation and commissioning activities using our own engineers and technicians. For specific support functions on larger projects, we may engage trusted partners, but engineering supervision always remains with Touch Teq." },
+  { q: "Do you use subcontractors for installation and commissioning work?", a: "We maintain direct control over all safety-critical installation and commissioning activities using our own engineers and technicians. For specific support functions on larger projects, we may engage trusted partners, but engineering supervision always remains with Touch Teqniques Engineering." },
   { q: "Can you install and commission systems designed by another engineering firm?", a: "Yes. We regularly execute installation and commissioning based on design packages from other consultancies or EPC contractors. We review documentation before mobilisation and raise technical queries where needed." },
   { q: "Can you work during a planned plant shutdown or turnaround?", a: "Yes. We frequently deliver scope within shutdown windows at refineries, chemical plants, and power stations. We plan resources and logistics to complete our scope within the allocated window." },
   { q: "What documentation do we receive at handover?", a: "You receive a complete commissioning data book including as-built drawings, loop test records, calibration certificates, functional test reports, equipment manuals, spare parts lists, hazardous area inspection records, and a signed completion certificate." },
@@ -152,7 +152,7 @@ export default function InstallationCommissioningPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -201,7 +201,7 @@ export default function InstallationCommissioningPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              Touch Teq Engineering takes your project from approved design to fully operational system. Our engineers and technicians handle physical installation, loop testing, functional safety verification, and formal handover of fire and gas, C&I, and electrical systems.
+              Touch Teqniques Engineering takes your project from approved design to fully operational system. Our engineers and technicians handle physical installation, loop testing, functional safety verification, and formal handover of fire and gas, C&I, and electrical systems.
             </motion.p>
             
             <motion.div
@@ -554,7 +554,7 @@ export default function InstallationCommissioningPage() {
               viewport={{ once: true }}
               className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4"
             >
-              The Touch Teq Advantage
+              The Touch Teqniques Engineering Advantage
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}

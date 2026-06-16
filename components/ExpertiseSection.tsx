@@ -42,7 +42,7 @@ export default function ExpertiseSection() {
             >
               <Image 
                 src="/esce.jpeg" 
-                alt="Touch Teq Engineering Solutions"
+                alt="Touch Teqniques Engineering Solutions"
                 width={640}
                 height={800}
                 className="w-full h-auto object-cover"
@@ -62,7 +62,7 @@ export default function ExpertiseSection() {
               <div className="flex items-center space-x-2 mb-4">
                 <div className="h-1.5 w-1.5 bg-[#ff6900] rounded-full"></div>
                 <span className="text-[#ff6900] font-mono text-xs font-bold uppercase tracking-[0.3em]">
-                  Touch Teq • Experienced Engineering Experts
+                  Touch Teqniques Engineering • Experienced Engineering Experts
                 </span>
               </div>
               
@@ -72,7 +72,7 @@ export default function ExpertiseSection() {
               </h2>
               
               <p className="text-slate-600 text-lg leading-relaxed mb-10">
-                Touch Teq Engineering provides fire & gas detection, automation, control and instrumentation, and electrical engineering solutions for industrial facilities where reliability and operational safety are critical. Every project is handled directly by a qualified engineer, ensuring clear communication, accountable decision-making, and consistent quality from design through support, backed by 24/7 emergency service.
+                Touch Teqniques Engineering provides fire & gas detection, automation, control and instrumentation, and electrical engineering solutions for industrial facilities where reliability and operational safety are critical. Every project is handled directly by a qualified engineer, ensuring clear communication, accountable decision-making, and consistent quality from design through support, backed by 24/7 emergency service.
               </p>
 
               {/* Checklist */}
@@ -103,7 +103,7 @@ export default function ExpertiseSection() {
                 transition={{ delay: 0.7 }}
                 className="text-slate-500 text-sm italic mb-12 border-l-2 border-slate-100 pl-6"
               >
-                We deliver practical engineering solutions that protect people, assets, and operations—without unnecessary complexity.
+                We deliver practical engineering solutions that protect people, assets, and operations, without unnecessary complexity.
               </motion.p>
 
               {/* CTA Button */}

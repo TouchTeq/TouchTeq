@@ -11,8 +11,8 @@ const industries = [
     id: 1,
     title: "Heavy Industry",
     href: "/industries",
-    categories: "Mining & Minerals | Metals & Steel | Cement & Aggregates",
-    description: "Fire & gas detection, control & instrumentation, and electrical engineering solutions for mining operations, metals processing, and cement production facilities across Southern Africa.",
+    categories: "Metals & Steel | Cement & Aggregates | Smelters | Foundries",
+    description: "Fire & gas detection, control & instrumentation, and electrical engineering solutions for metals processing, cement production, and smelting facilities operating in harsh industrial environments across Southern Africa.",
     image: "/heavy_industry.jpeg",
     bullets: [
       "Harsh environment solutions",
@@ -37,6 +37,20 @@ const industries = [
   },
   {
     id: 3,
+    title: "Mining & Minerals",
+    href: "/industries",
+    categories: "Surface & Underground | Coal & Mineral Processing | Smelting & Refining",
+    description: "Methane and toxic gas monitoring, conveyor fire detection, and hazardous area electrical engineering for surface plants, underground workings, and mineral processing circuits across Southern Africa's mining belt.",
+    image: "/Mining_and_Minerals Processing.jpeg",
+    bullets: [
+      "Methane, CO & NO₂ monitoring systems",
+      "Conveyor fire detection & protection",
+      "Surface plant and underground engineering",
+      "MHSA & DMR compliance"
+    ]
+  },
+  {
+    id: 5,
     title: "Manufacturing",
     href: "/industries",
     categories: "Automotive | Food & Beverage | Packaging | Plastics & Rubber",
@@ -50,7 +64,7 @@ const industries = [
     ]
   },
   {
-    id: 4,
+    id: 6,
     title: "Infrastructure",
     href: "/industries",
     categories: "Power Generation | Water & Wastewater | Transport | Commercial Buildings",
@@ -222,7 +236,7 @@ export default function IndustriesCarousel() {
                       <div className="absolute inset-0 z-10 bg-black/10 transition-colors group-hover/image:bg-transparent" />
                       <Image
                         src={industry.image}
-                        alt={`${industry.title} - ${industry.categories} engineering services - Touch Teq`}
+                        alt={`${industry.title} - ${industry.categories} engineering services - Touch Teqniques Engineering`}
                         fill
                         className="object-cover transition-transform duration-700 group-hover/image:scale-105"
                         referrerPolicy="no-referrer"

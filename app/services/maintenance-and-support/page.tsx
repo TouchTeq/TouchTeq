@@ -162,7 +162,7 @@ export default function MaintenanceAndSupportPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -277,7 +277,7 @@ export default function MaintenanceAndSupportPage() {
                 In a high-risk industrial environment, a system failure is more than just an inconvenience. It is a safety risk and a potential production disaster. Fire and gas detection, control systems, and electrical infrastructure require regular, professional attention to remain reliable and properly documented.
               </p>
               <p>
-                At Touch Teq Engineering, we don&apos;t just install systems and walk away. We provide the ongoing technical support needed to keep your facility running safely. Our maintenance programs are designed to identify potential issues before they cause a shutdown, ensuring your safety-critical systems are ready to perform when they are needed most.
+                At Touch Teqniques Engineering, we don&apos;t just install systems and walk away. We provide the ongoing technical support needed to keep your facility running safely. Our maintenance programs are designed to identify potential issues before they cause a shutdown, ensuring your safety-critical systems are ready to perform when they are needed most.
               </p>
               <p>
                 Whether you need a once-off system health check, a long-term preventative maintenance contract, or urgent emergency repairs, our engineering team is available to support your operations across Southern Africa.
@@ -428,12 +428,12 @@ export default function MaintenanceAndSupportPage() {
         </div>
       </section>
 
-      {/* Section 6: Why Choose Touch Teq */}
+      {/* Section 6: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teq Advantage</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teqniques Engineering Advantage</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Direct Access to <br />
                 <span className="text-orange-500">Engineering Expertise</span>
@@ -549,7 +549,7 @@ export default function MaintenanceAndSupportPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
             >
-              Don&apos;t wait for a failure to find out if your system works. Contact Touch Teq today to discuss a preventative maintenance program or request emergency technical support.
+              Don&apos;t wait for a failure to find out if your system works. Contact Touch Teqniques Engineering today to discuss a preventative maintenance program or request emergency technical support.
             </motion.p>
             
             <motion.div

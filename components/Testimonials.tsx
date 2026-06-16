@@ -61,7 +61,7 @@ export default function Testimonials() {
             >
               <Image
                 src="/wcs.jpg"
-                alt="Touch Teq project delivery"
+                alt="Touch Teqniques Engineering project delivery"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"

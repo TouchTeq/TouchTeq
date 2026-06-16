@@ -10,12 +10,12 @@ import Link from 'next/link';
 const sections = [
   {
     title: 'Who We Are',
-    content: `This website is operated by Touch Teqniques Engineering Services, trading as Touch Teq Engineering, Johannesburg, South Africa. By accessing or using this website you agree to these terms.`,
+    content: `This website is operated by Touch Teqniques Engineering Services, trading as Touch Teqniques Engineering, Johannesburg, South Africa. By accessing or using this website you agree to these terms.`,
     icon: Globe
   },
   {
     title: 'Use of This Website',
-    content: `This website is intended to provide information about Touch Teq Engineering's services, share technical knowledge, and allow prospective clients to make contact. You may use this website for lawful purposes only.\n\nYou may not:\n\n• Copy, reproduce, or redistribute any content from this website without our written permission\n• Use this website in any way that could damage its operation or reputation\n• Attempt to gain unauthorised access to any part of the website or its underlying systems`,
+    content: `This website is intended to provide information about Touch Teqniques Engineering's services, share technical knowledge, and allow prospective clients to make contact. You may use this website for lawful purposes only.\n\nYou may not:\n\n• Copy, reproduce, or redistribute any content from this website without our written permission\n• Use this website in any way that could damage its operation or reputation\n• Attempt to gain unauthorised access to any part of the website or its underlying systems`,
     icon: FileText
   },
   {
@@ -25,12 +25,12 @@ const sections = [
   },
   {
     title: 'Intellectual Property',
-    content: `All content on this website — including text, articles, technical guides, downloadable resources, graphics, and the Touch Teq name and logo — is the intellectual property of Touch Teqniques Engineering Services and is protected under applicable South African law.\n\nYou may share links to our content and reference our articles with appropriate attribution. You may not reproduce, republish, or repurpose our content for commercial use without prior written consent.`,
+    content: `All content on this website, including text, articles, technical guides, downloadable resources, graphics, and the Touch Teqniques Engineering name and logo, is the intellectual property of Touch Teqniques Engineering Services and is protected under applicable South African law.\n\nYou may share links to our content and reference our articles with appropriate attribution. You may not reproduce, republish, or repurpose our content for commercial use without prior written consent.`,
     icon: Scale
   },
   {
-    title: 'Disclaimer — Important',
-    content: `The information, articles, technical guides, risk assessment tools, checklists, and downloadable resources published on this website are provided for general informational purposes only. They are intended to educate and inform, not to serve as professional engineering advice.\n\nNothing on this website constitutes a substitute for qualified engineering assessment, design, or consultation.\n\nFire and gas detection systems, hazardous area classifications, functional safety assessments, SIL determinations, and related engineering activities are safety-critical by nature. They must be designed, assessed, and commissioned by a suitably qualified and experienced engineer in accordance with applicable standards including but not limited to IEC 61511, IEC 60079, and SANS regulations.\n\nTouch Teqniques Engineering Services accepts no liability for any loss, damage, injury, or consequence — direct or indirect — arising from decisions made or actions taken based solely on information obtained from this website.\n\nIf you require professional engineering advice, please contact us directly to discuss your specific requirements.`,
+    title: 'Disclaimer, Important',
+    content: `The information, articles, technical guides, risk assessment tools, checklists, and downloadable resources published on this website are provided for general informational purposes only. They are intended to educate and inform, not to serve as professional engineering advice.\n\nNothing on this website constitutes a substitute for qualified engineering assessment, design, or consultation.\n\nFire and gas detection systems, hazardous area classifications, functional safety assessments, SIL determinations, and related engineering activities are safety-critical by nature. They must be designed, assessed, and commissioned by a suitably qualified and experienced engineer in accordance with applicable standards including but not limited to IEC 61511, IEC 60079, and SANS regulations.\n\nTouch Teqniques Engineering Services accepts no liability for any loss, damage, injury, or consequence, direct or indirect, arising from decisions made or actions taken based solely on information obtained from this website.\n\nIf you require professional engineering advice, please contact us directly to discuss your specific requirements.`,
     icon: AlertTriangle,
     isWarning: true
   },

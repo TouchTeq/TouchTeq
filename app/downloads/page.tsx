@@ -253,7 +253,7 @@ export default function DownloadsPage() {
                         </button>
 
                         <p className="text-slate-400 text-xs leading-relaxed">
-                          By downloading, you agree to receive relevant technical content from Touch Teq Engineering. You can unsubscribe at any time.
+                          By downloading, you agree to receive relevant technical content from Touch Teqniques Engineering. You can unsubscribe at any time.
                         </p>
                       </div>
                     )}

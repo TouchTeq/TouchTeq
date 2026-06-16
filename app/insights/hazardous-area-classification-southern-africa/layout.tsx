@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa',
-    siteName: 'Touch Teq Engineering',
+    siteName: 'Touch Teqniques Engineering',
     title: 'A Guide to Hazardous Area Classification in Southern Africa',
     description:
       'A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements.',

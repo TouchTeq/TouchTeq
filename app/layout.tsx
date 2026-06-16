@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Touch Teq | Specialist Fire & Gas Detection Engineering | South Africa',
+  title: 'Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering | South Africa',
   description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation in safety-critical industrial environments across Southern Africa.',
   keywords: [
     'fire and gas detection',
@@ -52,21 +52,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za',
-    siteName: 'Touch Teq Engineering',
-    title: 'Touch Teq | Specialist Fire & Gas Detection Engineering',
+    siteName: 'Touch Teqniques Engineering',
+    title: 'Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
     description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation across Southern Africa.',
     images: [
       {
         url: '/touch-teq-logo-wordmark.jpeg',
         width: 1200,
         height: 630,
-        alt: 'Touch Teq Engineering',
+        alt: 'Touch Teqniques Engineering',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Touch Teq | Specialist Fire & Gas Detection Engineering',
+    title: 'Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
     description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation across Southern Africa.',
     images: ['/touch-teq-logo-wordmark.jpeg'],
     creator: '@TouchTeqniques',
@@ -95,7 +95,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               '@type': 'ProfessionalService',
               '@id': 'https://touchteq.co.za/#professional-service',
               name: 'Touch Teqniques Engineering Services',
-              alternateName: 'Touch Teq Engineering',
+              alternateName: 'Touch Teqniques Engineering',
               url: 'https://touchteq.co.za',
               logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
               image: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
@@ -163,7 +163,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               '@type': 'WebSite',
               '@id': 'https://touchteq.co.za/#website',
               url: 'https://touchteq.co.za',
-              name: 'Touch Teq Engineering',
+              name: 'Touch Teqniques Engineering',
               inLanguage: 'en-ZA',
               publisher: {
                 '@id': 'https://touchteq.co.za/#professional-service',

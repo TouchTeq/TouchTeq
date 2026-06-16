@@ -4,7 +4,7 @@ import SettingsClient from './SettingsClient';
 import { getBusinessProfile } from '@/lib/settings/actions';
 
 export const metadata: Metadata = {
-  title: 'Settings | Touch Teq Office',
+  title: 'Settings | Touch Teqniques Engineering Office',
   description: 'Manage your business profile, banking details, and application settings.',
 };
 

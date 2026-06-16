@@ -296,7 +296,7 @@ export default function IndustriesPage() {
         }))}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -336,7 +336,7 @@ export default function IndustriesPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              Touch Teq Engineering works exclusively with industrial clients in environments where the consequences of failure are serious. Our engineers have hands-on experience across refining, mining, chemical, power, and manufacturing sectors across South Africa, Botswana, Mozambique, Namibia, and Zimbabwe
+              Touch Teqniques Engineering works exclusively with industrial clients in environments where the consequences of failure are serious. Our engineers have hands-on experience across refining, mining, chemical, power, and manufacturing sectors across South Africa, Botswana, Mozambique, Namibia, and Zimbabwe
             </motion.p>
             
             <motion.div
@@ -594,7 +594,7 @@ export default function IndustriesPage() {
         </div>
       </section>
 
-      {/* Section 5: Why Choose Touch Teq */}
+      {/* Section 5: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
@@ -604,7 +604,7 @@ export default function IndustriesPage() {
               viewport={{ once: true }}
               className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4"
             >
-              The Touch Teq Advantage
+              The Touch Teqniques Engineering Advantage
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}

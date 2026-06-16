@@ -22,7 +22,7 @@ export function getWhatsAppInvoiceMessage(
   invoiceNumber: string,
   total: number
 ): string {
-  return `Good day,\n\nPlease find attached Invoice ${invoiceNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}.\n\nKind regards,\nTouch Teq Engineering`;
+  return `Good day,\n\nPlease find attached Invoice ${invoiceNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}.\n\nKind regards,\nTouch Teqniques Engineering`;
 }
 
 export function getWhatsAppQuoteMessage(
@@ -30,7 +30,7 @@ export function getWhatsAppQuoteMessage(
   quoteNumber: string,
   total: number
 ): string {
-  return `Good day,\n\nPlease find attached Quotation ${quoteNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}.\n\nPlease let us know if you have any questions.\n\nKind regards,\nTouch Teq Engineering`;
+  return `Good day,\n\nPlease find attached Quotation ${quoteNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}.\n\nPlease let us know if you have any questions.\n\nKind regards,\nTouch Teqniques Engineering`;
 }
 
 export function getWhatsAppPaymentReminderMessage(
@@ -39,7 +39,7 @@ export function getWhatsAppPaymentReminderMessage(
   total: number,
   daysOverdue: number
 ): string {
-  return `Good day,\n\nThis is a friendly reminder regarding Invoice ${invoiceNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}, which is now ${daysOverdue} day(s) overdue.\n\nWe would appreciate it if payment could be arranged at your earliest convenience.\n\nKind regards,\nTouch Teq Engineering`;
+  return `Good day,\n\nThis is a friendly reminder regarding Invoice ${invoiceNumber} for R${total.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}, which is now ${daysOverdue} day(s) overdue.\n\nWe would appreciate it if payment could be arranged at your earliest convenience.\n\nKind regards,\nTouch Teqniques Engineering`;
 }
 
 export function getWhatsAppGeneralMessage(contactName: string): string {

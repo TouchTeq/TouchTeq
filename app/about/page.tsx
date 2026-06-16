@@ -182,8 +182,8 @@ const advantages = [
 
 const faqs = [
   {
-    q: "How long has Touch Teq Engineering been operating?",
-    a: "Touch Teq Engineering was founded in [year] with a specific focus on industrial fire and gas detection, control and instrumentation, and electrical engineering. Since our founding, we have built a portfolio of projects across multiple industries and countries in the Southern African region. Our team's collective experience in the industrial sector extends well beyond the age of the company itself."
+    q: "How long has Touch Teqniques Engineering been operating?",
+    a: "Touch Teqniques Engineering was founded in [year] with a specific focus on industrial fire and gas detection, control and instrumentation, and electrical engineering. Since our founding, we have built a portfolio of projects across multiple industries and countries in the Southern African region. Our team's collective experience in the industrial sector extends well beyond the age of the company itself."
   },
   {
     q: "Are your engineers registered with ECSA?",
@@ -191,7 +191,7 @@ const faqs = [
   },
   {
     q: "Do you use subcontractors for your project work?",
-    a: "We maintain direct control over all critical engineering, installation, and commissioning activities using our own internal team. For specific support functions or large-scale mobilisations, we may engage trusted specialist partners, but the engineering oversight, quality control, and accountability always remain with Touch Teq. Our clients are informed if any external resources are involved in their project."
+    a: "We maintain direct control over all critical engineering, installation, and commissioning activities using our own internal team. For specific support functions or large-scale mobilisations, we may engage trusted specialist partners, but the engineering oversight, quality control, and accountability always remain with Touch Teqniques Engineering. Our clients are informed if any external resources are involved in their project."
   },
   {
     q: "What size of projects do you typically handle?",
@@ -206,7 +206,7 @@ const faqs = [
     a: "Yes. We maintain professional indemnity insurance, public liability insurance, and contractor's all-risk coverage appropriate to the nature and value of the work we perform. Certificates of insurance are available on request and are routinely provided as part of our vendor registration and tender documentation."
   },
   {
-    q: "How do we start working with Touch Teq?",
+    q: "How do we start working with Touch Teqniques Engineering?",
     a: "The easiest way to start is to contact us directly by phone or email, or to submit a request through the contact form on our website. Tell us about your facility, the service you need, and any relevant project details. A qualified engineer will review your inquiry and get back to you to discuss the scope, the approach, and the next steps. There is no obligation, and we are happy to have an initial conversation to understand whether we are the right fit for your requirements."
   },
   {
@@ -233,7 +233,7 @@ export default function AboutPage() {
         }))}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -287,7 +287,7 @@ export default function AboutPage() {
               transition={{ delay: 0.2, duration: 0.8 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              Touch Teq Engineering is a focused industrial engineering firm that delivers fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services for high-risk facilities across Southern Africa. We are built on technical depth, professional accountability, and a straightforward commitment to doing the work properly.
+              Touch Teqniques Engineering is a focused industrial engineering firm that delivers fire and gas detection, control and instrumentation, electrical engineering, and hazardous area classification services for high-risk facilities across Southern Africa. We are built on technical depth, professional accountability, and a straightforward commitment to doing the work properly.
             </motion.p>
             
             <motion.div
@@ -351,13 +351,13 @@ export default function AboutPage() {
               className="space-y-6 text-slate-600 text-lg leading-relaxed font-medium text-left"
             >
               <p>
-                Touch Teq Engineering exists for industrial facilities that need engineering partners who understand the technical and regulatory demands of high-risk environments. General electrical contractors may be able to pull cables, but specialist systems such as fire and gas detection layouts and hazardous area classification require focused engineering judgement. Large multinational consultancies can produce engineering documents, but practical site experience is what helps those designs translate into installations that actually work.
+                Touch Teqniques Engineering exists for industrial facilities that need engineering partners who understand the technical and regulatory demands of high-risk environments. General electrical contractors may be able to pull cables, but specialist systems such as fire and gas detection layouts and hazardous area classification require focused engineering judgement. Large multinational consultancies can produce engineering documents, but practical site experience is what helps those designs translate into installations that actually work.
               </p>
               <p>
-                We set out to bridge that gap. Touch Teq is a specialist engineering firm that works in industrial environments: refineries, chemical plants, mines, fuel storage facilities, power stations, and processing operations. Every project we deliver, every engineer we employ, and every capability we develop is focused on the systems that protect people and keep industrial operations running safely.
+                We set out to bridge that gap. Touch Teqniques Engineering is a specialist engineering firm that works in industrial environments: refineries, chemical plants, mines, fuel storage facilities, power stations, and processing operations. Every project we deliver, every engineer we employ, and every capability we develop is focused on the systems that protect people and keep industrial operations running safely.
               </p>
               <p>
-                Our scope covers three core technical disciplines: fire and gas detection, control and instrumentation, and industrial electrical engineering. Within those disciplines, we provide the full range of services from front-end design and hazardous area classification through to equipment procurement, sales support, installation, commissioning, and ongoing maintenance. This means our clients deal with one engineering team that understands the entire lifecycle of the systems they depend on, not a fragmented chain of subcontractors passing responsibility from one to the next.
+                Our scope covers three core technical disciplines: fire and gas detection, control and instrumentation, and industrial electrical engineering. Within those disciplines, we provide the full range of services from front-end design and hazardous area classification through to equipment procurement, sales support, installation, commissioning, and ongoing maintenance. This means our clients deal with one engineering team that understands the entire lifecycle of the systems they depend on.
               </p>
               <p>
                 We are technically focused, operationally practical, and directly accountable for the quality of every piece of work that carries our name.
@@ -578,7 +578,7 @@ export default function AboutPage() {
             >
               Professional registration is not a marketing badge. It is a legal and ethical commitment that underpins the credibility of every engineering deliverable we produce. When a registered professional signs off on a design, a classification, or a commissioning record, they are taking personal responsibility for the technical content and its compliance with the applicable standards.
               <br /><br />
-              At Touch Teq Engineering, our work is overseen by professionals registered with the Engineering Council of South Africa (ECSA). This registration is a requirement under the Engineering Profession Act and provides our clients with the assurance that their engineering is being conducted by individuals who meet the qualifications, competence, and ethical standards defined by the profession.
+              At Touch Teqniques Engineering, our work is overseen by professionals registered with the Engineering Council of South Africa (ECSA). This registration is a requirement under the Engineering Profession Act and provides our clients with the assurance that their engineering is being conducted by individuals who meet the qualifications, competence, and ethical standards defined by the profession.
             </motion.p>
           </div>
 
@@ -631,11 +631,11 @@ export default function AboutPage() {
               transition={{ delay: 0.2 }}
               className="text-slate-600 text-lg leading-relaxed font-medium"
             >
-              The strength of any engineering firm is its people. At Touch Teq, our team is made up of engineers and technicians who have built their careers in industrial environments. They have worked inside refineries during turnarounds. They have commissioned fire and gas systems in chemical plants. They have traced undocumented wiring in processing plants that are decades old. They have carried out hazardous area classifications at fuel depots, mines, and power stations across the region.
+              The strength of any engineering firm is its people. At Touch Teqniques Engineering, our team is made up of engineers and technicians who have built their careers in industrial environments. They have worked inside refineries during turnarounds. They have commissioned fire and gas systems in chemical plants. They have traced undocumented wiring in processing plants that are decades old. They have carried out hazardous area classifications at fuel depots, mines, and power stations across the region.
               <br /><br />
               This is not a team that learned industrial engineering from a textbook and then started a company. It is a team that has accumulated its knowledge through years of hands-on project delivery in the types of facilities we serve. That practical experience shows up in the quality of our designs, the efficiency of our installations, and the reliability of the systems we hand over.
               <br /><br />
-              We invest in our team&apos;s ongoing development. Our engineers maintain their professional registrations, stay current with changes to the standards they work to, and continuously build their competence through project exposure and formal training. When a client engages Touch Teq, they are engaging a team that is technically current and operationally capable.
+              We invest in our team&apos;s ongoing development. Our engineers maintain their professional registrations, stay current with changes to the standards they work to, and continuously build their competence through project exposure and formal training. When a client engages Touch Teqniques Engineering, they are engaging a team that is technically current and operationally capable.
             </motion.p>
           </div>
         </div>
@@ -674,7 +674,7 @@ export default function AboutPage() {
                 </h3>
                 <div className="space-y-5 text-slate-600 text-base md:text-lg leading-[1.8] font-medium">
                   <p>
-                    Thabo Matona founded Touch Teqniques Engineering Services with a clear mandate — to deliver specialist fire and gas detection and control & instrumentation engineering without the layers of subcontracting that compromise accountability and quality.
+                    Thabo Matona founded Touch Teqniques Engineering Services with a clear mandate to deliver specialist fire and gas detection and control & instrumentation engineering with direct accountability and quality.
                   </p>
                   <p>
                     With over 20 years of hands-on experience across refineries, chemical processing plants, mining operations, fuel storage facilities, and power generation plants, Thabo brings deep practical knowledge to every project he leads. He has personally designed, commissioned, and handed over fire and gas systems in some of Southern Africa&apos;s most demanding and safety-critical industrial environments.
@@ -684,7 +684,7 @@ export default function AboutPage() {
                   </p>
                   <div className="mt-6 pl-5 py-5 border-l-4 border-orange-500">
                     <p className="text-[#1A2B4C] font-black text-base md:text-lg leading-relaxed">
-                      At Touch Teq, he is not a director who manages from a distance. He is the engineer on your project.
+                      At Touch Teqniques Engineering, he is not a director who manages from a distance. He is the engineer on your project.
                     </p>
                   </div>
                 </div>
@@ -722,7 +722,7 @@ export default function AboutPage() {
               transition={{ delay: 0.2 }}
               className="max-w-4xl mx-auto text-slate-600 text-lg leading-relaxed font-medium mb-12"
             >
-              Touch Teq Engineering is headquartered in [City, South Africa], strategically located to serve the major industrial corridors in Gauteng, Mpumalanga, and KwaZulu-Natal. Our project footprint, however, extends well beyond our home base. 
+              Touch Teqniques Engineering is headquartered in [City, South Africa], strategically located to serve the major industrial corridors in Gauteng, Mpumalanga, and KwaZulu-Natal. Our project footprint, however, extends well beyond our home base. 
               <br /><br />
               We have delivered engineering, installation, and maintenance services at industrial facilities across Southern Africa, including cross-border projects in Mozambique, Botswana, Namibia, and Zimbabwe. We manage the logistics, permits, regulatory requirements, and site access protocols involved in working across borders as a standard part of our project delivery. Our regional clients receive the same engineering standard, the same documentation quality, and the same level of direct accountability as our South African clients.
             </motion.p>
@@ -868,7 +868,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Section 10: Why Choose Touch Teq */}
+      {/* Section 10: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
@@ -878,7 +878,7 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4"
             >
-              The Touch Teq Advantage
+              The Touch Teqniques Engineering Advantage
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -960,7 +960,7 @@ export default function AboutPage() {
                 transition={{ delay: 0.1 }}
                 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-tight"
               >
-                Common Questions About <br />Touch Teq Engineering
+                Common Questions About <br />Touch Teqniques Engineering
               </motion.h2>
             </div>
 

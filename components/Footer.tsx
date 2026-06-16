@@ -60,7 +60,7 @@ export default function Footer() {
               <div className="flex items-center">
                 <Image 
                   src="/touch-teq-logo-wordmark.jpeg" 
-                  alt="Touch Teq Engineering" 
+                  alt="Touch Teqniques Engineering" 
                   width={454}
                   height={65}
                   className="h-10 md:h-12 w-auto"
@@ -227,7 +227,7 @@ export default function Footer() {
             <div className="flex items-center space-x-2">
               <div className="w-1 h-1 bg-orange-500"></div>
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                Copyright © {new Date().getFullYear()} Touch Teq Engineering. All Rights Reserved. A <Link href="https://www.kreativereflow.com/" target="_blank" className="text-orange-500 hover:underline">Kreative Reflow</Link> Design.
+                Copyright © {new Date().getFullYear()} Touch Teqniques Engineering. All Rights Reserved. A <Link href="https://www.kreativereflow.com/" target="_blank" className="text-orange-500 hover:underline">Kreative Reflow</Link> Design.
               </p>
             </div>
             <div className="flex space-x-8">

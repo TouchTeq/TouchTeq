@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen bg-white overflow-x-hidden">
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -100,7 +100,7 @@ export default function Home() {
                 transition={{ delay: 0.1 }}
                 className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium leading-relaxed"
               >
-                From fire and gas detection to electrical engineering and hazardous area classification, Touch Teq delivers specialist industrial solutions across Southern Africa.
+                From fire and gas detection to electrical engineering and hazardous area classification, Touch Teqniques Engineering delivers specialist industrial solutions across Southern Africa.
               </motion.p>
               
               <motion.div

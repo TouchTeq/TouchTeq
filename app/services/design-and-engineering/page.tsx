@@ -234,7 +234,7 @@ export default function DesignAndEngineeringPage() {
         ]}
       />
       <OrganizationJsonLd 
-        name="Touch Teq Engineering"
+        name="Touch Teqniques Engineering"
         url="https://touchteq.co.za"
         logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
@@ -283,7 +283,7 @@ export default function DesignAndEngineeringPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-300 text-lg md:text-xl max-w-2xl leading-relaxed mb-10 font-medium"
             >
-              Touch Teq Engineering provides the technical foundation that industrial projects depend on. We design fire and gas detection, control and instrumentation, and electrical installations from first principles.
+              Touch Teqniques Engineering provides the technical foundation that industrial projects depend on. We design fire and gas detection, control and instrumentation, and electrical installations from first principles.
             </motion.p>
             
             <motion.div
@@ -348,7 +348,7 @@ export default function DesignAndEngineeringPage() {
                 The quality of your engineering determines the quality of your installation. A project with incomplete drawings, ambiguous specifications, or poorly defined safety logic will generate problems at every stage, from procurement through to commissioning and handover.
               </p>
               <p>
-                At Touch Teq Engineering, we work at the front end of the project lifecycle, where the decisions that shape everything downstream are made. We take your operational requirements, your process hazards, your regulatory obligations, and your site-specific constraints, and we translate them into a complete engineering design that your construction team can execute with confidence.
+                At Touch Teqniques Engineering, we work at the front end of the project lifecycle, where the decisions that shape everything downstream are made. We take your operational requirements, your process hazards, your regulatory obligations, and your site-specific constraints, and we translate them into a complete engineering design that your construction team can execute with confidence.
               </p>
               <p>
                 Our approach is grounded in practical experience. Because we also deliver installation and commissioning services, our engineers understand what happens when a design meets the reality of a working plant. We know which cable routing arrangements cause access problems during construction. We know which junction box layouts make termination difficult in confined spaces.
@@ -601,12 +601,12 @@ export default function DesignAndEngineeringPage() {
         </div>
       </section>
 
-      {/* Section 9: Why Choose Touch Teq */}
+      {/* Section 9: Why Choose Touch Teqniques Engineering */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             <div className="lg:w-1/2">
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teq Advantage</span>
+              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">The Touch Teqniques Engineering Advantage</span>
               <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
                 Engineers Who Design <br />
                 What They Know <br />

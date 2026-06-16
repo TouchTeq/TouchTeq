@@ -460,7 +460,7 @@ function TravelLogbookContent() {
         : null;
       
       const summaryData = [
-        { Field: 'Company', Value: 'Touch Teq Engineering' },
+        { Field: 'Company', Value: 'Touch Teqniques Engineering' },
         { Field: 'Tax Period', Value: label },
         { Field: 'Vehicle', Value: exportVehicle ? `${exportVehicle.vehicle_description} (${exportVehicle.registration_number})` : 'All Vehicles' },
         { Field: 'Total Trips', Value: exportTrips.length },

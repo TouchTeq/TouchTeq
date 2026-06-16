@@ -47,7 +47,7 @@ export default function DashboardGreeting({ name }: DashboardGreetingProps) {
     <div className="flex items-end justify-between gap-4">
       <div>
         <h2 className="text-3xl font-black text-white leading-tight">{greeting}</h2>
-        <p className="text-slate-500 text-sm font-medium mt-1">Welcome back to Touch Teq Office.</p>
+        <p className="text-slate-500 text-sm font-medium mt-1">Welcome back to Touch Teqniques Engineering Office.</p>
       </div>
       <p className="text-sm font-bold text-orange-400 uppercase tracking-wider whitespace-nowrap pb-0.5">
         {date}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import JsonLd from '@/components/seo/JsonLd';
 
 export const metadata: Metadata = {
-  title: 'Engineering Services | Touch Teq',
+  title: 'Engineering Services | Touch Teqniques Engineering',
   description: 'Specialist engineering services for fire and gas detection, hazardous area classification, and control & instrumentation in safety-critical industrial environments across Southern Africa.',
 };
 

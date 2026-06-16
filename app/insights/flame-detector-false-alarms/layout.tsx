@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://touchteq.co.za/insights/flame-detector-false-alarms',
-    siteName: 'Touch Teq Engineering',
+    siteName: 'Touch Teqniques Engineering',
     title: 'Top 5 Reasons for False Alarms in Optical Flame Detectors',
     description:
       'False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility.',
