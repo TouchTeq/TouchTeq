@@ -61,65 +61,116 @@ export async function getCreditNoteDetails(id: string) {
 }
 
 /**
- * Apply a credit note to its linked invoice using the atomic DB function.
- * This ensures proper balance recalculation and audit trail.
+ * Apply a credit note to its linked invoice (direct writes — no RPC).
+ * Reduces the invoice balance by the credit note total, recomputes status,
+ * records the application in the credit_note_applications ledger (which enforces
+ * one application per credit note), and marks the credit note Applied.
  */
 export async function applyCreditNote(id: string) {
   const supabase = await createClient();
-  
-  const { data, error } = await supabase.rpc('apply_credit_note_to_invoice', {
-    p_credit_note_id: id,
-  });
+  const now = new Date().toISOString();
 
-  if (error) throw error;
-  
-  if (!data?.success) {
-    throw new Error(data?.error || 'Credit note application failed');
+  const { data: cn, error: cnErr } = await supabase
+    .from('credit_notes')
+    .select('id, status, total, invoice_id, credit_note_number')
+    .eq('id', id)
+    .single();
+  if (cnErr || !cn) throw new Error(cnErr?.message || 'Credit note not found');
+  if (cn.status === 'Applied') throw new Error(`Credit note ${cn.credit_note_number} has already been applied.`);
+  if (!cn.invoice_id) throw new Error(`Credit note ${cn.credit_note_number} is not linked to an invoice.`);
+
+  const { data: inv, error: invErr } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, total, balance_due, status')
+    .eq('id', cn.invoice_id)
+    .single();
+  if (invErr || !inv) throw new Error('Linked invoice not found');
+  if (inv.status === 'Cancelled') throw new Error(`Cannot apply to cancelled invoice ${inv.invoice_number}.`);
+
+  const amount = Number(cn.total) || 0;
+  const previousBalance = Number(inv.balance_due) || 0;
+  let newBalance = previousBalance - amount;
+  if (newBalance < 0) newBalance = 0;
+  const newStatus = newBalance <= 0 ? 'Paid' : newBalance < Number(inv.total) ? 'Partially Paid' : inv.status;
+  const creditStatus = newBalance <= 0 ? 'Fully Credited' : 'Partially Credited';
+
+  // Ledger insert first — the UNIQUE(credit_note_id) guards against double-apply (race-safe)
+  const { error: ledgerErr } = await supabase
+    .from('credit_note_applications')
+    .insert({ credit_note_id: id, invoice_id: inv.id, applied_amount: amount });
+  if (ledgerErr) {
+    if ((ledgerErr as any).code === '23505') throw new Error(`Credit note ${cn.credit_note_number} has already been applied.`);
+    throw new Error(ledgerErr.message);
   }
+
+  await supabase.from('invoices').update({ balance_due: newBalance, status: newStatus, credit_status: creditStatus, updated_at: now }).eq('id', inv.id);
+  await supabase.from('credit_notes').update({ status: 'Applied', updated_at: now }).eq('id', id);
 
   revalidatePath('/office/invoices');
   revalidatePath('/office/credit-notes');
-  
+
   return {
     success: true,
-    creditNoteNumber: data.credit_note_number,
-    invoiceNumber: data.invoice_number,
-    appliedAmount: data.credit_note_amount,
-    previousBalance: data.previous_invoice_balance,
-    newBalance: data.new_invoice_balance,
-    previousStatus: data.previous_invoice_status,
-    newStatus: data.new_invoice_status,
+    creditNoteNumber: cn.credit_note_number,
+    invoiceNumber: inv.invoice_number,
+    appliedAmount: amount,
+    previousBalance,
+    newBalance,
+    previousStatus: inv.status,
+    newStatus,
   };
 }
 
 /**
- * Cancel an applied credit note using the atomic reversal function.
- * This restores the invoice balance and removes the application record.
+ * Reverse an applied credit note (direct writes — no RPC). Restores the invoice
+ * balance, removes the ledger row, and returns the credit note to Sent status.
  */
-export async function cancelAppliedCreditNote(id: string, reason?: string) {
+export async function cancelAppliedCreditNote(id: string, _reason?: string) {
   const supabase = await createClient();
-  
-  const { data, error } = await supabase.rpc('cancel_applied_credit_note', {
-    p_credit_note_id: id,
-    p_reason: reason || null,
-  });
+  const now = new Date().toISOString();
 
-  if (error) throw error;
-  
-  if (!data?.success) {
-    throw new Error(data?.error || 'Credit note cancellation failed');
-  }
+  const { data: cn, error: cnErr } = await supabase
+    .from('credit_notes')
+    .select('id, status, total, invoice_id, credit_note_number')
+    .eq('id', id)
+    .single();
+  if (cnErr || !cn) throw new Error(cnErr?.message || 'Credit note not found');
+  if (cn.status !== 'Applied') throw new Error(`Credit note ${cn.credit_note_number} is not applied.`);
+
+  const { data: app } = await supabase
+    .from('credit_note_applications')
+    .select('id, invoice_id, applied_amount')
+    .eq('credit_note_id', id)
+    .maybeSingle();
+
+  const invoiceId = app?.invoice_id ?? cn.invoice_id;
+  const amount = Number(app?.applied_amount ?? cn.total) || 0;
+
+  const { data: inv, error: invErr } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, total, balance_due, amount_paid')
+    .eq('id', invoiceId)
+    .single();
+  if (invErr || !inv) throw new Error('Linked invoice not found');
+
+  let newBalance = (Number(inv.balance_due) || 0) + amount;
+  if (newBalance > Number(inv.total)) newBalance = Number(inv.total);
+  const newStatus = newBalance <= 0 ? 'Paid' : Number(inv.amount_paid) > 0 ? 'Partially Paid' : 'Sent';
+
+  await supabase.from('invoices').update({ balance_due: newBalance, status: newStatus, credit_status: 'None', updated_at: now }).eq('id', inv.id);
+  if (app?.id) await supabase.from('credit_note_applications').delete().eq('id', app.id);
+  await supabase.from('credit_notes').update({ status: 'Sent', updated_at: now }).eq('id', id);
 
   revalidatePath('/office/invoices');
   revalidatePath('/office/credit-notes');
-  
+
   return {
     success: true,
-    creditNoteNumber: data.credit_note_number,
-    invoiceNumber: data.invoice_number,
-    reversedAmount: data.reversed_amount,
-    newBalance: data.new_invoice_balance,
-    newStatus: data.new_invoice_status,
+    creditNoteNumber: cn.credit_note_number,
+    invoiceNumber: inv.invoice_number,
+    reversedAmount: amount,
+    newBalance,
+    newStatus,
   };
 }
 
