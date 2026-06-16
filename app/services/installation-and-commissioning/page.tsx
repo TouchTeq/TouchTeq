@@ -463,47 +463,6 @@ export default function InstallationCommissioningPage() {
         </div>
       </section>
 
-      {/* Section 6: Standards */}
-      <section className="py-24 bg-slate-50">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="max-w-4xl mx-auto text-center mb-12">
-            <motion.span
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4"
-            >
-              Technical Standards
-            </motion.span>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-8"
-            >
-              Installation and Commissioning <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">to Recognised</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Standards</span>
-            </motion.h2>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            {standards.map((std, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.03 }}
-                className="px-4 py-2 bg-white text-[#1A2B4C] font-black text-xs uppercase tracking-wider rounded-full border border-slate-100"
-              >
-                {std}
-              </motion.span>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Section 7: Industries */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 md:px-8">

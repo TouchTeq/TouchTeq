@@ -500,42 +500,6 @@ export default function DesignAndEngineeringPage() {
         </div>
       </section>
 
-      {/* Section 6: Standards We Design To */}
-      <section className="py-24 bg-[#1A2B4C] text-white">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-6">Technical Standards</span>
-              <h2 className="text-3xl md:text-5xl font-black uppercase tracking-normal mb-8 leading-tight">
-                Engineering Aligned to <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">International</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6900] to-orange-300">Requirements</span>
-              </h2>
-              <p className="text-slate-300 text-lg leading-relaxed mb-8 font-medium">
-                Every design we produce is developed in accordance with the standards and codes applicable to your industry, your region, and your specific facility requirements.
-              </p>
-            </div>
-            
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
-              {standards.map((std, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white/5 border border-white/10 p-6 rounded-xl flex items-center space-x-6 group hover:bg-white/10 transition-colors"
-                >
-                  <div className="bg-orange-500/20 text-orange-500 px-3 py-1 rounded font-black text-xs uppercase tracking-widest min-w-[140px] text-center">
-                    {std.code}
-                  </div>
-                  <p className="text-slate-300 text-sm font-bold uppercase tracking-normal">{std.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Section 7: Industries We Serve */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 md:px-8">

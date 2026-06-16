@@ -54,9 +54,9 @@ const questions = [
     title: "Hazardous Area Classification",
     question: "Does your facility have a current, approved Hazardous Area Classification study?",
     options: [
-      "Yes — reviewed within the last 3 years",
-      "Yes — but it has not been reviewed recently",
-      "No — or we are unsure",
+      "Yes, reviewed within the last 3 years",
+      "Yes, but it has not been reviewed recently",
+      "No, or we are unsure",
       "We are a new facility still in design"
     ]
   },
@@ -65,8 +65,8 @@ const questions = [
     title: "Safety Instrumented Systems",
     question: "Do you have a Safety Instrumented System (SIS) or Emergency Shutdown System (ESD) in place?",
     options: [
-      "Yes — with a current SIL assessment",
-      "Yes — but no formal SIL assessment has been done",
+      "Yes, with a current SIL assessment",
+      "Yes, but no formal SIL assessment has been done",
       "No",
       "Not applicable to our facility"
     ]
@@ -114,7 +114,7 @@ export default function RiskAssessment() {
     if (audit?.includes("1 to 3 years")) score += 1;
 
     if (hac?.includes("not been reviewed")) score += 1;
-    if (hac?.includes("No — or we are unsure")) score += 2;
+    if (hac?.includes("No, or we are unsure")) score += 2;
 
     if (sis?.includes("no formal SIL")) score += 1;
     if (sis?.includes("No") && !sis?.includes("unsure")) score += 2;
@@ -129,14 +129,14 @@ export default function RiskAssessment() {
     const [ind, haz, audit, hac, sis] = answers;
 
     if (audit?.includes("More than 3 years") || audit?.includes("Never")) {
-      obs.push(`Your F&G detection system has not been formally audited in over 3 years. IEC 61511 and good engineering practice recommend periodic proof testing — gaps here can affect both safety and regulatory compliance.`);
+      obs.push(`Your F&G detection system has not been formally audited in over 3 years. IEC 61511 and good engineering practice recommend periodic proof testing; gaps here can affect both safety and regulatory compliance.`);
     } else if (audit?.includes("1 to 3 years")) {
       obs.push(`Your baseline F&G audit is becoming dated. Routine verification ensures your detectors are still positioned optimally despite any process or structural changes.`);
     } else if (audit?.includes("12 months")) {
       obs.push(`Your F&G systems are frequently audited, which is excellent for maintaining a high level of operational safety and early fault detection.`);
     }
 
-    if (hac?.includes("not been reviewed") || hac?.includes("No —")) {
+    if (hac?.includes("not been reviewed") || hac?.includes("No,")) {
       obs.push(`Without a current Hazardous Area Classification (HAC) study, you risk installing incorrect Ex-rated equipment, which can serve as an ignition source in explosive atmospheres.`);
     }
 
@@ -230,7 +230,7 @@ export default function RiskAssessment() {
             {/* Progress Bar */}
             <div className="mb-12">
               <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-400 mb-4">
-                <span>Phase 1 — Questions</span>
+                <span>Phase 1: Questions</span>
                 <span>{Math.round((currentStep / questions.length) * 100)}% Complete</span>
               </div>
               <div className="w-full bg-[#1A2B4C] h-2 rounded-full overflow-hidden">
@@ -307,7 +307,7 @@ export default function RiskAssessment() {
             {/* Phase 2: Results Screen */}
             <div className="text-center mb-12">
               <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4">
-                Phase 2 — Results
+                Phase 2: Results
               </span>
               <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight mb-4">
                 Your Mini Risk Report
@@ -398,7 +398,7 @@ export default function RiskAssessment() {
             {/* Phase 3: Lead Capture */}
             <div className="text-center mb-8">
               <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4">
-                Phase 3 — Get Your Report
+                Phase 3: Get Your Report
               </span>
             </div>
 

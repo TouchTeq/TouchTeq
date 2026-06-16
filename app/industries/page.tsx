@@ -99,7 +99,7 @@ const industries = [
       "Control and instrumentation for boiler systems, turbine auxiliaries, and water treatment plants",
       "Integration with existing SCADA and DCS platforms"
     ],
-    standards: ["IEC 61511", "IEC 60079-10-1", "IEC 60079-14", "SANS 10108", "SANS 10142", "SANS 10400", "NFPA 850 (where US-standard compliance is required)"]
+
   },
   {
     id: "manufacturing",
@@ -115,7 +115,7 @@ const industries = [
       "Motor control centre (MCC) design and specification",
       "Legacy system upgrades and documentation recovery"
     ],
-    standards: ["SANS 10142", "SANS 10108", "IEC 60079-10-1", "IEC 60079-10-2", "IEC 60079-14", "NFPA 652"]
+
   },
   {
     id: "pharmaceutical",
@@ -179,7 +179,7 @@ const industries = [
       "Telemetry and remote monitoring system architecture",
       "Custody transfer metering instrumentation"
     ],
-    standards: ["IEC 61511", "IEC 60079-10-1", "IEC 60079-14", "SANS 10108", "API RP 14C", "API RP 505", "API 2510"]
+
   }
 ];
 
@@ -466,16 +466,7 @@ export default function IndustriesPage() {
                     </ul>
                   </div>
 
-                  <div>
-                    <h4 className="text-[#1A2B4C] font-black text-sm uppercase tracking-wider mb-4">Applicable Standards:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {industry.standards.map((std, i) => (
-                        <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">
-                          {std}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+
                 </div>
 
                 {/* Image */}

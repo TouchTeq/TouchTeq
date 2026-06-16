@@ -19,7 +19,7 @@ const reasons = [
   {
     icon: Briefcase,
     title: "Industry Experience",
-    description: "With hands-on experience in refineries, chemical plants, and heavy industry, I understand the unique challenges of hazardous environments and deliver solutions that work."
+    description: "With hands-on experience in refineries, chemical plants, and heavy industry, Touch Teqniques Engineering understands the unique challenges of hazardous environments and delivers solutions that work."
   },
   {
     icon: FileBadge,
