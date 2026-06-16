@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { matchTransactionToInvoices, type OpenInvoice } from '@/lib/bank/matching';
+import { createExpense } from '@/lib/expenses/actions';
 
 /** A parsed statement line as produced by the client-side CSV wizard. */
 export interface ParsedRow {
@@ -261,6 +262,52 @@ export async function matchExpenseToTxn(txnId: string, expenseId: string) {
   if (error) return { error: error.message };
   if (txn) await recomputeImport(txn.import_id);
   return { success: true };
+}
+
+/**
+ * Create a new expense from a money-out transaction and link it. Reuses the
+ * existing createExpense action so VAT-period totals stay correct. Defaults to
+ * a standard 15% VAT-inclusive expense; the user can refine it in the Expenses
+ * module afterwards.
+ */
+export async function createExpenseFromTxn(txnId: string) {
+  const supabase = await createClient();
+  const { data: txn } = await supabase.from('bank_transactions').select('*').eq('id', txnId).single();
+  if (!txn) return { error: 'Transaction not found.' };
+  if (txn.direction !== 'out') return { error: 'Only money-out can become an expense.' };
+
+  const amountInclusive = Math.abs(Number(txn.amount));
+  const vatClaimable = true;
+  const inputVat = vatClaimable ? Math.round(((amountInclusive * 15) / 115) * 100) / 100 : 0;
+
+  let expense: any;
+  try {
+    expense = await createExpense(
+      {
+        expense_date: txn.txn_date,
+        supplier_name: (txn.description || txn.reference || 'Bank transaction').slice(0, 120),
+        description: txn.reference || txn.description || 'Imported from bank statement',
+        category: 'Other',
+        amount_inclusive: amountInclusive,
+        vat_claimable: vatClaimable,
+        receipt_url: null,
+        notes: 'Created from bank statement import',
+      },
+      inputVat
+    );
+  } catch (e: any) {
+    return { error: e.message };
+  }
+
+  await supabase
+    .from('bank_transactions')
+    .update({ status: 'matched', matched_type: 'expense', matched_id: expense.id, match_confidence: 100 })
+    .eq('id', txnId);
+
+  await recomputeImport(txn.import_id);
+  revalidatePath('/office/expenses');
+  revalidatePath(`/office/bank/${txn.import_id}`);
+  return { success: true, expenseId: expense.id };
 }
 
 export async function ignoreTxn(txnId: string) {

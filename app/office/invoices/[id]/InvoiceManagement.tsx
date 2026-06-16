@@ -25,7 +25,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
-import { pdf } from '@react-pdf/renderer';
+import { pdf, PDFViewer } from '@react-pdf/renderer';
 import { InvoicePDF } from '@/lib/invoices/InvoicePDF';
 import { createClient } from '@/lib/supabase/client';
 import confetti from 'canvas-confetti';
@@ -42,6 +42,10 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [payments, setPayments] = useState(initialPayments);
+  const [mounted, setMounted] = useState(false);
+
+  // PDFViewer relies on browser APIs — only render it after mount (avoids SSR errors)
+  useEffect(() => { setMounted(true); }, []);
 
   // Modals
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -385,153 +389,16 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               <Maximize2 size={12} /> Fullscreen
             </button>
           </div>
-          <div
-            className="w-full bg-white text-slate-900 shadow-2xl rounded-sm p-12 min-h-[1000px] flex flex-col cursor-zoom-in relative group"
-            onClick={() => setShowPreviewModal(true)}
-          >
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/5 transition-all z-10 pointer-events-none">
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2">
-                <Maximize2 size={12} /> Click to expand
-              </span>
-            </div>
-            {/* Header */}
-            <div className="flex justify-between items-start mb-12 border-b border-[#F26400] pb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#F26400] rounded flex items-center justify-center font-black text-white italic text-xl">T</div>
-                <div>
-                  <span className="font-black text-xl uppercase tracking-tighter">Touch<span className="text-[#F26400]">Teq</span></span>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Engineering Services</p>
-                </div>
+          <div className="w-full rounded-sm overflow-hidden shadow-2xl bg-slate-700" style={{ height: 1000 }}>
+            {mounted ? (
+              <PDFViewer width="100%" height="100%" className="border-none">
+                <InvoicePDF invoice={invoice} lineItems={lineItems} businessProfile={businessProfile} />
+              </PDFViewer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-white">
+                <Loader2 className="animate-spin text-orange-500" size={32} />
               </div>
-              <div className="text-right">
-                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-1">Tax Invoice</h2>
-                <p className="text-xs font-bold text-slate-500">#{invoice.invoice_number}</p>
-                <p className="text-[10px] font-medium text-slate-400 mt-1">{new Date(invoice.issue_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-12 mb-12">
-              <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
-                <div className="space-y-1">
-                  <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                  <div className="pt-4 text-[10px] font-bold text-slate-400 space-y-1">
-                    <p>VAT No: {businessProfile.vat_number}</p>
-                    <p>Reg No: {businessProfile.registration_number}</p>
-                    <p>CSD No: {businessProfile.csd_number}</p>
-                    <p>Email: {businessProfile.email}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
-                <div className="space-y-1">
-                  <p className="font-black text-sm uppercase">{clientName}</p>
-                  <p className="text-xs font-bold text-slate-700">Attn: {clientContact}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{clientAddress}</p>
-                  {invoice.clients?.vat_number && <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">VAT No: {invoice.clients.vat_number}</p>}
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8 bg-slate-50 p-4 rounded-sm flex justify-between">
-              <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Payment Reference</p>
-                <p className="text-xs font-black text-slate-800">{invoice.invoice_number}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Due Date</p>
-                <p className="text-xs font-black text-slate-800">{new Date(invoice.due_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="flex-1">
-              <table className="w-full">
-                <thead className="bg-[#F26400] text-white">
-                  <tr className="text-[10px] font-black uppercase tracking-widest">
-                    <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
-                    <th className="px-4 py-3 text-center">Qty</th>
-                    <th className="px-4 py-3 text-right">Unit Price</th>
-                    <th className="px-6 py-3 text-right rounded-r-sm">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lineItems.map((item: any, i: number) => (
-                    <tr key={i} className="text-slate-800">
-                      <td className="px-6 py-4 text-xs font-bold leading-relaxed whitespace-pre-line">{item.description}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.qty_type === 'hrs' ? `${item.quantity} hrs` : item.quantity}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-right text-slate-500">{new Intl.NumberFormat('en-ZA').format(item.unit_price)}</td>
-                      <td className="px-6 py-4 text-xs font-black text-right">{new Intl.NumberFormat('en-ZA').format(item.line_total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Totals Box */}
-            <div className="mt-8 border-t-2 border-slate-900 pt-6 flex justify-end">
-              <div className="w-80 space-y-3">
-                <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  <span>Subtotal</span>
-                  <span>R {new Intl.NumberFormat('en-ZA').format(invoice.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  <span>VAT (15%)</span>
-                  <span>R {new Intl.NumberFormat('en-ZA').format(invoice.vat_amount)}</span>
-                </div>
-                <div className="flex items-end justify-between py-4 border-t border-slate-100 gap-8">
-                  <span className="text-xs font-black text-slate-900 uppercase tracking-widest whitespace-nowrap leading-none">Total</span>
-                  <span className="text-xl font-black text-[#F26400] tabular-nums whitespace-nowrap leading-none tracking-tight">R {new Intl.NumberFormat('en-ZA').format(invoice.total)}</span>
-                </div>
-                {invoice.amount_paid > 0 && (
-                  <div className="flex justify-between py-2 bg-green-50 px-3 rounded-sm">
-                    <span className="text-[10px] font-black text-green-700 uppercase">Paid to date</span>
-                    <span className="text-[10px] font-black text-green-700">- R {new Intl.NumberFormat('en-ZA').format(invoice.amount_paid)}</span>
-                  </div>
-                )}
-                {invoice.balance_due > 0 && (
-                  <div className="flex justify-between py-3 border-t-2 border-slate-900">
-                    <span className="text-xs font-black text-slate-900 uppercase">Balance Due</span>
-                    <span className="text-sm font-black text-slate-900 underline underline-offset-4 decoration-orange-500">R {new Intl.NumberFormat('en-ZA').format(invoice.balance_due)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Banking */}
-            <div className="mt-12 bg-slate-50 p-8 rounded-sm border border-slate-200">
-              <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4 border-b pb-2">Banking Details</h4>
-              <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Bank</p>
-                  <p className="text-[10px] font-bold text-slate-700">First National Bank (FNB)</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Account Number</p>
-                  <p className="text-[10px] font-bold text-slate-700">62740294851</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Account Type</p>
-                  <p className="text-[10px] font-bold text-slate-700">Business Current</p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Branch Code</p>
-                  <p className="text-[10px] font-bold text-slate-700">250655</p>
-                </div>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-200">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Use Reference</p>
-                <p className="text-xs font-black text-slate-900">{invoice.invoice_number}</p>
-              </div>
-            </div>
-
-            <div className="mt-auto pt-12 border-t border-slate-100 text-center">
-              <p className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em]">
-                {businessProfile.legal_name} • VAT: {businessProfile.vat_number} • Reg: {businessProfile.registration_number}
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -548,79 +415,14 @@ export default function InvoiceManagement({ invoice, initialPayments, lineItems,
               <X size={20} />
             </button>
             <div
-              className="w-full h-full max-w-6xl max-h-[90vh] overflow-auto rounded-sm shadow-2xl bg-white text-slate-900 p-12"
+              className="w-full h-full max-w-5xl max-h-[92vh] rounded-sm shadow-2xl overflow-hidden bg-slate-700"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex justify-between items-start mb-12 border-b border-[#F26400] pb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#F26400] rounded flex items-center justify-center font-black text-white italic text-xl">T</div>
-                  <div>
-                    <span className="font-black text-xl uppercase tracking-tighter">Touch<span className="text-[#F26400]">Teq</span></span>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Engineering Services</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-1">Tax Invoice</h2>
-                  <p className="text-xs font-bold text-slate-500">#{invoice.invoice_number}</p>
-                  <p className="text-[10px] font-medium text-slate-400 mt-1">{new Date(invoice.issue_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-12 mb-12">
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier:</h3>
-                  <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{businessProfile.legal_name}</p>
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{businessProfile.physical_address}</p>
-                    <div className="pt-4 text-[10px] font-bold text-slate-400 space-y-1">
-                      <p>VAT No: {businessProfile.vat_number}</p>
-                      <p>Reg No: {businessProfile.registration_number}</p>
-                      <p>Email: {businessProfile.email}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bill To:</h3>
-                  <div className="space-y-1">
-                    <p className="font-black text-sm uppercase">{clientName}</p>
-                    <p className="text-xs font-bold text-slate-700">Attn: {clientContact}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{clientAddress}</p>
-                  </div>
-                </div>
-              </div>
-              <table className="w-full mb-8">
-                <thead className="bg-[#F26400] text-white">
-                  <tr className="text-[10px] font-black uppercase tracking-widest">
-                    <th className="px-6 py-3 text-left w-3/5 rounded-l-sm">Description</th>
-                    <th className="px-4 py-3 text-center">Qty</th>
-                    <th className="px-4 py-3 text-right">Unit Price</th>
-                    <th className="px-6 py-3 text-right rounded-r-sm">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lineItems.map((item: any, i: number) => (
-                    <tr key={i} className="text-slate-800">
-                      <td className="px-6 py-4 text-xs font-bold leading-relaxed whitespace-pre-line">{item.description}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-center text-slate-500">{item.qty_type === 'hrs' ? `${item.quantity} hrs` : item.quantity}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-right text-slate-500">{new Intl.NumberFormat('en-ZA').format(item.unit_price)}</td>
-                      <td className="px-6 py-4 text-xs font-black text-right">{new Intl.NumberFormat('en-ZA').format(item.line_total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="border-t-2 border-slate-900 pt-6 flex justify-end">
-                <div className="w-80 space-y-3">
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>Subtotal</span><span>R {new Intl.NumberFormat('en-ZA').format(invoice.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    <span>VAT (15%)</span><span>R {new Intl.NumberFormat('en-ZA').format(invoice.vat_amount)}</span>
-                  </div>
-                  <div className="flex items-end justify-between py-4 border-t border-slate-100 gap-8">
-                    <span className="text-xs font-black text-slate-900 uppercase tracking-widest whitespace-nowrap leading-none">Total</span>
-                    <span className="text-xl font-black text-[#F26400] tabular-nums whitespace-nowrap leading-none tracking-tight">R {new Intl.NumberFormat('en-ZA').format(invoice.total)}</span>
-                  </div>
-                </div>
-              </div>
+              {mounted && (
+                <PDFViewer width="100%" height="100%" className="border-none">
+                  <InvoicePDF invoice={invoice} lineItems={lineItems} businessProfile={businessProfile} />
+                </PDFViewer>
+              )}
             </div>
           </div>
         )}

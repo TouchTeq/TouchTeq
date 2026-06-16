@@ -20,6 +20,7 @@ import {
 import { format, addDays, differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
+import { getTaxDashboard } from '@/lib/tax/actions';
 
 export default function CashFlowPage() {
   const supabase = createClient();
@@ -32,6 +33,7 @@ export default function CashFlowPage() {
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [taxPayments, setTaxPayments] = useState<{ label: string; dueDate: string; amountDue: number }[]>([]);
   const [profile, setProfile] = useState<any>(null);
 
   const today = startOfDay(new Date());
@@ -74,6 +76,21 @@ export default function CashFlowPage() {
 
       setInvoices(invoiceData || []);
       setExpenses(expenseData || []);
+
+      // Overlay upcoming provisional-tax payments as money-out (best-effort —
+      // silently skipped if the tax module isn't set up yet).
+      try {
+        const taxRes = await getTaxDashboard();
+        if ('data' in taxRes && taxRes.data && !taxRes.data.noTable) {
+          const todayStr = format(new Date(), 'yyyy-MM-dd');
+          const upcoming = (taxRes.data.schedule || [])
+            .filter((p: any) => p.period !== 'P3' && p.amountDue > 0 && p.dueDate >= todayStr)
+            .map((p: any) => ({ label: p.label, dueDate: p.dueDate, amountDue: p.amountDue }));
+          setTaxPayments(upcoming);
+        }
+      } catch {
+        // tax module not available — ignore
+      }
     } catch (err: any) {
       toast.error({ title: 'Error', message: err.message });
     } finally {
@@ -138,9 +155,13 @@ export default function CashFlowPage() {
           format(parseISO(exp.expense_date), 'yyyy-MM-dd') === dateStr
         );
         
+        const dayTax = taxPayments
+          .filter((t) => t.dueDate === dateStr)
+          .reduce((sum, t) => sum + (t.amountDue || 0), 0);
+
         const dayIn = dayInvoices.reduce((sum, inv) => sum + (inv.balance_due || inv.total || 0), 0);
-        const dayOut = dayExpenses.reduce((sum, exp) => sum + (exp.amount_inclusive || 0), 0);
-        
+        const dayOut = dayExpenses.reduce((sum, exp) => sum + (exp.amount_inclusive || 0), 0) + dayTax;
+
         runningBalance += dayIn - dayOut;
         
         result[day].push({
@@ -152,7 +173,7 @@ export default function CashFlowPage() {
     });
     
     return result;
-  }, [invoices, expenses, openingBalance, today]);
+  }, [invoices, expenses, taxPayments, openingBalance, today]);
 
   const getInvoiceStatus = (dueDate: string, status: string) => {
     if (status === 'Paid') return 'paid';
@@ -182,8 +203,9 @@ export default function CashFlowPage() {
     }
   };
 
+  const totalTax = taxPayments.reduce((sum, t) => sum + (t.amountDue || 0), 0);
   const totalExpectedIn = invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + (i.balance_due || 0), 0);
-  const totalExpectedOut = expenses.reduce((sum, e) => sum + (e.amount_inclusive || 0), 0);
+  const totalExpectedOut = expenses.reduce((sum, e) => sum + (e.amount_inclusive || 0), 0) + totalTax;
   const projected30Day = projections[30][projections[30].length - 1]?.balance || openingBalance;
   const projected60Day = projections[60][projections[60].length - 1]?.balance || openingBalance;
   const projected90Day = projections[90][projections[90].length - 1]?.balance || openingBalance;
@@ -356,7 +378,24 @@ export default function CashFlowPage() {
             </h3>
           </div>
           <div className="divide-y divide-slate-800/30 max-h-[400px] overflow-y-auto">
-            {expenses.length === 0 ? (
+            {taxPayments.map((t) => (
+              <div key={t.dueDate + t.label} className="p-4 flex items-center justify-between hover:bg-slate-800/20 bg-orange-500/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                    <AlertTriangle size={14} />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">Provisional tax</p>
+                    <p className="text-slate-500 text-xs">{t.label}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-black">{formatCurrency(t.amountDue)}</p>
+                  <p className="text-slate-500 text-xs">{format(parseISO(t.dueDate), 'dd MMM')}</p>
+                </div>
+              </div>
+            ))}
+            {expenses.length === 0 && taxPayments.length === 0 ? (
               <div className="p-8 text-center text-slate-500 text-sm">No upcoming expenses</div>
             ) : (
               expenses.map((exp) => (

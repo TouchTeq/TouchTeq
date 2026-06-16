@@ -32,6 +32,7 @@ import {
   ShoppingBag,
   Truck,
   Landmark,
+  Calculator,
   Bot,
   ChevronDown,
   CheckSquare,
@@ -100,6 +101,7 @@ const navGroups: NavGroup[] = [
       { name: 'Reports', href: '/office/reports', icon: BarChart3 },
       { name: 'Cash Flow', href: '/office/cash-flow', icon: Wallet },
       { name: 'Bank / Reconcile', href: '/office/bank', icon: Landmark },
+      { name: 'Tax Centre', href: '/office/tax', icon: Calculator },
     ],
   },
   {
@@ -644,6 +646,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     { id: 'new-delivery-note', label: 'New Delivery Note', keywords: 'create delivery dispatch', Icon: Truck as any, onSelect: () => router.push('/office/delivery-notes/new') },
     { id: 'bank-reconcile', label: 'Bank / Reconcile', keywords: 'bank statement import reconcile match payment csv', Icon: Landmark as any, onSelect: () => router.push('/office/bank') },
     { id: 'import-statement', label: 'Import Bank Statement', keywords: 'upload csv statement bank reconcile', Icon: Landmark as any, onSelect: () => router.push('/office/bank/import') },
+    { id: 'tax-centre', label: 'Tax Centre', keywords: 'tax provisional irp6 sars income set aside deadline', Icon: Calculator as any, onSelect: () => router.push('/office/tax') },
     { id: 'fuel-tracker', label: 'Fuel Tracker', keywords: 'fuel petrol diesel log expense', Icon: Fuel as any, onSelect: () => router.push('/office/fuel') },
     { id: 'tasks', label: 'Tasks', keywords: 'task todo', Icon: CheckSquare as any, onSelect: () => router.push('/office/tasks') },
     { id: 'notes', label: 'Notes', keywords: 'note sticky', Icon: StickyNote as any, onSelect: () => router.push('/office/notes') },

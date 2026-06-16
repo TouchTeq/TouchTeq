@@ -31,6 +31,7 @@ import { getTaskStats, getTasks } from '@/lib/tasks/actions';
 import { getCalendarEvents } from '@/lib/calendar/actions';
 import { getNotes } from '@/lib/notes/actions';
 import { getUpcomingReminders } from '@/lib/reminders/actions';
+import { getTaxDashboard } from '@/lib/tax/actions';
 import QuickCompleteTask from '@/components/office/QuickCompleteTask';
 import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { getWhatsAppPaymentReminderMessage } from '@/lib/whatsapp/utils';
@@ -192,6 +193,16 @@ export default async function DashboardPage() {
     .select('invoice_balance, total_outstanding');
 
   const outstandingValue = outstandingSummary?.reduce((sum, c) => sum + (c.total_outstanding || 0), 0) || 0;
+
+  // Tax planning (best-effort — only renders if the tax module is set up)
+  const taxRes = await getTaxDashboard();
+  const taxData =
+    'data' in taxRes && taxRes.data && !taxRes.data.noTable && taxRes.data.estimate ? taxRes.data : null;
+  const taxNext = taxData
+    ? taxData.schedule.find((p: any) => p.period !== 'P3' && p.dueDate >= today) ||
+      taxData.schedule.find((p: any) => p.period === 'P2')
+    : null;
+  const taxDaysTo = taxNext ? differenceInDays(parseISO(taxNext.dueDate), parseISO(today)) : null;
 
   return (
     <div className="space-y-8">
@@ -363,6 +374,46 @@ export default async function DashboardPage() {
           <p className="text-xs text-slate-400 mt-2">{quotesPendingCount} quote{quotesPendingCount !== 1 ? 's' : ''} awaiting response</p>
         </Link>
       </div>
+
+      {/* Section 3b: Tax Planning (only when the tax module is configured) */}
+      {taxData && (
+        <Link
+          href="/office/tax"
+          className="block bg-[#151B28] border border-slate-800/50 rounded-xl p-6 hover:border-orange-500/50 transition-all"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <Wallet size={16} className="text-orange-500" />
+              Tax Planning — {taxData.taxYear}
+            </h2>
+            <span className="text-xs text-orange-500 hover:text-orange-400 flex items-center gap-1">
+              Open Tax Centre <ArrowUpRight size={12} />
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Estimated Tax (Year)</p>
+              <h3 className="text-2xl font-black text-orange-400">{formatRand(taxData.estimate.estimatedTax)}</h3>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Set Aside Per R Received</p>
+              <h3 className="text-2xl font-black text-green-500">{taxData.setAsidePerRandReceived}%</h3>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Next IRP6 Deadline</p>
+              <h3 className={`text-2xl font-black ${taxDaysTo != null && taxDaysTo <= 30 ? 'text-red-500' : 'text-white'}`}>
+                {taxNext ? format(parseISO(taxNext.dueDate), 'd MMM yyyy') : '—'}
+              </h3>
+              {taxDaysTo != null && taxNext && (
+                <p className="text-xs text-slate-400 mt-1">{taxDaysTo} days · {taxNext.period}</p>
+              )}
+            </div>
+          </div>
+          {!taxData.estimate.tableVerified && (
+            <p className="text-amber-400/80 text-xs mt-3">Using unverified {taxData.taxYear} SARS rates — confirm before relying on figures.</p>
+          )}
+        </Link>
+      )}
 
       {/* Section 4: Pending Follow-ups */}
       <div className="bg-[#151B28] border border-slate-800/50 rounded-xl p-6">

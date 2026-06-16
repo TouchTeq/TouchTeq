@@ -14,6 +14,7 @@ import {
   Undo2,
   ArrowUpRight,
   ArrowDownRight,
+  Plus,
 } from 'lucide-react';
 import { useOfficeToast } from '@/components/office/OfficeToastContext';
 import {
@@ -21,6 +22,7 @@ import {
   confirmInvoiceMatch,
   assignInvoiceToTxn,
   matchExpenseToTxn,
+  createExpenseFromTxn,
   ignoreTxn,
   unmatchTxn,
 } from '@/lib/bank/actions';
@@ -267,6 +269,15 @@ export default function ReconcileClient({
                               title="Confirm & record payment"
                             >
                               <Check size={12} /> Confirm
+                            </button>
+                          )}
+                          {txn.direction === 'out' && (
+                            <button
+                              onClick={() => run(txn.id, () => createExpenseFromTxn(txn.id), 'Expense created')}
+                              className="inline-flex items-center gap-1 text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-2 py-1 rounded"
+                              title="Create an expense from this transaction"
+                            >
+                              <Plus size={12} /> Expense
                             </button>
                           )}
                           <button
