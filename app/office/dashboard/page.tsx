@@ -112,7 +112,7 @@ export default async function DashboardPage() {
     supabase
       .from('quotes')
       .select('id, quote_number, total, clients(company_name)')
-      .eq('status', 'Sent')
+      .in('status', ['Sent', 'Issued'])
       .order('created_at', { ascending: false }),
 
     // Expenses this month
@@ -208,7 +208,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/office/chat"
+            href="/office/ai-assistant"
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors"
           >
             <MessageSquare size={18} />
@@ -468,9 +468,12 @@ export default async function DashboardPage() {
                               className="!text-[10px]"
                             />
                           )}
-                          <button className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded transition-colors">
+                          <Link
+                            href={`/office/invoices/${inv.id}`}
+                            className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded transition-colors"
+                          >
                             Send Reminder
-                          </button>
+                          </Link>
                         </div>
                       </td>
                     </tr>

@@ -46,10 +46,11 @@ export default function CashFlowPage() {
       // Fetch business profile for opening balance
       const { data: profileData } = await supabase
         .from('business_profile')
-        .select('opening_balance')
+        .select('id, opening_balance')
         .single();
-      
+
       if (profileData) {
+        setProfile(profileData);
         setOpeningBalance(profileData.opening_balance || 0);
         setNewBalance(String(profileData.opening_balance || 0));
       }
@@ -84,11 +85,19 @@ export default function CashFlowPage() {
     setSaving(true);
     try {
       const balance = parseFloat(newBalance) || 0;
-      await supabase
+      if (!profile?.id) {
+        throw new Error('Business profile not loaded yet. Please refresh and try again.');
+      }
+      const { data: updated, error } = await supabase
         .from('business_profile')
         .update({ opening_balance: balance })
-        .eq('id', profile?.id);
-      
+        .eq('id', profile.id)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      if (!updated) throw new Error('Opening balance was not saved — profile row not found.');
+
       setOpeningBalance(balance);
       setShowBalanceInput(false);
       toast.success({ title: 'Saved', message: 'Opening balance updated' });
