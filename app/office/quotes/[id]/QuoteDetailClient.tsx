@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Edit2,
   Maximize2,
+  ClipboardList,
   X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ import QuoteRenderer from '@/components/office/QuoteRenderer';
 import { generateQuotePdfBlob } from '@/lib/quotes/quote-pdf';
 import { blobToBase64 } from '@/lib/invoices/invoice-pdf';
 import { convertQuoteToInvoice } from '@/lib/quotes/quoteActions';
+import { convertQuoteToSalesOrder } from '@/lib/sales-orders/actions';
 import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { getWhatsAppQuoteMessage } from '@/lib/whatsapp/utils';
 
@@ -183,6 +185,26 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
     }
   };
 
+  const handleConvertToSalesOrder = async () => {
+    setLoading('so');
+    setError(null);
+    try {
+      const result = await convertQuoteToSalesOrder(quote.id);
+      if ('error' in result && result.error) {
+        setError(result.error);
+        toast.error({ title: 'Could not create sales order', message: result.error });
+        return;
+      }
+      toast.success({ title: 'Sales Order Created', message: `Sales order ${(result as any).soNumber} created from ${quote.quote_number}.` });
+      router.push(`/office/sales-orders/${(result as any).salesOrderId}`);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error({ title: 'Conversion Failed', message: err.message });
+    } finally {
+      setLoading(null);
+    }
+  };
+
   const handleConvertToInvoice = async () => {
     setLoading('convert');
     setError(null);
@@ -301,6 +323,26 @@ export default function QuoteDetailClient({ quote, lineItems, businessProfile }:
                 <XCircle size={14} /> Decline
               </button>
             </>
+          )}
+
+          {(quote.status === 'Accepted' || quote.status === 'Sent' || quote.status === 'Issued') && !quote.converted_sales_order_id && (
+            <button
+              onClick={handleConvertToSalesOrder}
+              disabled={loading === 'so'}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded border border-blue-600/20 transition-all disabled:opacity-50"
+            >
+              {loading === 'so' ? <Loader2 className="animate-spin" size={14} /> : <ClipboardList size={14} />}
+              Convert to Sales Order
+            </button>
+          )}
+
+          {quote.converted_sales_order_id && (
+            <Link
+              href={`/office/sales-orders/${quote.converted_sales_order_id}`}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-blue-500 text-white hover:bg-blue-600 rounded transition-all"
+            >
+              <ExternalLink size={14} /> View Sales Order
+            </Link>
           )}
 
           {(quote.status === 'Accepted' || quote.status === 'Sent' || quote.status === 'Issued') && !quote.converted_invoice_id && (
