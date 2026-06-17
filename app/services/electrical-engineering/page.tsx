@@ -138,9 +138,9 @@ export default function ElectricalEngineeringPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Electrical Engineering', url: 'https://touchteq.co.za/services/electrical-engineering' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Electrical Engineering', url: 'https://www.touchteq.co.za/services/electrical-engineering' }
         ]}
       />
       <FAQJsonLd 
@@ -149,7 +149,7 @@ export default function ElectricalEngineeringPage() {
       <ServiceJsonLd 
         name="Industrial Electrical Engineering"
         description="Professional industrial electrical engineering services across Southern Africa. ECSA registered, handling power distribution, motor control, lighting, and hazardous area installations."
-        url="https://touchteq.co.za/services/electrical-engineering"
+        url="https://www.touchteq.co.za/services/electrical-engineering"
         serviceType={[
           'Electrical Design', 
           'Power Distribution', 
@@ -161,8 +161,8 @@ export default function ElectricalEngineeringPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

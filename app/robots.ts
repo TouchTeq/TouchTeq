@@ -39,7 +39,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/office/', '/api/', '/admin/'],
       },
     ],
-    host: 'https://touchteq.co.za',
-    sitemap: 'https://touchteq.co.za/sitemap.xml',
+    host: 'https://www.touchteq.co.za',
+    sitemap: 'https://www.touchteq.co.za/sitemap.xml',
   };
 }

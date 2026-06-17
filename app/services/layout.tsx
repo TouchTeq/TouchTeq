@@ -17,10 +17,10 @@ export default function ServicesLayout({
         {
           '@context': 'https://schema.org',
           '@type': 'Service',
-          '@id': 'https://touchteq.co.za/services',
+          '@id': 'https://www.touchteq.co.za/services',
           name: 'Engineering Services',
           provider: {
-            '@id': 'https://touchteq.co.za/#professional-service',
+            '@id': 'https://www.touchteq.co.za/#professional-service',
           },
           serviceType: [
             'Fire and Gas Detection Systems',

@@ -130,9 +130,9 @@ export default function InstallationCommissioningPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Installation & Commissioning', url: 'https://touchteq.co.za/services/installation-and-commissioning' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Installation & Commissioning', url: 'https://www.touchteq.co.za/services/installation-and-commissioning' }
         ]}
       />
       <FAQJsonLd 
@@ -141,7 +141,7 @@ export default function InstallationCommissioningPage() {
       <ServiceJsonLd 
         name="Industrial Installation & Commissioning"
         description="Expert installation and commissioning of industrial safety and control systems. Specialists in Fire & Gas, C&I, and Hazardous Area (Ex) equipment."
-        url="https://touchteq.co.za/services/installation-and-commissioning"
+        url="https://www.touchteq.co.za/services/installation-and-commissioning"
         serviceType={[
           'Field Device Installation', 
           'Cable Reticulation', 
@@ -153,8 +153,8 @@ export default function InstallationCommissioningPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

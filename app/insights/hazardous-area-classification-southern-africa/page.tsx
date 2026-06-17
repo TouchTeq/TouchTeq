@@ -127,16 +127,16 @@ const articleJsonLd = {
   headline: 'A Guide to Hazardous Area Classification in Southern Africa',
   description:
     'A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements.',
-  image: 'https://touchteq.co.za/HAC.jpg',
+  image: 'https://www.touchteq.co.za/HAC.jpg',
   author: { '@type': 'Person', name: 'Thabo Matona', jobTitle: 'Founder and Principal Engineer' },
   publisher: {
     '@type': 'Organization',
     name: 'Touch Teqniques Engineering Services',
-    logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+    logo: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
-  mainEntityOfPage: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa',
+  mainEntityOfPage: 'https://www.touchteq.co.za/insights/hazardous-area-classification-southern-africa',
   keywords:
     'Hazardous Area Classification, HAC, SANS 10108, IEC 60079, ATEX, Zone Classification, Explosive Atmospheres, South Africa',
 };
@@ -269,9 +269,9 @@ export default function HACInsightsDetailPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
-          { name: 'Hazardous Area Classification', url: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa' },
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Insights', url: 'https://www.touchteq.co.za/insights' },
+          { name: 'Hazardous Area Classification', url: 'https://www.touchteq.co.za/insights/hazardous-area-classification-southern-africa' },
         ]}
       />
       <JsonLd data={articleJsonLd} />
@@ -333,7 +333,7 @@ export default function HACInsightsDetailPage() {
             <ShareButton
               title="A Guide to Hazardous Area Classification in Southern Africa"
               description="A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements."
-              url="https://touchteq.co.za/insights/hazardous-area-classification-southern-africa"
+              url="https://www.touchteq.co.za/insights/hazardous-area-classification-southern-africa"
               className="mb-6"
             />
 

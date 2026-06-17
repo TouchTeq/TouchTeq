@@ -137,9 +137,9 @@ export default function FireAndGasPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Fire & Gas Detection', url: 'https://touchteq.co.za/services/fire-and-gas-detection' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Fire & Gas Detection', url: 'https://www.touchteq.co.za/services/fire-and-gas-detection' }
         ]}
       />
       <FAQJsonLd 
@@ -148,7 +148,7 @@ export default function FireAndGasPage() {
       <ServiceJsonLd 
         name="Fire and Gas Detection Engineering"
         description="Specialist engineering, design, and installation of fire and gas detection systems for high-risk industrial facilities, supported by GDSCorp partnership positioning."
-        url="https://touchteq.co.za/services/fire-and-gas-detection"
+        url="https://www.touchteq.co.za/services/fire-and-gas-detection"
         serviceType={[
           'Fire Detection', 
           'Gas Monitoring', 
@@ -159,8 +159,8 @@ export default function FireAndGasPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

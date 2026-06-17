@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thabo Matona' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights/iec-61511-plant-managers',
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights/iec-61511-plant-managers',
+    url: 'https://www.touchteq.co.za/insights/iec-61511-plant-managers',
     siteName: 'Touch Teqniques Engineering',
     title: 'Understanding IEC 61511: What Plant Managers in South Africa Need to Know',
     description:

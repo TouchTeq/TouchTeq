@@ -132,8 +132,8 @@ export default function InsightsPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Insights', url: 'https://www.touchteq.co.za/insights' },
         ]}
       />
       <Header />

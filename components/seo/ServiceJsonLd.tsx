@@ -17,7 +17,7 @@ export default function ServiceJsonLd({
   url,
   serviceType,
   areaServed = ['South Africa', 'Mozambique', 'Botswana', 'Namibia', 'Zimbabwe'],
-  image = 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg'
+  image = 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg'
 }: ServiceJsonLdProps) {
   return (
     <JsonLd
@@ -30,7 +30,7 @@ export default function ServiceJsonLd({
         provider: {
           '@type': 'ProfessionalService',
           name: 'Touch Teqniques Engineering Services',
-          url: 'https://touchteq.co.za',
+          url: 'https://www.touchteq.co.za',
         },
         serviceType,
         areaServed: areaServed.map(country => ({

@@ -129,16 +129,16 @@ const articleJsonLd = {
   headline: 'Fire and Gas System Commissioning: What to Expect',
   description:
     'Find out what a professional fire and gas system commissioning involves, what to prepare, and what to expect at each stage of the process.',
-  image: 'https://touchteq.co.za/f&g.jpeg',
+  image: 'https://www.touchteq.co.za/f&g.jpeg',
   author: { '@type': 'Person', name: 'Thabo Matona', jobTitle: 'Founder and Principal Engineer' },
   publisher: {
     '@type': 'Organization',
     name: 'Touch Teqniques Engineering Services',
-    logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+    logo: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
-  mainEntityOfPage: 'https://touchteq.co.za/insights/fire-and-gas-system-commissioning',
+  mainEntityOfPage: 'https://www.touchteq.co.za/insights/fire-and-gas-system-commissioning',
   keywords:
     'Fire & Gas Commissioning, F&G System, IEC 61511, Pre-Startup, PSSR, Fire Detection, Gas Detection',
 };
@@ -271,9 +271,9 @@ export default function FGCommissioningInsightsDetailPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
-          { name: 'Fire and Gas System Commissioning', url: 'https://touchteq.co.za/insights/fire-and-gas-system-commissioning' },
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Insights', url: 'https://www.touchteq.co.za/insights' },
+          { name: 'Fire and Gas System Commissioning', url: 'https://www.touchteq.co.za/insights/fire-and-gas-system-commissioning' },
         ]}
       />
       <JsonLd data={articleJsonLd} />
@@ -335,7 +335,7 @@ export default function FGCommissioningInsightsDetailPage() {
             <ShareButton
               title="Fire and Gas System Commissioning: What to Expect"
               description="Find out what a professional fire and gas system commissioning involves, what to prepare, and what to expect at each stage of the process."
-              url="https://touchteq.co.za/insights/fire-and-gas-system-commissioning"
+              url="https://www.touchteq.co.za/insights/fire-and-gas-system-commissioning"
               className="mb-6"
             />
 

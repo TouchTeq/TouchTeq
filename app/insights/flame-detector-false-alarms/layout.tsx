@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thabo Matona' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights/flame-detector-false-alarms',
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights/flame-detector-false-alarms',
+    url: 'https://www.touchteq.co.za/insights/flame-detector-false-alarms',
     siteName: 'Touch Teqniques Engineering',
     title: 'Top 5 Reasons for False Alarms in Optical Flame Detectors',
     description:

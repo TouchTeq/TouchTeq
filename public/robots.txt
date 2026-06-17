@@ -7,4 +7,4 @@ Disallow: /office/
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://touchteq.co.za/sitemap.xml
+Sitemap: https://www.touchteq.co.za/sitemap.xml

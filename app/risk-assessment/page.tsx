@@ -207,15 +207,15 @@ export default function RiskAssessment() {
     <main className="bg-[#0A1120] min-h-screen font-sans flex flex-col items-center">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Solutions', url: 'https://touchteq.co.za' },
-          { name: 'Industrial Risk Assessment', url: 'https://touchteq.co.za/risk-assessment' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Solutions', url: 'https://www.touchteq.co.za' },
+          { name: 'Industrial Risk Assessment', url: 'https://www.touchteq.co.za/risk-assessment' }
         ]}
       />
       <ServiceJsonLd 
         name="Industrial Fire & Gas Risk Assessment"
         description="A comprehensive assessment tool for industrial facilities to evaluate their fire and gas detection system readiness and regulatory compliance level."
-        url="https://touchteq.co.za/risk-assessment"
+        url="https://www.touchteq.co.za/risk-assessment"
         serviceType={[
           'Risk Assessment', 
           'Compliance Audit', 

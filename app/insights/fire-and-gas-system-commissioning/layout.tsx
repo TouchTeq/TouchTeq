@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thabo Matona' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights/fire-and-gas-system-commissioning',
   },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights/fire-and-gas-system-commissioning',
+    url: 'https://www.touchteq.co.za/insights/fire-and-gas-system-commissioning',
     siteName: 'Touch Teqniques Engineering',
     title: 'Fire and Gas System Commissioning: What to Expect',
     description:

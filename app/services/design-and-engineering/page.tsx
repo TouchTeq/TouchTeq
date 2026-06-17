@@ -212,9 +212,9 @@ export default function DesignAndEngineeringPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Design & Engineering', url: 'https://touchteq.co.za/services/design-and-engineering' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Design & Engineering', url: 'https://www.touchteq.co.za/services/design-and-engineering' }
         ]}
       />
       <FAQJsonLd 
@@ -223,7 +223,7 @@ export default function DesignAndEngineeringPage() {
       <ServiceJsonLd 
         name="Industrial Design & Engineering"
         description="Comprehensive front-end (FEED) and detailed engineering for industrial facilities. Specialist design in Fire & Gas, C&I, and Electrical systems."
-        url="https://touchteq.co.za/services/design-and-engineering"
+        url="https://www.touchteq.co.za/services/design-and-engineering"
         serviceType={[
           'Front-End Engineering Design (FEED)', 
           'Detailed Engineering Design', 
@@ -235,8 +235,8 @@ export default function DesignAndEngineeringPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

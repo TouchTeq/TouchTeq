@@ -121,16 +121,16 @@ const articleJsonLd = {
   headline: 'SIL Assessment vs HAZOP: Understanding the Difference',
   description:
     'SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals.',
-  image: 'https://touchteq.co.za/SIL-HAZOP.jpeg',
+  image: 'https://www.touchteq.co.za/SIL-HAZOP.jpeg',
   author: { '@type': 'Person', name: 'Thabo Matona', jobTitle: 'Founder and Principal Engineer' },
   publisher: {
     '@type': 'Organization',
     name: 'Touch Teqniques Engineering Services',
-    logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+    logo: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
-  mainEntityOfPage: 'https://touchteq.co.za/insights/sil-assessment-vs-hazop',
+  mainEntityOfPage: 'https://www.touchteq.co.za/insights/sil-assessment-vs-hazop',
   keywords:
     'SIL Assessment, HAZOP, LOPA, Process Safety, IEC 61511, Functional Safety, Safety Instrumented Function',
 };
@@ -263,9 +263,9 @@ export default function SILHAZOPInsightsDetailPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
-          { name: 'SIL Assessment vs HAZOP', url: 'https://touchteq.co.za/insights/sil-assessment-vs-hazop' },
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Insights', url: 'https://www.touchteq.co.za/insights' },
+          { name: 'SIL Assessment vs HAZOP', url: 'https://www.touchteq.co.za/insights/sil-assessment-vs-hazop' },
         ]}
       />
       <JsonLd data={articleJsonLd} />
@@ -327,7 +327,7 @@ export default function SILHAZOPInsightsDetailPage() {
             <ShareButton
               title="SIL Assessment vs HAZOP: Understanding the Difference"
               description="SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals."
-              url="https://touchteq.co.za/insights/sil-assessment-vs-hazop"
+              url="https://www.touchteq.co.za/insights/sil-assessment-vs-hazop"
               className="mb-6"
             />
 

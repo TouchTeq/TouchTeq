@@ -93,16 +93,16 @@ const articleJsonLd = {
   headline: 'Top 5 Reasons for False Alarms in Optical Flame Detectors',
   description:
     'False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility.',
-  image: 'https://touchteq.co.za/optical-flame-detector.jpeg',
+  image: 'https://www.touchteq.co.za/optical-flame-detector.jpeg',
   author: { '@type': 'Person', name: 'Thabo Matona', jobTitle: 'Founder and Principal Engineer' },
   publisher: {
     '@type': 'Organization',
     name: 'Touch Teqniques Engineering Services',
-    logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+    logo: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
   },
   dateModified: '2026-03-30T00:00:00Z',
   reviewedBy: { '@type': 'Person', name: 'Thabo Matona' },
-  mainEntityOfPage: 'https://touchteq.co.za/insights/flame-detector-false-alarms',
+  mainEntityOfPage: 'https://www.touchteq.co.za/insights/flame-detector-false-alarms',
   keywords:
     'False Alarms, Optical Flame Detectors, Fire Detection, Maintenance, Industrial Safety, Fire & Gas',
 };
@@ -235,9 +235,9 @@ export default function FlameDetectorInsightsDetailPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Insights', url: 'https://touchteq.co.za/insights' },
-          { name: 'Flame Detector False Alarms', url: 'https://touchteq.co.za/insights/flame-detector-false-alarms' },
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Insights', url: 'https://www.touchteq.co.za/insights' },
+          { name: 'Flame Detector False Alarms', url: 'https://www.touchteq.co.za/insights/flame-detector-false-alarms' },
         ]}
       />
       <JsonLd data={articleJsonLd} />
@@ -299,7 +299,7 @@ export default function FlameDetectorInsightsDetailPage() {
             <ShareButton
               title="Top 5 Reasons for False Alarms in Optical Flame Detectors"
               description="False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility."
-              url="https://touchteq.co.za/insights/flame-detector-false-alarms"
+              url="https://www.touchteq.co.za/insights/flame-detector-false-alarms"
               className="mb-6"
             />
 

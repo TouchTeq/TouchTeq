@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Touch Teqniques Engineering Services' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights',
   },
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights',
+    url: 'https://www.touchteq.co.za/insights',
     siteName: 'Touch Teqniques Engineering',
     title: 'Technical Insights for Industrial Engineers | Touch Teqniques Engineering',
     description:

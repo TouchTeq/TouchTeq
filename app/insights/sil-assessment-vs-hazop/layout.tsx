@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thabo Matona' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights/sil-assessment-vs-hazop',
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights/sil-assessment-vs-hazop',
+    url: 'https://www.touchteq.co.za/insights/sil-assessment-vs-hazop',
     siteName: 'Touch Teqniques Engineering',
     title: 'SIL Assessment vs HAZOP: Understanding the Difference',
     description:

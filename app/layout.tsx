@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Touch Teqniques Engineering Services' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/',
     languages: {
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za',
+    url: 'https://www.touchteq.co.za',
     siteName: 'Touch Teqniques Engineering',
     title: 'Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering',
     description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation across Southern Africa.',
@@ -93,12 +93,12 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             {
               '@context': 'https://schema.org',
               '@type': 'ProfessionalService',
-              '@id': 'https://touchteq.co.za/#professional-service',
+              '@id': 'https://www.touchteq.co.za/#professional-service',
               name: 'Touch Teqniques Engineering Services',
               alternateName: 'Touch Teqniques Engineering',
-              url: 'https://touchteq.co.za',
-              logo: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
-              image: 'https://touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+              url: 'https://www.touchteq.co.za',
+              logo: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
+              image: 'https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg',
               description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation in safety-critical industrial environments across Southern Africa.',
               address: {
                 '@type': 'PostalAddress',
@@ -139,7 +139,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 'https://x.com/TouchTeqniques',
               ],
               founder: {
-                '@id': 'https://touchteq.co.za/#thabo-matona',
+              '@id': 'https://www.touchteq.co.za/#thabo-matona',
               },
               contactPoint: [
                 {
@@ -161,23 +161,23 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             {
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              '@id': 'https://touchteq.co.za/#website',
-              url: 'https://touchteq.co.za',
+              '@id': 'https://www.touchteq.co.za/#website',
+              url: 'https://www.touchteq.co.za',
               name: 'Touch Teqniques Engineering',
               inLanguage: 'en-ZA',
               publisher: {
-                '@id': 'https://touchteq.co.za/#professional-service',
+                '@id': 'https://www.touchteq.co.za/#professional-service',
               },
             },
             {
               '@context': 'https://schema.org',
               '@type': 'Person',
-              '@id': 'https://touchteq.co.za/#thabo-matona',
+              '@id': 'https://www.touchteq.co.za/#thabo-matona',
               name: 'Thabo Matona',
               jobTitle: 'Founder and Principal Engineer',
-              url: 'https://touchteq.co.za/about',
+              url: 'https://www.touchteq.co.za/about',
               worksFor: {
-                '@id': 'https://touchteq.co.za/#professional-service',
+                '@id': 'https://www.touchteq.co.za/#professional-service',
               },
               knowsAbout: [
                 'Fire and gas detection systems',

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thabo Matona' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
-  metadataBase: new URL('https://touchteq.co.za'),
+  metadataBase: new URL('https://www.touchteq.co.za'),
   alternates: {
     canonical: '/insights/hazardous-area-classification-southern-africa',
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
-    url: 'https://touchteq.co.za/insights/hazardous-area-classification-southern-africa',
+    url: 'https://www.touchteq.co.za/insights/hazardous-area-classification-southern-africa',
     siteName: 'Touch Teqniques Engineering',
     title: 'A Guide to Hazardous Area Classification in Southern Africa',
     description:

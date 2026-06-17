@@ -177,9 +177,9 @@ export default function HazardousAreaClassificationPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Hazardous Area Classification', url: 'https://touchteq.co.za/services/hazardous-area-classification' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Hazardous Area Classification', url: 'https://www.touchteq.co.za/services/hazardous-area-classification' }
         ]}
       />
       <FAQJsonLd 
@@ -188,7 +188,7 @@ export default function HazardousAreaClassificationPage() {
       <ServiceJsonLd 
         name="Hazardous Area Classification & Zoning"
         description="Professional Hazardous Area Classification (HAC) studies and zoning services. Compliance with SANS 10108 and IEC 60079 for industrial facilities in Southern Africa."
-        url="https://touchteq.co.za/services/hazardous-area-classification"
+        url="https://www.touchteq.co.za/services/hazardous-area-classification"
         serviceType={[
           'Area Classification', 
           'Explosive Atmosphere Risk Assessment', 
@@ -199,8 +199,8 @@ export default function HazardousAreaClassificationPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

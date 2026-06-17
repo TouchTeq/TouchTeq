@@ -140,9 +140,9 @@ export default function MaintenanceAndSupportPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Maintenance & Support', url: 'https://touchteq.co.za/services/maintenance-and-support' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Maintenance & Support', url: 'https://www.touchteq.co.za/services/maintenance-and-support' }
         ]}
       />
       <FAQJsonLd 
@@ -151,7 +151,7 @@ export default function MaintenanceAndSupportPage() {
       <ServiceJsonLd 
         name="Industrial Maintenance & 24/7 Support"
         description="Scheduled preventative maintenance and rapid emergency response for fire and gas, electrical, and control systems in industrial facilities."
-        url="https://touchteq.co.za/services/maintenance-and-support"
+        url="https://www.touchteq.co.za/services/maintenance-and-support"
         serviceType={[
           'Preventative Maintenance', 
           'Emergency Callout', 
@@ -163,8 +163,8 @@ export default function MaintenanceAndSupportPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />

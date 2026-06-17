@@ -125,9 +125,9 @@ export default function ControlAndInstrumentationPage() {
     <main className="bg-white min-h-screen font-sans">
       <BreadcrumbJsonLd 
         items={[
-          { name: 'Home', url: 'https://touchteq.co.za' },
-          { name: 'Services', url: 'https://touchteq.co.za/#services' },
-          { name: 'Control & Instrumentation', url: 'https://touchteq.co.za/services/control-and-instrumentation' }
+          { name: 'Home', url: 'https://www.touchteq.co.za' },
+          { name: 'Services', url: 'https://www.touchteq.co.za/#services' },
+          { name: 'Control & Instrumentation', url: 'https://www.touchteq.co.za/services/control-and-instrumentation' }
         ]}
       />
       <FAQJsonLd 
@@ -136,7 +136,7 @@ export default function ControlAndInstrumentationPage() {
       <ServiceJsonLd 
         name="Control & Instrumentation Engineering"
         description="Design, installation, and maintenance of industrial control, instrumentation, and automation systems. PLC upgrades, calibration, loop testing, and SUPCON partnership support across Southern Africa."
-        url="https://touchteq.co.za/services/control-and-instrumentation"
+        url="https://www.touchteq.co.za/services/control-and-instrumentation"
         serviceType={[
           'Control Engineering', 
           'Process Instrumentation', 
@@ -147,8 +147,8 @@ export default function ControlAndInstrumentationPage() {
       />
       <OrganizationJsonLd 
         name="Touch Teqniques Engineering"
-        url="https://touchteq.co.za"
-        logo="https://touchteq.co.za/touch-teq-logo-wordmark.jpeg"
+        url="https://www.touchteq.co.za"
+        logo="https://www.touchteq.co.za/touch-teq-logo-wordmark.jpeg"
         description="Specialist industrial engineering firm delivering fire and gas detection, control and instrumentation, and electrical engineering services across Southern Africa."
       />
       <Header />
