@@ -1,9 +1,28 @@
 import { MetadataRoute } from 'next';
+import { categories, products } from '@/lib/equipment/products';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://www.touchteq.co.za';
   const reviewedAt = new Date('2026-03-24T00:00:00Z');
   const articleReviewedAt = new Date('2026-03-24T00:00:00Z');
+  const equipmentDate = new Date('2026-06-17T00:00:00Z');
+
+  // Equipment routes
+  const equipmentRoutes: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/equipment`, lastModified: equipmentDate, changeFrequency: 'monthly', priority: 0.8 },
+    ...categories.map((cat) => ({
+      url: `${baseUrl}/equipment/${cat.slug}`,
+      lastModified: equipmentDate,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
+    ...products.map((product) => ({
+      url: `${baseUrl}/equipment/${product.category}/${product.slug}`,
+      lastModified: equipmentDate,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+  ];
 
   return [
     { url: baseUrl, lastModified: reviewedAt, changeFrequency: 'weekly', priority: 1 },
@@ -15,13 +34,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/industries`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
 
     // Services
-    { url: `${baseUrl}/services/fire-and-gas-detection`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/services/fire-and-gas-detection`, lastModified: equipmentDate, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/control-and-instrumentation`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/electrical-engineering`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/hazardous-area-classification`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/design-and-engineering`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/installation-and-commissioning`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/maintenance-and-support`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
+
+    // Equipment
+    ...equipmentRoutes,
 
     // Insight Articles
     { url: `${baseUrl}/insights/iec-61511-plant-managers`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },

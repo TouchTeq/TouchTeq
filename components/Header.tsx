@@ -67,8 +67,8 @@ export default function Header() {
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'About Us', href: '/about' },
-    { 
-      name: 'Services', 
+    {
+      name: 'Services',
       href: '/#services',
       dropdownId: 'services',
       dropdown: [
@@ -79,6 +79,19 @@ export default function Header() {
         { name: 'Design & Engineering', href: '/services/design-and-engineering' },
         { name: 'Installation & Commissioning', href: '/services/installation-and-commissioning' },
         { name: 'Maintenance & Support', href: '/services/maintenance-and-support' },
+      ]
+    },
+    {
+      name: 'Equipment',
+      href: '/equipment',
+      dropdownId: 'equipment',
+      dropdown: [
+        { name: 'All Equipment', href: '/equipment' },
+        { name: 'Wireless Gas Detectors', href: '/equipment/wireless-gas-detectors' },
+        { name: 'Fixed Gas Detectors', href: '/equipment/fixed-gas-detectors' },
+        { name: 'Open Path Gas Detectors', href: '/equipment/open-path-detectors' },
+        { name: 'System Alarm Controllers', href: '/equipment/alarm-controllers' },
+        { name: 'Wireless System Accessories', href: '/equipment/wireless-accessories' },
       ]
     },
     { name: 'Industries', href: '/industries' },

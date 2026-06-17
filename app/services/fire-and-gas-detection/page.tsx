@@ -1,11 +1,11 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Flame, ShieldCheck, CheckCircle2, ArrowRight, Zap, Cpu, 
+import {
+  Flame, ShieldCheck, CheckCircle2, ArrowRight, Zap, Cpu,
   AlertTriangle, Settings, FileText, Activity, ChevronRight,
   Search, HardHat, Factory, Droplets, ZapOff, Microscope,
-  Plus, Minus, ArrowUpRight, Phone
+  Plus, Minus, ArrowUpRight, Phone, Radio, Bell, Cable
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,6 +17,15 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import FAQJsonLd from '@/components/seo/FAQJsonLd';
 import ServiceJsonLd from '@/components/seo/ServiceJsonLd';
 import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
+import { categories, products } from '@/lib/equipment/products';
+
+const equipmentCategoryIcons: Record<string, typeof Radio> = {
+  radio: Radio,
+  gauge: Radio,
+  beam: Radio,
+  bell: Bell,
+  cable: Cable,
+};
 
 const services = [
   {
@@ -364,6 +373,96 @@ export default function FireAndGasPage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3.5: Equipment We Supply */}
+      <section className="py-24 bg-slate-50">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="text-center mb-16">
+            <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em] block mb-4">GDSCorp Partnership</span>
+            <h2 className="text-[#1A2B4C] text-3xl md:text-5xl font-black uppercase tracking-normal mb-6">
+              Equipment We <span className="text-orange-500">Specify &amp; Supply</span>
+            </h2>
+            <p className="text-slate-500 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed">
+              We partner with GDSCorp to provide reliable wireless gas detection, alarm controllers, and system accessories. Explore the specific models we design, install, and maintain.
+            </p>
+          </div>
+
+          {/* Category cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+            {categories.map((cat, index) => {
+              const CatIcon = equipmentCategoryIcons[cat.icon] ?? Radio;
+              const catProducts = products.filter((p) => p.category === cat.slug);
+              return (
+                <motion.div
+                  key={cat.slug}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link
+                    href={`/equipment/${cat.slug}`}
+                    className="group block bg-white p-8 rounded-2xl border border-slate-100 hover:border-orange-500/50 hover:shadow-xl transition-all duration-300 h-full"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#1A2B4C] flex items-center justify-center mb-6 group-hover:bg-orange-500 transition-colors duration-300">
+                      <CatIcon className="text-white" size={24} />
+                    </div>
+                    <h3 className="text-[#1A2B4C] text-lg font-black uppercase tracking-normal mb-3 group-hover:text-orange-500 transition-colors">
+                      {cat.name}
+                    </h3>
+                    <p className="text-slate-500 text-xs leading-relaxed font-medium mb-6 line-clamp-2">
+                      {cat.description}
+                    </p>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        {catProducts.length} {catProducts.length === 1 ? 'Model' : 'Models'}
+                      </span>
+                      <span className="inline-flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-[#ff6900] group-hover:text-[#1A2B4C] transition-colors">
+                        Browse
+                        <ArrowUpRight size={14} className="ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Featured products strip */}
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {products.map((product, i) => (
+                <motion.div
+                  key={product.slug}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link
+                    href={`/equipment/${product.category}/${product.slug}`}
+                    className="group block bg-white p-4 rounded-xl border border-slate-100 hover:border-orange-500/50 hover:shadow-lg transition-all duration-300 text-center"
+                  >
+                    <span className="block text-[#1A2B4C] font-black text-xs uppercase tracking-tight group-hover:text-orange-500 transition-colors">
+                      {product.model}
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              href="/equipment"
+              className="inline-flex items-center gap-2 text-orange-500 font-black text-xs uppercase tracking-[0.2em] hover:text-[#1A2B4C] transition-colors"
+            >
+              View All Equipment
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
       </section>
