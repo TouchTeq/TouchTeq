@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  ExternalLink,
   Factory,
   FileCheck2,
   Gauge,
@@ -11,7 +12,6 @@ import {
   Search,
   ShieldCheck,
   Thermometer,
-  Waves,
   Wrench,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -49,6 +49,36 @@ const capabilities = [
     description:
       'Flow measurement checks and calibration support scoped to the meter, process and installation conditions.',
     examples: ['Installed flow meters', 'Flow transmitters', 'Flow indication loops', 'Temporary check-metering'],
+  },
+];
+
+const calibrationEquipment = [
+  {
+    model: 'HSIN150A',
+    type: 'Dry-block temperature calibrator',
+    image: '/calibration-equipment/hsin150a-dry-block-temperature-calibrator.jpg',
+    alt: 'HSIN150A dry-block temperature calibrator',
+    description:
+      'Provides a controlled dry-well environment for comparing suitable temperature probes and sensors at agreed test points.',
+    sourceUrl: 'https://www.hsincalibrator.com/product/1-3/',
+  },
+  {
+    model: 'HSIN613',
+    type: 'Portable pneumatic pressure test pump',
+    image: '/calibration-equipment/hsin613-portable-pressure-test-pump.png',
+    alt: 'HSIN613 portable pneumatic pressure test pump',
+    description:
+      'Generates controllable pneumatic pressure and vacuum for suitable pressure instruments when paired with the appropriate reference equipment.',
+    sourceUrl: 'https://www.hsincalibrator.com/product/5/',
+  },
+  {
+    model: 'HSIN600-9',
+    type: 'Four-port pressure calibration table',
+    image: '/calibration-equipment/hsin600-9-four-port-pressure-table.jpg',
+    alt: 'HSIN600-9 four-port pressure calibration table',
+    description:
+      'Supports the connection and isolation of multiple compatible pressure instruments for an efficient, organised testing setup.',
+    sourceUrl: 'https://www.hsincalibrator.com/product/1-5/',
   },
 ];
 
@@ -315,6 +345,61 @@ export default function InstrumentCalibrationPage() {
         </div>
       </section>
 
+      <section aria-labelledby="calibration-equipment-heading" className="border-y border-slate-200 bg-slate-50 py-24 md:py-32">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="mb-14 grid gap-8 lg:grid-cols-[1fr_0.65fr] lg:items-end">
+            <div className="max-w-3xl">
+              <span className="mb-5 block text-xs font-black uppercase tracking-[0.3em] text-orange-500">Purchased calibration equipment</span>
+              <h2 id="calibration-equipment-heading" className="text-3xl font-black uppercase leading-tight text-[#1A2B4C] md:text-5xl">
+                The equipment behind the measurement work.
+              </h2>
+            </div>
+            <p className="border-l-2 border-orange-500 pl-5 text-sm font-medium leading-relaxed text-slate-600 md:text-base">
+              These are the three HSIN models purchased for this service. Final suitability depends on the instrument, application, requested test points and complete reference setup confirmed during scoping.
+            </p>
+          </div>
+
+          <div className="grid gap-px overflow-hidden border border-slate-200 bg-slate-200 lg:grid-cols-3">
+            {calibrationEquipment.map((equipment, index) => (
+              <article key={equipment.model} className="flex flex-col bg-white">
+                <div className="relative aspect-[4/3] overflow-hidden bg-white">
+                  <Image
+                    src={equipment.image}
+                    alt={equipment.alt}
+                    fill
+                    sizes="(max-width: 1023px) 100vw, 33vw"
+                    className="object-contain p-7 transition-transform duration-500 hover:scale-[1.03] md:p-9"
+                  />
+                  <span className="absolute left-5 top-5 bg-[#1A2B4C] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                    Purchased model {String(index + 1).padStart(2, '0')}
+                  </span>
+                </div>
+
+                <div className="flex flex-1 flex-col border-t border-slate-200 p-6 md:p-8">
+                  <p className="font-mono text-xs font-black uppercase tracking-[0.2em] text-orange-600">{equipment.model}</p>
+                  <h3 className="mt-3 text-xl font-black uppercase leading-tight text-[#1A2B4C] md:text-2xl">{equipment.type}</h3>
+                  <p className="mt-4 flex-1 text-sm font-medium leading-relaxed text-slate-600">{equipment.description}</p>
+                  <a
+                    href={equipment.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-7 inline-flex items-center gap-2 self-start text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 transition-colors hover:text-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500"
+                  >
+                    Manufacturer reference
+                    <ExternalLink size={14} aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 border border-dashed border-slate-300 bg-white px-5 py-4 text-sm leading-relaxed text-slate-600 sm:flex-row sm:items-center sm:justify-between md:px-6">
+            <p><span className="font-black uppercase text-[#1A2B4C]">Image note:</span> Manufacturer product images are shown temporarily.</p>
+            <p className="font-semibold text-slate-500">They will be replaced with Touch Teq equipment-in-use photography.</p>
+          </div>
+        </div>
+      </section>
+
       <section className="overflow-hidden bg-[#0A1120] py-24 text-white md:py-32">
         <div className="container mx-auto grid items-center gap-16 px-4 lg:grid-cols-[1.05fr_0.95fr] md:px-8">
           <div>
@@ -343,24 +428,22 @@ export default function InstrumentCalibrationPage() {
             </p>
           </div>
 
-          <div aria-label="Diagram showing ultrasonic sensors measuring flow from outside a pipe" className="relative min-h-[390px] border border-white/10 bg-white/[0.03] p-6 sm:p-10">
-            <div className="absolute inset-x-8 top-1/2 h-28 -translate-y-1/2 rounded-full border-4 border-slate-500 bg-gradient-to-b from-slate-300 to-slate-600 shadow-2xl sm:inset-x-12">
-              <div className="absolute inset-3 overflow-hidden rounded-full bg-[#15395b]">
-                <div className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-[#1f5b83] to-[#2e7aa1]" />
-                <ArrowRight className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white/80" size={52} strokeWidth={1.3} aria-hidden="true" />
-              </div>
+          <figure className="overflow-hidden border border-white/10 bg-white/[0.03]">
+            <div className="relative aspect-video w-full overflow-hidden">
+              <Image
+                src="/calibration-equipment/ultrasonic-flow-spotlight.webp"
+                alt="Clamp-on ultrasonic flow sensors transmitting signals through a liquid-filled pipe"
+                fill
+                sizes="(max-width: 1023px) 100vw, 48vw"
+                className="object-cover"
+              />
             </div>
 
-            <div className="absolute left-[24%] top-[25%] h-20 w-12 -rotate-12 rounded border-2 border-orange-300 bg-orange-500 shadow-lg shadow-orange-500/30" />
-            <div className="absolute right-[24%] top-[25%] h-20 w-12 rotate-12 rounded border-2 border-orange-300 bg-orange-500 shadow-lg shadow-orange-500/30" />
-
-            <Waves className="absolute left-1/2 top-[34%] -translate-x-1/2 text-orange-300" size={70} strokeWidth={1.3} aria-hidden="true" />
-
-            <div className="absolute bottom-8 left-1/2 w-[calc(100%-3rem)] -translate-x-1/2 border border-white/10 bg-[#0A1120] p-4 text-center sm:w-auto sm:min-w-72">
+            <figcaption className="border-t border-white/10 bg-[#0A1120] p-4 text-center sm:p-5">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-500">Non-invasive measurement concept</p>
               <p className="mt-2 text-xs leading-relaxed text-slate-400">Sensors are mounted externally for suitable applications.</p>
-            </div>
-          </div>
+            </figcaption>
+          </figure>
         </div>
       </section>
 
@@ -386,6 +469,21 @@ export default function InstrumentCalibrationPage() {
               );
             })}
           </ol>
+
+          <div className="mt-8 border-l-4 border-orange-500 bg-slate-50 p-6 md:flex md:items-center md:justify-between md:gap-10 md:p-8">
+            <div>
+              <p className="font-black uppercase text-[#1A2B4C]">Want to understand the process before requesting a scope?</p>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+                Read the practical guide to calibration methods, service boundaries, ultrasonic suitability and the information your team should prepare.
+              </p>
+            </div>
+            <Link
+              href="/insights/industrial-instrument-calibration-process-guide"
+              className="mt-5 inline-flex shrink-0 items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-orange-600 transition-colors hover:text-[#1A2B4C] md:mt-0"
+            >
+              Read the calibration guide <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       </section>
 

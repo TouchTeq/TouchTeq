@@ -94,6 +94,14 @@ export const searchIndex: SearchResult[] = [
   },
   // ── Insights ──────────────────────────────────────────────────────────
   {
+    id: 'insight-instrument-calibration-guide',
+    title: 'Industrial Instrument Calibration: Process, Capabilities and What to Expect',
+    description: 'A practical guide to pressure, temperature and flow calibration, ultrasonic suitability, reporting, service boundaries and the information needed for an accurate scope.',
+    category: 'Insight',
+    url: '/insights/industrial-instrument-calibration-process-guide',
+    keywords: 'industrial instrument calibration process guide pressure temperature flow ultrasonic clamp on as found as left traceability calibration adjustment repair certificate reporting South Africa',
+  },
+  {
     id: 'insight-iec61511',
     title: 'IEC 61511: What Plant Managers Need to Know',
     description: 'Understanding IEC 61511 requirements for safety instrumented systems in South African industrial facilities.',

@@ -15,6 +15,17 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
 const articles = [
   {
+    id: 6,
+    title: "Industrial Instrument Calibration: Process, Capabilities and What to Expect",
+    excerpt: "Calibration is more than a date on a sticker. This guide explains how pressure, temperature and flow instruments are scoped, compared and documented, when clamp-on ultrasonic flow measurement is suitable, and what clients should prepare before requesting calibration.",
+    category: "Technical Articles",
+    cardTag: "Calibration",
+    detailTags: ["Instrument Calibration", "Pressure & Temperature", "Flow Measurement"],
+    image: "/insights/industrial-instrument-calibration-process-guide.webp",
+    link: "/insights/industrial-instrument-calibration-process-guide",
+    readTime: 11
+  },
+  {
     id: 1,
     title: "Understanding IEC 61511: What Plant Managers in South Africa Need to Know",
     excerpt: "IEC 61511 defines the requirements for safety instrumented systems in the process industry. For plant managers in South Africa, understanding what the standard requires, and what it means for your facility's safety lifecycle, is no longer optional. This article breaks down the key requirements in plain language.",
@@ -212,11 +223,12 @@ export default function InsightsPage() {
             className="relative"
           >
             <div className="relative h-[400px] md:h-[500px] w-full rounded-2xl overflow-hidden">
-              <Link href={featuredArticle.link}>
+              <Link href={featuredArticle.link} className="relative block h-full w-full">
                 <Image
                   src={featuredArticle.image}
                   alt={featuredArticle.title}
                   fill
+                  sizes="(max-width: 767px) 100vw, 1200px"
                   className="object-cover"
                   referrerPolicy="no-referrer"
                   priority
@@ -277,11 +289,12 @@ export default function InsightsPage() {
               >
                 {/* Image Container */}
                 <div className="relative aspect-[16/9] overflow-hidden">
-                  <Link href={article.link}>
+                  <Link href={article.link} className="relative block h-full w-full">
                     <Image
                       src={article.image}
                       alt={article.title}
                       fill
+                      sizes="(max-width: 767px) 100vw, 50vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                       referrerPolicy="no-referrer"
                     />
