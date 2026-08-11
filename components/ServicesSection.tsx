@@ -29,6 +29,14 @@ const services = [
     href: "/services/control-and-instrumentation"
   },
   {
+    title: "Industrial Instrument Calibration",
+    icon: Gauge,
+    description: "Scope-led calibration support for pressure, temperature and flow instruments, including non-invasive ultrasonic flow checks for suitable clean-liquid and slurry applications.",
+    features: ["Pressure & Temperature Calibration", "Flow & Ultrasonic Checks", "Documented Calibration Results"],
+    color: "navy",
+    href: "/services/instrument-calibration"
+  },
+  {
     title: "Electrical Engineering",
     icon: Zap,
     description: "Professional electrical design, installation, and maintenance services for heavy industrial applications and plant operations.",
@@ -220,9 +228,9 @@ export default function ServicesSection() {
             whileHover={{ x: 10 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="lg:col-span-2 p-6 sm:p-8 md:p-10 rounded-2xl bg-[#ff6900] flex flex-col justify-center items-start group cursor-pointer hover:bg-[#e55e00] transition-all shadow-2xl hover:shadow-[#ff6900]/20"
+            className="sm:col-span-2 lg:col-span-1 p-6 sm:p-8 md:p-10 rounded-2xl bg-[#ff6900] flex flex-col justify-center items-start group cursor-pointer hover:bg-[#e55e00] transition-all shadow-2xl hover:shadow-[#ff6900]/20"
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full gap-6">
+            <div className="flex w-full flex-col gap-6">
               <div>
                 <h3 className="text-white text-2xl md:text-3xl font-black mb-4 uppercase tracking-normal leading-tight">
                   Need a Custom <br /> Engineering Solution?
