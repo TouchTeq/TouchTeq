@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Top 5 Reasons for False Alarms in Optical Flame Detectors | TouchTeq Insights',
+  title: 'Five Common Causes of False Alarms in Optical Flame Detectors | TouchTeq Insights',
   description:
-    'False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility.',
+    'A source-led guide to optical flame-detector interference, diagnostics, safe troubleshooting, maintenance and the limits of universal fixes.',
   keywords: [
     'flame detector false alarms',
     'optical flame detection',
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     'flame detector maintenance',
     'South Africa',
   ],
-  authors: [{ name: 'Thabo Matona' }],
+  authors: [{ name: 'Touch Teqniques Engineering' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
   metadataBase: new URL('https://www.touchteq.co.za'),
@@ -26,27 +26,27 @@ export const metadata: Metadata = {
     locale: 'en_ZA',
     url: 'https://www.touchteq.co.za/insights/flame-detector-false-alarms',
     siteName: 'Touch Teqniques Engineering',
-    title: 'Top 5 Reasons for False Alarms in Optical Flame Detectors',
+    title: 'Five Common Causes of False Alarms in Optical Flame Detectors',
     description:
-      'False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility.',
+      'A source-led guide to optical interference, diagnostics, safe troubleshooting and maintenance without compromising detector coverage.',
     images: [
       {
         url: '/optical-flame-detector.jpeg',
         width: 1200,
         height: 630,
-        alt: 'Optical Flame Detector False Alarms',
+        alt: 'Industrial optical flame detector installed in a process facility',
       },
     ],
     publishedTime: '2024-04-01T00:00:00Z',
-    modifiedTime: '2026-03-24T00:00:00Z',
-    authors: ['Thabo Matona'],
-    tags: ['Fire & Gas', 'Flame Detectors', 'Maintenance'],
+    modifiedTime: '2026-08-11T00:00:00+02:00',
+    authors: ['Touch Teqniques Engineering'],
+    tags: ['Fire & Gas', 'Flame Detectors', 'Troubleshooting', 'Maintenance'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Top 5 Reasons for False Alarms in Optical Flame Detectors',
+    title: 'Five Common Causes of False Alarms in Optical Flame Detectors',
     description:
-      'False alarms in optical flame detection systems cost time and money. Discover the five most common causes and how to eliminate them in your facility.',
+      'A source-led guide to optical interference, diagnostics and safe troubleshooting without compromising detector coverage.',
     images: ['/optical-flame-detector.jpeg'],
     creator: '@TouchTeqniques',
   },

@@ -2,13 +2,13 @@
 
 import { motion } from "framer-motion"
 import { Share2, Linkedin, Twitter, Facebook, Mail, LucideIcon } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface ShareButtonProps {
   title: string
   description: string
-  url?: string
+  url: string
   className?: string
 }
 
@@ -25,40 +25,33 @@ export function ShareButton({
   className 
 }: ShareButtonProps) {
   const [active, setActive] = useState(false)
-  const [currentUrl, setCurrentUrl] = useState('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentUrl(url || window.location.href)
-    }
-  }, [url])
 
   const socialIcons: SocialIcon[] = [
     { 
       Icon: Linkedin,
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       label: 'LinkedIn'
     },
     { 
       Icon: Twitter,
-      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(currentUrl)}`,
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
       label: 'Twitter'
     },
     { 
       Icon: Facebook,
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       label: 'Facebook'
     },
     { 
       Icon: Mail,
-      href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(description + '\n\n' + currentUrl)}`,
+      href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(description + '\n\n' + url)}`,
       label: 'Email'
     },
   ]
 
   return (
     <div className={cn("relative flex items-center justify-start", className)}>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <motion.div
           className="relative z-10"
         >
@@ -90,12 +83,11 @@ export function ShareButton({
               "bg-[#1A2B4C] shadow-lg",
               "hover:bg-[#1A2B4C]/90 transition-all hover:-translate-y-1"
             )}
-            initial={{ scale: 0, opacity: 0, y: 0 }}
+            initial={{ scale: 0, opacity: 0, width: 0 }}
             animate={{
               scale: active ? 1 : 0,
               opacity: active ? 1 : 0,
-              x: active ? (index + 1) * 56 : 0,
-              y: active ? 0 : 0,
+              width: active ? 40 : 0,
             }}
             transition={{
               type: "spring",

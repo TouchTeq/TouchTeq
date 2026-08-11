@@ -49,14 +49,14 @@ const articles = [
   },
   {
     id: 3,
-    title: "Top 5 Reasons for False Alarms in Optical Flame Detectors",
-    excerpt: "False alarms in optical flame detection systems are one of the most disruptive and costly problems in industrial fire protection. This article identifies the five most common causes, explains the engineering principles behind each, and outlines the corrective actions that will reduce nuisance trips without compromising detection performance.",
+    title: "Five Common Causes of False Alarms in Optical Flame Detectors",
+    excerpt: "A source-led guide to recurring optical interference, dirty or obstructed optics, field-of-view problems, configuration and logic, and faults in the wider detection chain.",
     category: "Technical Articles",
     cardTag: "Fire & Gas",
-    detailTags: ["Fire & Gas", "Flame Detectors", "Maintenance"],
+    detailTags: ["Fire & Gas", "Flame Detectors", "Troubleshooting"],
     image: "/optical-flame-detector.jpeg",
     link: "/insights/flame-detector-false-alarms",
-    readTime: 6
+    readTime: 16
   },
   {
     id: 4,

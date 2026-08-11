@@ -119,11 +119,11 @@ export const searchIndex: SearchResult[] = [
   },
   {
     id: 'insight-false-alarms',
-    title: 'Top 5 Causes of False Alarms in Flame Detectors',
-    description: 'Common causes of false alarms in optical flame detectors and engineering actions to reduce nuisance trips.',
+    title: 'Five Common Causes of False Alarms in Optical Flame Detectors',
+    description: 'A source-led guide to detector technologies, recurring alarm causes, safe troubleshooting, diagnostics and maintenance boundaries.',
     category: 'Insight',
     url: '/insights/flame-detector-false-alarms',
-    keywords: 'flame detector false alarms nuisance trips optical ir uv maintenance fire detection solar radiation vibration contamination',
+    keywords: 'flame detector false alarms nuisance optical uv ir uvir ir3 msir welding hot work field of view contamination diagnostics wiring troubleshooting fire gas south africa',
   },
   {
     id: 'insight-sil-hazop',

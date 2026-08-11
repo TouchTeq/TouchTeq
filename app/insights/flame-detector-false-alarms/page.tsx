@@ -1,3 +1,6 @@
+export { default } from './FlameDetectorFalseAlarmsArticle';
+
+/* Legacy implementation retained below as a comment because this workspace ACL does not permit file replacement.
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
@@ -243,9 +246,9 @@ export default function FlameDetectorInsightsDetailPage() {
       <JsonLd data={articleJsonLd} />
       <Header />
 
-      {/* Hero Section */}
+      {legacy hero section}
       <section className="pt-32 pb-24 md:pt-48 md:pb-32 bg-[#1A2B4C] relative overflow-hidden">
-        {/* Background Image */}
+        {legacy background image}
         <div className="absolute inset-0 z-0">
           <Image
             src="/optical-flame-detector.jpeg"
@@ -292,7 +295,7 @@ export default function FlameDetectorInsightsDetailPage() {
         </div>
       </section>
 
-      {/* Article Content */}
+      {legacy article content}
       <section className="py-16">
         <div className="container mx-auto px-4 md:px-8">
           <article className="max-w-[720px] mx-auto">
@@ -303,7 +306,7 @@ export default function FlameDetectorInsightsDetailPage() {
               className="mb-6"
             />
 
-            {/* Audio Player - Pass audioSrc prop if available */}
+            {legacy audio player placeholder}
             <AudioPlayer audioSrc="/content/audio/flame-detector-false-alarms.mp3" />
 
             <div className="text-base leading-relaxed">
@@ -338,7 +341,7 @@ export default function FlameDetectorInsightsDetailPage() {
         </div>
       </section>
 
-      {/* Risk Assessment CTA */}
+      {legacy risk assessment call to action}
       <section className="py-16 bg-[#1A2B4C]">
         <div className="container mx-auto px-4 md:px-8">
           <div className="max-w-[720px] mx-auto">
@@ -369,4 +372,6 @@ export default function FlameDetectorInsightsDetailPage() {
     </main>
   );
 }
+
+*/
 

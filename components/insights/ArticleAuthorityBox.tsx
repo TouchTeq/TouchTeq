@@ -2,12 +2,16 @@ type ArticleAuthorityBoxProps = {
   updated: string;
   topics: string[];
   variant?: 'engineer-review' | 'source-review';
+  sourceStatus?: string;
+  sourceSummary?: string;
 };
 
 export default function ArticleAuthorityBox({
   updated,
   topics,
   variant = 'engineer-review',
+  sourceStatus,
+  sourceSummary,
 }: ArticleAuthorityBoxProps) {
   const isSourceReview = variant === 'source-review';
 
@@ -21,12 +25,12 @@ export default function ArticleAuthorityBox({
       </h3>
       <p className="mt-2 text-sm font-bold uppercase tracking-widest text-slate-500">
         {isSourceReview
-          ? 'Primary standards and South African regulatory sources checked'
+          ? sourceStatus ?? 'Primary standards and South African regulatory sources checked'
           : 'Founder and Principal Engineer, Touch Teqniques Engineering'}
       </p>
       <p className="mt-4 text-sm leading-relaxed text-slate-600">
         {isSourceReview
-          ? 'This article was rebuilt from a consolidated technical research pack and checked against current IEC catalogue pages and published South African regulatory material. It is general information and does not replace a site-specific engineering, legal or approved-inspection-authority assessment.'
+          ? sourceSummary ?? 'This article was rebuilt from a consolidated technical research pack and checked against current IEC catalogue pages and published South African regulatory material. It is general information and does not replace a site-specific engineering, legal or approved-inspection-authority assessment.'
           : 'This article is published by Touch Teqniques Engineering and reviewed for technical accuracy by an engineer overseeing industrial fire and gas detection, control and instrumentation, hazardous area classification, and electrical engineering work in Southern Africa.'}
       </p>
       <div className="mt-6 text-sm text-slate-600">
