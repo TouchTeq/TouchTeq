@@ -265,7 +265,14 @@ export default function IndustrialInstrumentCalibrationProcessGuidePage() {
               className="mb-6"
             />
 
-            <ArticleAudioPlayer />
+            <ArticleAudioPlayer
+              audioSrc="/content/audio/industrial-instrument-calibration-process-guide-deep-dive.mp3"
+              variant="deep-dive"
+              title="What a calibration result actually proves"
+              description="A practical discussion about calibration scope, measurement methods, ultrasonic suitability, records and the boundaries between calibration, traceability, accreditation and legal verification."
+              durationLabel="5:10"
+              disclosure="This AI-produced discussion is an accessible companion to the written guide and may simplify or paraphrase technical and regulatory points. For precise terminology, standards references and engineering boundaries, refer to the written article and its cited sources. Always follow the applicable OEM instructions, approved site procedures and project-specific engineering requirements."
+            />
 
             <div className="border-l-4 border-orange-500 bg-slate-50 px-6 py-7 md:px-8">
               <p className="text-xl font-black leading-relaxed text-[#1A2B4C] md:text-2xl">

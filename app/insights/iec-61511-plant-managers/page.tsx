@@ -373,7 +373,14 @@ export default function IEC61511PlantManagersPage() {
               className="mb-6"
             />
 
-            <ArticleAudioPlayer />
+            <ArticleAudioPlayer
+              audioSrc="/content/audio/iec-61511-plant-managers-deep-dive.mp3"
+              variant="deep-dive"
+              title="What a credible SIL claim needs after design approval"
+              description="A practical discussion about the SIS lifecycle, SIL evidence, proof testing, bypass control and the distinction between engineering standards and South African legal duties."
+              durationLabel="6:11"
+              disclosure="This AI-produced discussion is an accessible companion to the written guide and may simplify or paraphrase technical and regulatory points. For precise terminology, standards references and engineering boundaries, refer to the written article and its cited sources. Always follow the applicable OEM instructions, approved site procedures and project-specific engineering requirements."
+            />
 
             <div className="border-l-4 border-orange-500 bg-slate-50 px-6 py-7 md:px-8">
               <p className="text-xl font-black leading-relaxed text-[#1A2B4C] md:text-2xl">

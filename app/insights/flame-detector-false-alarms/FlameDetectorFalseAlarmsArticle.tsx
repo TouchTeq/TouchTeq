@@ -301,7 +301,14 @@ export default function FlameDetectorFalseAlarmsArticle() {
 
           <article>
             <div className="mb-8"><ShareButton title="Five Common Causes of False Alarms in Optical Flame Detectors" description="A source-led guide to optical interference, diagnostics, safe troubleshooting and maintenance." url={articleUrl} /></div>
-            <ArticleAudioPlayer />
+            <ArticleAudioPlayer
+              audioSrc="/content/audio/flame-detector-false-alarms-deep-dive.mp3"
+              variant="deep-dive"
+              title="Before you change the flame-detector settings"
+              description="A two-host troubleshooting discussion about optical interferents, field of view, detector technology, configuration and system-chain evidence."
+              durationLabel="4:11"
+              disclosure="This AI-produced discussion is an accessible companion to the written guide and may simplify or paraphrase technical and regulatory points. For precise terminology, standards references and engineering boundaries, refer to the written article and its cited sources. Always follow the applicable OEM instructions, approved site procedures and project-specific engineering requirements."
+            />
 
             <div className="border-l-4 border-orange-500 bg-[#0A1120] p-7 text-white md:p-9">
               <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-orange-500"><ShieldAlert size={17} />The first rule</p>

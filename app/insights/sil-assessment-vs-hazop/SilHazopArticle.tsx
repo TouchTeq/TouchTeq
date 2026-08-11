@@ -246,7 +246,14 @@ export default function SilHazopArticle() {
 
           <article>
             <div className="mb-8"><ShareButton title="HAZOP vs SIL Assessment: Different Questions, One Connected Safety Lifecycle" description="A source-led guide to HAZOP, SIL determination, LOPA and the connected functional-safety lifecycle." url={articleUrl} /></div>
-            <ArticleAudioPlayer />
+            <ArticleAudioPlayer
+              audioSrc="/content/audio/sil-assessment-vs-hazop-deep-dive.mp3"
+              variant="deep-dive"
+              title="Where HAZOP ends and SIL determination begins"
+              description="A practical discussion about the different questions answered by HAZOP and SIL determination, and the evidence needed to connect them through the safety lifecycle."
+              durationLabel="5:36"
+              disclosure="This AI-produced discussion is an accessible companion to the written guide and may simplify or paraphrase technical and regulatory points. For precise terminology, standards references and engineering boundaries, refer to the written article and its cited sources. Always follow the applicable OEM instructions, approved site procedures and project-specific engineering requirements."
+            />
 
             <div className="border-l-4 border-orange-500 bg-[#0A1120] p-7 text-white md:p-9">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-500">The decision trail</p>

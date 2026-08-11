@@ -269,7 +269,14 @@ export default function FireGasCommissioningArticle() {
 
           <article>
             <ShareButton title="Fire and Gas System Commissioning: What a Credible Handover Must Prove" description="A source-led guide to commissioning stages, cause-and-effect tests, detector procedures, inhibit control and handover evidence." url={articleUrl} className="mb-6" />
-            <ArticleAudioPlayer />
+            <ArticleAudioPlayer
+              audioSrc="/content/audio/fire-and-gas-system-commissioning-deep-dive.mp3"
+              variant="deep-dive"
+              title="What a green status light does—and does not—prove"
+              description="A two-host discussion about what status indications, loop checks, detector tests and commissioning records prove—and what they leave unproven."
+              durationLabel="5:15"
+              disclosure="This AI-produced discussion is an accessible companion to the written guide and may simplify or paraphrase technical and regulatory points. For precise terminology, standards references and engineering boundaries, refer to the written article and its cited sources. Always follow the applicable OEM instructions, approved site procedures and project-specific engineering requirements."
+            />
 
             <div className="border-l-4 border-orange-500 bg-orange-50 p-6 text-sm font-medium leading-relaxed text-slate-700 md:p-8">
               <p className="font-black uppercase tracking-wide text-[#1A2B4C]">The central commissioning question</p>
