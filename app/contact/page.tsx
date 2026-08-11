@@ -34,6 +34,7 @@ import {
   VALID_SERVICES,
   VALID_TIMELINES,
   VALID_PROJECT_STAGES,
+  getPrefilledService,
   FormErrors
 } from '@/lib/formValidation';
 import { sendGAEvent } from '@next/third-parties/google';
@@ -113,6 +114,18 @@ export default function ContactPage() {
   // Initialize page load time on mount
   useEffect(() => {
     pageLoadTime.current = Date.now();
+  }, []);
+
+  // Preselect only services that are already accepted by contact validation.
+  useEffect(() => {
+    const prefilledService = getPrefilledService(
+      new URLSearchParams(window.location.search).get('service')
+    );
+
+    if (prefilledService) {
+      setSelectedService(prefilledService);
+      setFormData((current) => ({ ...current, service: prefilledService }));
+    }
   }, []);
 
   // Scroll to form when arriving with #request-quote hash

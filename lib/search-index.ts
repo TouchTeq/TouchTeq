@@ -61,6 +61,14 @@ export const searchIndex: SearchResult[] = [
     keywords: 'control instrumentation c&i plc scada dcs loop design pressure temperature flow level calibration shutdown alarm motor',
   },
   {
+    id: 'service-calibration',
+    title: 'Industrial Instrument Calibration',
+    description: 'Pressure, temperature and flow calibration support, including ultrasonic flow measurement for suitable clean-liquid and slurry applications.',
+    category: 'Service',
+    url: '/services/instrument-calibration',
+    keywords: 'industrial instrument calibration pressure temperature flow meter ultrasonic flow calibration ultrasonic clamp on clean liquid slurry check metering process analyzer south africa',
+  },
+  {
     id: 'service-elec',
     title: 'Electrical Engineering',
     description: 'Industrial electrical engineering including power distribution, motor control, hazardous area installations, earthing, and lightning protection.',

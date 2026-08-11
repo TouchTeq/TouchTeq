@@ -6,6 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const reviewedAt = new Date('2026-03-24T00:00:00Z');
   const articleReviewedAt = new Date('2026-03-24T00:00:00Z');
   const equipmentDate = new Date('2026-06-17T00:00:00Z');
+  const calibrationDate = new Date('2026-08-10T00:00:00Z');
 
   // Equipment routes
   const equipmentRoutes: MetadataRoute.Sitemap = [
@@ -36,6 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Services
     { url: `${baseUrl}/services/fire-and-gas-detection`, lastModified: equipmentDate, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/control-and-instrumentation`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/services/instrument-calibration`, lastModified: calibrationDate, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/electrical-engineering`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/hazardous-area-classification`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/services/design-and-engineering`, lastModified: reviewedAt, changeFrequency: 'monthly', priority: 0.8 },

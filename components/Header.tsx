@@ -74,6 +74,7 @@ export default function Header() {
       dropdown: [
         { name: 'Fire & Gas Detection', href: '/services/fire-and-gas-detection' },
         { name: 'Control & Instrumentation', href: '/services/control-and-instrumentation' },
+        { name: 'Instrument Calibration', href: '/services/instrument-calibration' },
         { name: 'Electrical Engineering', href: '/services/electrical-engineering' },
         { name: 'Hazardous Area Classification', href: '/services/hazardous-area-classification' },
         { name: 'Design & Engineering', href: '/services/design-and-engineering' },

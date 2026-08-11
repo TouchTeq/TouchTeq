@@ -58,12 +58,12 @@ export default function Footer() {
               className="space-y-8"
             >
               <div className="flex items-center">
-                <Image 
-                  src="/touch-teq-logo-wordmark.jpeg" 
-                  alt="Touch Teqniques Engineering" 
-                  width={454}
-                  height={65}
-                  className="h-10 md:h-12 w-auto"
+                <Image
+                  src="/Picture1.png"
+                  alt="Touch Teqniques Engineering"
+                  width={300}
+                  height={42}
+                  className="h-auto w-full max-w-[300px]"
                 />
               </div>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
@@ -161,6 +161,7 @@ export default function Footer() {
                 {[
                   { name: 'Fire & Gas Detection', href: '/services/fire-and-gas-detection' },
                   { name: 'Control & Instrumentation', href: '/services/control-and-instrumentation' },
+                  { name: 'Instrument Calibration', href: '/services/instrument-calibration' },
                   { name: 'Electrical Engineering', href: '/services/electrical-engineering' },
                   { name: 'Hazardous Area Classification', href: '/services/hazardous-area-classification' },
                   { name: 'Design & Engineering', href: '/services/design-and-engineering' },

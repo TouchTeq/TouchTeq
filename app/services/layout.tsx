@@ -25,6 +25,7 @@ export default function ServicesLayout({
           serviceType: [
             'Fire and Gas Detection Systems',
             'Control and Instrumentation Engineering',
+            'Industrial Instrument Calibration',
             'Hazardous Area Classification',
             'SIL Assessment',
             'Technical Documentation Support',

@@ -34,7 +34,8 @@ const services = [
   },
   {
     title: "Calibration & Testing",
-    description: "We test and calibrate instruments to confirm correct readings and dependable performance in day-to-day plant operation."
+    description: "We provide scope-led pressure, temperature and flow calibration support, including ultrasonic flow checks for suitable applications.",
+    href: "/services/instrument-calibration"
   },
   {
     title: "Commissioning & Start-Up Support",
@@ -293,6 +294,15 @@ export default function ControlAndInstrumentationPage() {
                 </div>
                 <h3 className="text-xl font-black text-[#1A2B4C] uppercase tracking-normal mb-4 group-hover:text-orange-500 transition-colors">{service.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed font-medium">{service.description}</p>
+                {'href' in service && service.href && (
+                  <Link
+                    href={service.href}
+                    className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-orange-500 transition-colors hover:text-[#1A2B4C]"
+                  >
+                    Explore calibration services
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>

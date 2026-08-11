@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Flame, Cpu, Zap, AlertTriangle, Settings, ArrowUpRight, CheckCircle2, ShieldCheck, Award, Clock, Globe } from 'lucide-react';
+import { Flame, Cpu, Zap, AlertTriangle, Settings, ArrowUpRight, CheckCircle2, ShieldCheck, Award, Clock, Globe, Gauge, Thermometer, Waves, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 const trustSignals = [
@@ -105,9 +105,59 @@ export default function ServicesSection() {
             transition={{ delay: 0.2 }}
             className="text-slate-500 text-base md:text-lg leading-relaxed max-w-2xl font-medium"
           >
-            Specialist fire & gas, automation, control and instrumentation, and electrical engineering services designed for regulated industrial operations across Southern Africa.
+            Specialist fire & gas, automation, control and instrumentation, industrial calibration, and electrical engineering services designed for regulated industrial operations across Southern Africa.
           </motion.p>
         </div>
+
+        {/* Featured calibration capability */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative mb-10 overflow-hidden rounded-2xl border border-orange-500/30 bg-[#0A1120] p-6 shadow-2xl md:p-10 lg:p-12"
+        >
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="rounded-full bg-orange-500 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-white">
+                  New capability
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Industrial instrument calibration
+                </span>
+              </div>
+              <h3 className="max-w-3xl text-3xl font-black uppercase leading-tight text-white md:text-5xl">
+                Know what your instruments are really reading.
+              </h3>
+              <p className="mt-5 max-w-2xl text-sm font-medium leading-relaxed text-slate-300 md:text-base">
+                Scope-led pressure, temperature and flow calibration support, including non-invasive ultrasonic flow checks for suitable clean-liquid and slurry applications.
+              </p>
+              <Link
+                href="/services/instrument-calibration"
+                className="group mt-8 inline-flex items-center gap-3 text-xs font-black uppercase tracking-[0.18em] text-orange-500 transition-colors hover:text-white"
+              >
+                Explore calibration services
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-white/10 bg-white/10">
+              {[
+                { label: 'Pressure', icon: Gauge },
+                { label: 'Temperature', icon: Thermometer },
+                { label: 'Flow', icon: Waves },
+              ].map((capability) => (
+                <div key={capability.label} className="flex min-h-32 flex-col items-center justify-center bg-[#111b2e] px-3 text-center">
+                  <capability.icon className="mb-4 text-orange-500" size={26} aria-hidden="true" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-300 md:text-[10px]">
+                    {capability.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">

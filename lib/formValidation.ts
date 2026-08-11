@@ -2,9 +2,12 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+export const CALIBRATION_SERVICE = "Industrial Instrument Calibration";
+
 export const VALID_SERVICES = [
   "Fire and Gas Detection Systems",
   "Control and Instrumentation (C&I)",
+  CALIBRATION_SERVICE,
   "Industrial Electrical Engineering",
   "Hazardous Area Classification",
   "Design and Engineering",
@@ -36,11 +39,16 @@ export const VALID_PROJECT_STAGES = [
 export const VALID_SERVICES_SHORT = [
   "Fire & Gas Detection",
   "Control & Instrumentation",
+  CALIBRATION_SERVICE,
   "Electrical Engineering",
   "Hazardous Area Classification",
   "Emergency Support / Urgent Repair",
   "General Inquiry"
 ];
+
+export function getPrefilledService(service: string | null): string {
+  return service && VALID_SERVICES.includes(service) ? service : '';
+}
 
 export function sanitizeInput(input: string): string {
   return input

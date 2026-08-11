@@ -19,9 +19,14 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
+const isVercelDeployment = process.env.VERCEL === '1';
+
 export const metadata: Metadata = {
   title: 'Touch Teqniques Engineering | Specialist Fire & Gas Detection Engineering | South Africa',
   description: 'Specialist engineering partner for fire and gas detection, hazardous area classification, and control & instrumentation in safety-critical industrial environments across Southern Africa.',
+  icons: {
+    icon: '/touch-teq-logo-wordmark.jpeg',
+  },
   keywords: [
     'fire and gas detection',
     'hazardous area classification',
@@ -129,6 +134,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 'SIL Assessment',
                 'Technical Documentation Support',
                 'Industrial Electrical Engineering',
+                'Industrial Instrument Calibration',
               ],
               priceRange: '$$$$',
               paymentAccepted: 'Cash, Credit Card, Bank Transfer, Invoice',
@@ -195,8 +201,8 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           <CookieConsentBanner />
         </LenisProvider>
         <ConditionalGA4 />
-        <Analytics />
-        <SpeedInsights />
+        {isVercelDeployment && <Analytics />}
+        {isVercelDeployment && <SpeedInsights />}
       </body>
     </html>
   );
