@@ -60,14 +60,14 @@ const articles = [
   },
   {
     id: 4,
-    title: "The Difference Between a SIL Assessment and a HAZOP",
-    excerpt: "These two studies come up together constantly in process safety conversations, and they often get conflated. A plant manager who has sat through both can usually describe what happened in the room. What's less common is a clear understanding of why they're different studies, why the sequence matters, and what each one actually produces.",
+    title: "HAZOP vs SIL Assessment: Different Questions, One Connected Safety Lifecycle",
+    excerpt: "A source-led guide to what HAZOP identifies, how SIL determination and LOPA use selected scenarios, and what must follow through the SRS, verification, validation and operating lifecycle.",
     category: "Technical Articles",
     cardTag: "Functional Safety",
-    detailTags: ["Functional Safety", "SIL Assessment", "HAZOP"],
+    detailTags: ["Functional Safety", "HAZOP", "SIL Determination"],
     image: "/SIL-HAZOP.jpeg",
     link: "/insights/sil-assessment-vs-hazop",
-    readTime: 7
+    readTime: 15
   },
   {
     id: 5,

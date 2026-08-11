@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const calibrationArticleDate = new Date('2026-08-11T00:00:00Z');
   const hazardousAreaArticleDate = new Date('2026-08-11T00:00:00+02:00');
   const fireGasCommissioningArticleDate = new Date('2026-08-11T00:00:00+02:00');
+  const silHazopArticleDate = new Date('2026-08-11T00:00:00+02:00');
   const flameDetectorArticleDate = new Date('2026-08-11T00:00:00+02:00');
 
   // Equipment routes
@@ -56,7 +57,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/insights/iec-61511-plant-managers`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/hazardous-area-classification-southern-africa`, lastModified: hazardousAreaArticleDate, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/flame-detector-false-alarms`, lastModified: flameDetectorArticleDate, changeFrequency: 'yearly', priority: 0.7 },
-    { url: `${baseUrl}/insights/sil-assessment-vs-hazop`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
+    { url: `${baseUrl}/insights/sil-assessment-vs-hazop`, lastModified: silHazopArticleDate, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/fire-and-gas-system-commissioning`, lastModified: fireGasCommissioningArticleDate, changeFrequency: 'yearly', priority: 0.7 },
 
     // Legal

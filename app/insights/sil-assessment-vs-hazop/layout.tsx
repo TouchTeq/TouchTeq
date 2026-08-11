@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'SIL Assessment vs HAZOP: Understanding the Difference | TouchTeq Insights',
+  title: 'HAZOP vs SIL Assessment: Different Questions, One Safety Lifecycle | TouchTeq Insights',
   description:
-    'SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals.',
+    'A source-led guide to HAZOP, SIL determination, LOPA, SRS, verification, validation and the South African process-safety context.',
   keywords: [
     'SIL assessment',
     'HAZOP',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'risk assessment',
     'South Africa',
   ],
-  authors: [{ name: 'Thabo Matona' }],
+  authors: [{ name: 'Touch Teqniques Engineering' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
   metadataBase: new URL('https://www.touchteq.co.za'),
@@ -27,27 +27,27 @@ export const metadata: Metadata = {
     locale: 'en_ZA',
     url: 'https://www.touchteq.co.za/insights/sil-assessment-vs-hazop',
     siteName: 'Touch Teqniques Engineering',
-    title: 'SIL Assessment vs HAZOP: Understanding the Difference',
+    title: 'HAZOP vs SIL Assessment: Different Questions, One Safety Lifecycle',
     description:
-      'SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals.',
+      'A source-led guide to HAZOP, SIL determination, LOPA, SRS, verification, validation and the South African process-safety context.',
     images: [
       {
         url: '/SIL-HAZOP.jpeg',
         width: 1200,
         height: 630,
-        alt: 'SIL Assessment vs HAZOP Comparison',
+        alt: 'HAZOP and SIL assessment shown as connected process-safety activities',
       },
     ],
     publishedTime: '2024-04-01T00:00:00Z',
-    modifiedTime: '2026-03-24T00:00:00Z',
-    authors: ['Thabo Matona'],
-    tags: ['Functional Safety', 'SIL Assessment', 'HAZOP'],
+    modifiedTime: '2026-08-11T00:00:00+02:00',
+    authors: ['Touch Teqniques Engineering'],
+    tags: ['Functional Safety', 'HAZOP', 'SIL Determination', 'LOPA'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SIL Assessment vs HAZOP: Understanding the Difference',
+    title: 'HAZOP vs SIL Assessment: Different Questions, One Safety Lifecycle',
     description:
-      'SIL assessments and HAZOPs are both essential but serve different purposes. This guide explains the difference in plain terms for process safety professionals.',
+      'A source-led guide to HAZOP, SIL determination, LOPA, SRS, verification, validation and the South African process-safety context.',
     images: ['/SIL-HAZOP.jpeg'],
     creator: '@TouchTeqniques',
   },

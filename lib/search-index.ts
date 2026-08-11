@@ -127,11 +127,11 @@ export const searchIndex: SearchResult[] = [
   },
   {
     id: 'insight-sil-hazop',
-    title: 'SIL Assessment vs HAZOP: What\'s the Difference?',
-    description: 'Why SIL assessments and HAZOPs are different studies, what each produces, and why the sequence matters.',
+    title: 'HAZOP vs SIL Assessment: Different Questions, One Safety Lifecycle',
+    description: 'A source-led guide to HAZOP, SIL determination, LOPA, SRS, verification, validation and South African process-safety boundaries.',
     category: 'Insight',
     url: '/insights/sil-assessment-vs-hazop',
-    keywords: 'sil assessment hazop functional safety process safety difference comparison iec 61511 risk reduction',
+    keywords: 'sil assessment sil determination hazop lopa functional safety process safety comparison iec 61511 iec 61882 risk reduction sif srs validation verification south africa mhi',
   },
   {
     id: 'insight-commissioning',
