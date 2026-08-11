@@ -38,14 +38,14 @@ const articles = [
   },
   {
     id: 2,
-    title: "A Guide to Hazardous Area Classification in Southern Africa",
-    excerpt: "Hazardous area classification determines where explosive atmospheres may exist in your facility and what equipment protection levels are required. This guide covers the classification process, the applicable standards, and what plant managers and HSE teams need to understand before commissioning a HAC study.",
+    title: "Hazardous Area Classification in Southern Africa: Zones, Equipment and the Legal Picture",
+    excerpt: "A source-led guide to gas and dust zones, the current SANS 10108 and IEC 60079 standards picture, equipment selection, certification boundaries and the South African legal route.",
     category: "Technical Articles",
     cardTag: "Hazardous Areas",
     detailTags: ["Hazardous Areas", "SANS 10108", "IEC 60079"],
     image: "/HAC.jpg",
     link: "/insights/hazardous-area-classification-southern-africa",
-    readTime: 8
+    readTime: 16
   },
   {
     id: 3,
@@ -71,14 +71,14 @@ const articles = [
   },
   {
     id: 5,
-    title: "What to Expect During a Fire and Gas System Commissioning",
-    excerpt: "There's a version of commissioning that most people have seen: a technician walks around with a clipboard, presses a test button on a detector, the panel beeps, and someone signs off a form. That's not commissioning. That's a functional check, and it is not enough to know whether a fire and gas system will actually perform when it's needed.",
+    title: "Fire and Gas System Commissioning: What a Credible Handover Must Prove",
+    excerpt: "A source-led guide to the evidence a credible F&G commissioning programme should produce, from FAT and loop checks to detector response, cause-and-effect testing, inhibit restoration and final handover.",
     category: "Technical Articles",
     cardTag: "Fire & Gas",
-    detailTags: ["Fire & Gas", "Commissioning", "IEC 61511"],
+    detailTags: ["Fire & Gas", "Commissioning", "Cause & Effect"],
     image: "/f&g.jpeg",
     link: "/insights/fire-and-gas-system-commissioning",
-    readTime: 8
+    readTime: 16
   }
 ];
 

@@ -112,10 +112,10 @@ export const searchIndex: SearchResult[] = [
   {
     id: 'insight-hac-guide',
     title: 'Hazardous Area Classification in Southern Africa',
-    description: 'A guide to HAC processes, applicable standards, and what plant managers need to understand.',
+    description: 'A source-led guide to gas and dust zones, SANS 10108, IEC 60079, equipment selection and South African certification boundaries.',
     category: 'Insight',
     url: '/insights/hazardous-area-classification-southern-africa',
-    keywords: 'hazardous area classification southern africa sans 10108 iec 60079 zones explosive atmosphere guide',
+    keywords: 'hazardous area classification south africa sans 10108 iec 60079 gas dust zone 0 1 2 20 21 22 ia certificate explosion protected apparatus guide',
   },
   {
     id: 'insight-false-alarms',
@@ -135,11 +135,11 @@ export const searchIndex: SearchResult[] = [
   },
   {
     id: 'insight-commissioning',
-    title: 'What to Expect During Fire & Gas System Commissioning',
-    description: 'Phases of a fire and gas commissioning: pre-commissioning, FAT, loop testing, cause and effect testing, and PSSR.',
+    title: 'Fire & Gas System Commissioning: What Handover Must Prove',
+    description: 'A source-led guide to FAT, SAT, loop checks, detector commissioning, cause-and-effect testing, inhibit control and handover evidence.',
     category: 'Insight',
     url: '/insights/fire-and-gas-system-commissioning',
-    keywords: 'commissioning fire gas detection fat loop testing cause effect pssr iec 61511 handover integrated testing',
+    keywords: 'commissioning fire gas detection fat fit sat sit loop testing detector cause effect inhibit bypass restoration handover integrated testing south africa',
   },
   // ── Resources ─────────────────────────────────────────────────────────
   {

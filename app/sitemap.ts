@@ -8,6 +8,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const equipmentDate = new Date('2026-06-17T00:00:00Z');
   const calibrationDate = new Date('2026-08-10T00:00:00Z');
   const calibrationArticleDate = new Date('2026-08-11T00:00:00Z');
+  const hazardousAreaArticleDate = new Date('2026-08-11T00:00:00+02:00');
+  const fireGasCommissioningArticleDate = new Date('2026-08-11T00:00:00+02:00');
 
   // Equipment routes
   const equipmentRoutes: MetadataRoute.Sitemap = [
@@ -51,10 +53,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Insight Articles
     { url: `${baseUrl}/insights/industrial-instrument-calibration-process-guide`, lastModified: calibrationArticleDate, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/iec-61511-plant-managers`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
-    { url: `${baseUrl}/insights/hazardous-area-classification-southern-africa`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
+    { url: `${baseUrl}/insights/hazardous-area-classification-southern-africa`, lastModified: hazardousAreaArticleDate, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/flame-detector-false-alarms`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${baseUrl}/insights/sil-assessment-vs-hazop`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
-    { url: `${baseUrl}/insights/fire-and-gas-system-commissioning`, lastModified: articleReviewedAt, changeFrequency: 'yearly', priority: 0.7 },
+    { url: `${baseUrl}/insights/fire-and-gas-system-commissioning`, lastModified: fireGasCommissioningArticleDate, changeFrequency: 'yearly', priority: 0.7 },
 
     // Legal
     { url: `${baseUrl}/terms`, lastModified: reviewedAt, changeFrequency: 'yearly', priority: 0.3 },

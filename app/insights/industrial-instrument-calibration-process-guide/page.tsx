@@ -19,6 +19,8 @@ import Link from 'next/link';
 import BackToTop from '@/components/BackToTop';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
+import ArticleAudioPlayer from '@/components/insights/ArticleAudioPlayer';
+import ArticleAuthorityBox from '@/components/insights/ArticleAuthorityBox';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import FAQJsonLd from '@/components/seo/FAQJsonLd';
 import JsonLd from '@/components/seo/JsonLd';
@@ -28,6 +30,7 @@ const articleUrl =
   'https://www.touchteq.co.za/insights/industrial-instrument-calibration-process-guide';
 const calibrationContactHref =
   '/contact?service=Industrial%20Instrument%20Calibration#request-quote';
+const detailTags = ['Pressure', 'Temperature', 'Flow Measurement'];
 
 const processSteps = [
   {
@@ -196,17 +199,29 @@ export default function IndustrialInstrumentCalibrationProcessGuidePage() {
           </Link>
 
           <div className="max-w-5xl">
-            <div className="mb-7 flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.16em]">
-              <span className="bg-orange-500 px-3 py-1.5 text-white">Instrument calibration</span>
-              <span className="inline-flex items-center gap-2 border border-white/20 px-3 py-1.5 text-slate-300">
-                <Clock size={13} aria-hidden="true" /> 11 min read
+            <div className="mb-6 flex flex-wrap items-center gap-4">
+              <span className="rounded-sm bg-orange-500 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                Instrument Calibration
               </span>
-              <span className="text-slate-400">Published 11 August 2026</span>
+              <div className="flex items-center text-xs text-slate-400">
+                <Clock size={12} className="mr-1" aria-hidden="true" />
+                11 min read
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {detailTags.map((tag, index) => (
+                  <span key={tag} className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {index > 0 && <span className="mx-1 text-slate-600">{'\u00B7'}</span>}
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <h1 className="max-w-5xl text-4xl font-black uppercase leading-[0.98] tracking-tight sm:text-5xl md:text-7xl">
               Industrial instrument calibration:{' '}
-              <span className="text-orange-500">process, capabilities and what to expect.</span>
+              <span className="bg-gradient-to-r from-[#FF6900] to-orange-300 bg-clip-text text-transparent">
+                process, capabilities and what to expect.
+              </span>
             </h1>
             <p className="mt-8 max-w-3xl text-base font-medium leading-relaxed text-slate-300 md:text-xl">
               A practical guide for plant, maintenance and engineering teams that need to understand what calibration proves, how a defensible scope is built and what information belongs in the handover.
@@ -221,12 +236,6 @@ export default function IndustrialInstrumentCalibrationProcessGuidePage() {
             <span className="font-black uppercase text-[#1A2B4C]">Quick answer:</span>{' '}
             calibration compares an instrument&apos;s indication with an applicable reference under defined conditions and records the relationship. It does not automatically adjust or repair the instrument.
           </p>
-          <ShareButton
-            title="Industrial Instrument Calibration: Process, Capabilities and What to Expect"
-            description="A practical guide to pressure, temperature and flow calibration for industrial teams."
-            url={articleUrl}
-            className="shrink-0"
-          />
         </div>
       </section>
 
@@ -249,6 +258,15 @@ export default function IndustrialInstrumentCalibrationProcessGuidePage() {
           </aside>
 
           <article className="min-w-0">
+            <ShareButton
+              title="Industrial Instrument Calibration: Process, Capabilities and What to Expect"
+              description="A practical guide to pressure, temperature and flow calibration for industrial teams."
+              url={articleUrl}
+              className="mb-6"
+            />
+
+            <ArticleAudioPlayer />
+
             <div className="border-l-4 border-orange-500 bg-slate-50 px-6 py-7 md:px-8">
               <p className="text-xl font-black leading-relaxed text-[#1A2B4C] md:text-2xl">
                 A display can look stable while the measurement behind it has shifted. Calibration provides the comparison data needed to decide whether the reading can still be trusted for its intended use.
@@ -567,6 +585,11 @@ export default function IndustrialInstrumentCalibrationProcessGuidePage() {
                 This guide is general technical information, not a declaration that a particular calibration method, accreditation route or legal verification applies to every instrument. The correct route must be confirmed from the application and required use of the result.
               </p>
             </div>
+
+            <ArticleAuthorityBox
+              updated="August 2026"
+              topics={['Industrial instrument calibration', 'Pressure and temperature measurement', 'Flow measurement', 'Metrological traceability']}
+            />
           </article>
         </div>
       </section>

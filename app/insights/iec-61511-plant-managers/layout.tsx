@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Understanding IEC 61511: What Plant Managers in South Africa Need to Know | TouchTeq Insights',
+  title: 'IEC 61511 in South Africa: A Plant Manager Guide | TouchTeq Insights',
   description:
-    'IEC 61511 governs safety instrumented systems across South African process plants. Learn what plant managers need to know about SIL, SIS design, and OHS Act compliance.',
+    'A practical guide to IEC 61511, the SIS lifecycle, SIL, proof testing and how the standard relates to South Africa’s Major Hazard Installation Regulations.',
   keywords: [
     'IEC 61511',
     'safety instrumented systems',
@@ -21,15 +21,15 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/insights/iec-61511-plant-managers',
   },
-  category: 'regulatory updates',
+  category: 'functional safety',
   openGraph: {
     type: 'article',
     locale: 'en_ZA',
     url: 'https://www.touchteq.co.za/insights/iec-61511-plant-managers',
     siteName: 'Touch Teqniques Engineering',
-    title: 'Understanding IEC 61511: What Plant Managers in South Africa Need to Know',
+    title: 'IEC 61511 in South Africa: What Plant Managers Need to Know',
     description:
-      'IEC 61511 governs safety instrumented systems across South African process plants. Learn what plant managers need to know about SIL, SIS design, and OHS Act compliance.',
+      'A practical guide to the SIS lifecycle, SIL, proof testing and South Africa’s Major Hazard Installation regulatory context.',
     images: [
       {
         url: '/IEC.jpeg',
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
       },
     ],
     publishedTime: '2024-04-01T00:00:00Z',
-    modifiedTime: '2026-03-24T00:00:00Z',
+    modifiedTime: '2026-08-11T00:00:00+02:00',
     authors: ['Thabo Matona'],
     tags: ['Functional Safety', 'IEC 61511', 'Safety Instrumented Systems'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Understanding IEC 61511: What Plant Managers in South Africa Need to Know',
+    title: 'IEC 61511 in South Africa: What Plant Managers Need to Know',
     description:
-      'IEC 61511 governs safety instrumented systems across South African process plants. Learn what plant managers need to know about SIL, SIS design, and OHS Act compliance.',
+      'A practical guide to the SIS lifecycle, SIL, proof testing and South Africa’s Major Hazard Installation regulatory context.',
     images: ['/IEC.jpeg'],
     creator: '@TouchTeqniques',
   },

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'A Guide to Hazardous Area Classification in Southern Africa | TouchTeq Insights',
+  title: 'Hazardous Area Classification in Southern Africa | TouchTeq Insights',
   description:
-    'A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements.',
+    'A source-led guide to gas and dust zones, SANS 10108, IEC 60079, equipment selection and South African certification boundaries.',
   keywords: [
     'hazardous area classification',
     'SANS 10108',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'industrial safety',
     'South Africa',
   ],
-  authors: [{ name: 'Thabo Matona' }],
+  authors: [{ name: 'Touch Teqniques Engineering' }],
   creator: 'Touch Teqniques Engineering Services',
   publisher: 'Touch Teqniques Engineering Services',
   metadataBase: new URL('https://www.touchteq.co.za'),
@@ -27,27 +27,27 @@ export const metadata: Metadata = {
     locale: 'en_ZA',
     url: 'https://www.touchteq.co.za/insights/hazardous-area-classification-southern-africa',
     siteName: 'Touch Teqniques Engineering',
-    title: 'A Guide to Hazardous Area Classification in Southern Africa',
+    title: 'Hazardous Area Classification in Southern Africa',
     description:
-      'A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements.',
+      'A source-led guide to gas and dust zones, SANS 10108, IEC 60079, equipment selection and South African certification boundaries.',
     images: [
       {
         url: '/HAC.jpg',
         width: 1200,
         height: 630,
-        alt: 'Hazardous Area Classification Guide',
+        alt: 'Hazardous area classification guide for Southern African industrial facilities',
       },
     ],
     publishedTime: '2024-04-01T00:00:00Z',
-    modifiedTime: '2026-03-24T00:00:00Z',
-    authors: ['Thabo Matona'],
-    tags: ['Hazardous Areas', 'SANS 10108', 'IEC 60079'],
+    modifiedTime: '2026-08-11T00:00:00+02:00',
+    authors: ['Touch Teqniques Engineering'],
+    tags: ['Hazardous Areas', 'SANS 10108', 'IEC 60079', 'Explosion-Protected Apparatus'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'A Guide to Hazardous Area Classification in Southern Africa',
+    title: 'Hazardous Area Classification in Southern Africa',
     description:
-      'A practical guide to hazardous area classification for Southern African facilities. Covers SANS 10108, IEC 60079, zone classification, and equipment selection requirements.',
+      'A source-led guide to gas and dust zones, SANS 10108, IEC 60079, equipment selection and South African certification boundaries.',
     images: ['/HAC.jpg'],
     creator: '@TouchTeqniques',
   },

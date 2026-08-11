@@ -41,11 +41,11 @@ const insightsItems: GalleryItem[] = [
   },
   {
     id: "item-2",
-    title: "A Guide to Hazardous Area Classification in Southern Africa",
-    summary: "Hazardous area classification determines where explosive atmospheres may exist in your facility and what equipment protection levels are required. This guide covers the classification process and applicable standards.",
+    title: "Hazardous Area Classification in Southern Africa: Zones, Equipment and the Legal Picture",
+    summary: "A source-led guide to gas and dust zones, current standards, equipment selection, certification boundaries and the South African legal route.",
     url: "/insights/hazardous-area-classification-southern-africa",
     image: "/HAC.jpg",
-    readTime: 8,
+    readTime: 16,
     category: "Hazardous Areas"
   },
   {
@@ -68,11 +68,11 @@ const insightsItems: GalleryItem[] = [
   },
   {
     id: "item-5",
-    title: "What to Expect During a Fire and Gas System Commissioning",
-    summary: "Proper F&G commissioning is a structured, documented process that proves the entire system, from field sensors through to logic, alarms, and physical outputs, works as designed.",
+    title: "Fire and Gas System Commissioning: What a Credible Handover Must Prove",
+    summary: "What each commissioning stage proves, how detector and cause-and-effect tests differ, and what evidence should survive handover.",
     url: "/insights/fire-and-gas-system-commissioning",
     image: "/f&g.jpeg",
-    readTime: 8,
+    readTime: 16,
     category: "Fire & Gas"
   },
 ];
