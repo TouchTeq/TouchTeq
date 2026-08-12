@@ -345,7 +345,7 @@ export default function InstrumentCalibrationPage() {
         </div>
       </section>
 
-      <section aria-labelledby="calibration-equipment-heading" className="border-y border-slate-200 bg-slate-50 py-24 md:py-32">
+      <section hidden aria-labelledby="calibration-equipment-heading" className="border-y border-slate-200 bg-slate-50 py-24 md:py-32">
         <div className="container mx-auto px-4 md:px-8">
           <div className="mb-14 grid gap-8 lg:grid-cols-[1fr_0.65fr] lg:items-end">
             <div className="max-w-3xl">
